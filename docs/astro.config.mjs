@@ -7,7 +7,7 @@ export default defineConfig({
       title: 'Bitbucket CLI',
       description: 'A command-line interface for Bitbucket Cloud',
       social: {
-        github: 'https://github.com/your-username/bitbucket-cli',
+        github: 'https://github.com/0pilatos0/bitbucket-cli',
       },
       sidebar: [
         {

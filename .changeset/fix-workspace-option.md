@@ -1,5 +1,5 @@
 ---
-"bitbucket-cli": patch
+"@pilatos/bitbucket-cli": patch
 ---
 
 Fix workspace option conflict between global and subcommand options

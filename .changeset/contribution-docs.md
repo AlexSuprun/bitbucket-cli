@@ -1,5 +1,5 @@
 ---
-"bitbucket-cli": patch
+"@pilatos/bitbucket-cli": patch
 ---
 
 Add contribution guidelines and changeset enforcement

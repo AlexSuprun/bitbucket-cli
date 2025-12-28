@@ -65,13 +65,21 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Publish to npm
+        if: steps.changesets.outputs.has_changesets == 'false' && steps.tag.outputs.exists == 'false'
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish to GitHub Packages
         if: steps.changesets.outputs.has_changesets == 'false' && steps.tag.outputs.exists == 'false'
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > .npmrc
           echo "@0pilatos0:registry=https://npm.pkg.github.com" >> .npmrc
           npm pkg set name="@0pilatos0/bitbucket-cli"
-          npm publish --registry=https://npm.pkg.github.com --access public
+          npm publish --registry=https://npm.pkg.github.com --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

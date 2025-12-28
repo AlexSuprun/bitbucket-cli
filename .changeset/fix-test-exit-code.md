@@ -1,5 +1,5 @@
 ---
-"bitbucket-cli": patch
+"@pilatos/bitbucket-cli": patch
 ---
 
 fix: prevent test pollution from process.exitCode set in command error handlers
