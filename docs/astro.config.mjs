@@ -2,9 +2,7 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
 export default defineConfig({
-  site: {
-    url: "https://bitbucket-cli.paulvanderlei.com",
-  },
+  site: "https://bitbucket-cli.paulvanderlei.com",
   integrations: [
     starlight({
       title: "Bitbucket CLI",
