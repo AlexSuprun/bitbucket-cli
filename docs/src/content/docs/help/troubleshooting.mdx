@@ -1,0 +1,380 @@
+---
+title: Troubleshooting
+description: Common issues and their solutions
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide covers the most common issues users encounter and how to resolve them.
+
+## Authentication Issues
+
+### "Authentication required" Error
+
+**Symptoms:**
+```
+Error: Authentication required. Please run 'bb auth login' first.
+```
+
+**Causes:**
+- You haven't logged in yet
+- Your credentials were cleared
+
+**Solution:**
+```bash
+bb auth login
+```
+
+---
+
+### "Invalid credentials" Error
+
+**Symptoms:**
+```
+Error: Invalid credentials
+```
+
+**Causes:**
+- Incorrect username
+- Invalid or expired API token
+- Using a password instead of API token
+
+**Solution:**
+
+<Steps>
+
+1. Verify your username is correct (your Bitbucket username, not email)
+
+2. Generate a fresh API token:
+   - Go to [Bitbucket API Tokens](https://bitbucket.org/account/settings/api-tokens/)
+   - Create a new token with required scopes
+   - Copy the token immediately
+
+3. Re-authenticate:
+   ```bash
+   bb auth logout
+   bb auth login
+   ```
+
+</Steps>
+
+<Aside type="caution" title="App Passwords Deprecated">
+As of September 9, 2025, Bitbucket app passwords are deprecated. Use API tokens instead.
+</Aside>
+
+---
+
+### Token Works in Browser but Not CLI
+
+**Causes:**
+- Token might have wrong scopes
+- Token might be an app password (deprecated)
+- Encoding issues when pasting
+
+**Solution:**
+
+1. Verify you're using an **API token** (not app password):
+   - API tokens are managed at [API Tokens page](https://bitbucket.org/account/settings/api-tokens/)
+   - App passwords are at a different URL (deprecated)
+
+2. Check token scopes include:
+   - `account:read`
+   - `repository:read` and `repository:write`
+   - `pullrequest:read` and `pullrequest:write`
+
+3. When pasting the token, ensure no extra whitespace:
+   ```bash
+   # Good - token only
+   bb auth login -u myuser -p ATBB_xxxxx
+
+   # Bad - extra space
+   bb auth login -u myuser -p " ATBB_xxxxx"
+   ```
+
+---
+
+## Repository Context Issues
+
+### "Could not determine repository" Error
+
+**Symptoms:**
+```
+Error: Could not determine repository. Use -w and -r flags or run from within a repository.
+```
+
+**Causes:**
+- Not in a git repository
+- Git remote doesn't point to Bitbucket
+- No default workspace/repo configured
+
+**Solutions:**
+
+**Option 1:** Use explicit flags
+```bash
+bb pr list -w myworkspace -r myrepo
+```
+
+**Option 2:** Set defaults
+```bash
+bb config set workspace myworkspace
+bb config set repo myrepo
+```
+
+**Option 3:** Work from a cloned repository
+```bash
+cd /path/to/cloned-bitbucket-repo
+bb pr list  # Auto-detects from git remote
+```
+
+See [Repository Context](/guides/repository-context/) for details.
+
+---
+
+### "Repository not found" Error
+
+**Symptoms:**
+```
+Error: Repository not found
+```
+
+**Causes:**
+- Typo in workspace or repository name
+- You don't have access to the repository
+- Repository was deleted or renamed
+
+**Solution:**
+
+1. Verify spelling:
+   ```bash
+   # Check what the CLI detected
+   bb repo view
+   ```
+
+2. List repositories you have access to:
+   ```bash
+   bb repo list -w myworkspace
+   ```
+
+3. Check Bitbucket web UI to confirm repository exists
+
+---
+
+## Network Issues
+
+### "API request failed" Error
+
+**Symptoms:**
+```
+Error: API request failed
+```
+
+**Causes:**
+- No internet connection
+- Bitbucket is down
+- Firewall blocking requests
+- Proxy not configured
+
+**Solutions:**
+
+1. Check internet connection:
+   ```bash
+   curl -I https://api.bitbucket.org
+   ```
+
+2. Check Bitbucket status: [status.bitbucket.org](https://status.bitbucket.org)
+
+3. If behind a proxy, configure it:
+   ```bash
+   export HTTPS_PROXY=http://proxy.example.com:8080
+   ```
+
+---
+
+### Rate Limiting
+
+**Symptoms:**
+```
+Error: Rate limit exceeded
+```
+
+**Causes:**
+- Too many API requests in a short period
+- Scripts making rapid sequential calls
+
+**Solutions:**
+
+1. Wait a few minutes and retry
+
+2. For scripts, implement delays:
+   ```bash
+   for pr_id in 1 2 3 4 5; do
+     bb pr view $pr_id
+     sleep 1  # Add delay between requests
+   done
+   ```
+
+3. Use `--json` and process locally to reduce API calls:
+   ```bash
+   # One API call, process locally
+   bb pr list --json | jq '.[] | select(.author.username == "me")'
+   ```
+
+---
+
+## Git Integration Issues
+
+### "Not a git repository" Error
+
+**Symptoms:**
+```
+Error: Not a git repository
+```
+
+**Causes:**
+- Running command outside a git repository
+- Git not initialized
+
+**Solutions:**
+
+1. Navigate to a git repository:
+   ```bash
+   cd /path/to/your/repo
+   ```
+
+2. Or use explicit flags:
+   ```bash
+   bb pr list -w workspace -r repo
+   ```
+
+---
+
+### Clone Fails
+
+**Symptoms:**
+```
+Error: Failed to clone repository
+```
+
+**Causes:**
+- SSH keys not configured
+- Repository access denied
+- Invalid repository URL
+
+**Solutions:**
+
+1. Try HTTPS instead of SSH:
+   ```bash
+   # The CLI uses SSH by default
+   # Clone manually with HTTPS if SSH fails
+   git clone https://bitbucket.org/workspace/repo.git
+   ```
+
+2. Check SSH configuration:
+   ```bash
+   ssh -T git@bitbucket.org
+   ```
+
+3. Verify repository access in Bitbucket web UI
+
+---
+
+## Command-Specific Issues
+
+### PR Creation Fails
+
+**Symptoms:**
+```
+Error: Failed to create pull request
+```
+
+**Common causes and solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| Branch doesn't exist on remote | `git push -u origin your-branch` |
+| PR already exists for branch | Check `bb pr list` |
+| Branch protection rules | Check repository settings |
+| No changes between branches | Ensure commits exist |
+
+---
+
+### PR Merge Fails
+
+**Symptoms:**
+```
+Error: Cannot merge pull request
+```
+
+**Common causes:**
+
+- Merge conflicts exist
+- Required approvals not met
+- Build checks failing
+- Branch protection rules
+
+**Solution:**
+Check PR status in Bitbucket web UI for specific blockers.
+
+---
+
+### Diff Shows Nothing
+
+**Symptoms:**
+```bash
+bb pr diff 42
+# (empty output)
+```
+
+**Causes:**
+- PR has no file changes
+- PR is already merged
+- API returned empty diff
+
+**Solutions:**
+
+1. Check PR status:
+   ```bash
+   bb pr view 42
+   ```
+
+2. View in browser:
+   ```bash
+   bb pr diff 42 --web
+   ```
+
+---
+
+## Getting Debug Information
+
+When reporting issues, gather this information:
+
+```bash
+# CLI version
+bb --version
+
+# OS information
+uname -a  # Linux/macOS
+systeminfo | findstr /B /C:"OS"  # Windows
+
+# Node.js version
+node --version
+
+# Auth status (masks token)
+bb auth status
+
+# Config (masks token)
+bb config list
+```
+
+---
+
+## Still Need Help?
+
+If you've tried the solutions above and still have issues:
+
+1. Search [existing issues](https://github.com/0pilatos0/bitbucket-cli/issues)
+2. Open a [new issue](https://github.com/0pilatos0/bitbucket-cli/issues/new) with:
+   - CLI version (`bb --version`)
+   - Operating system
+   - Complete error message
+   - Steps to reproduce

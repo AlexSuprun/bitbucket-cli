@@ -1,0 +1,447 @@
+---
+title: CI/CD Integration
+description: Integrate Bitbucket CLI into your CI/CD pipelines
+---
+
+import { Aside, Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+The Bitbucket CLI can automate pull request workflows, add comments, and manage repositories in your CI/CD pipelines.
+
+## Quick Setup
+
+<Steps>
+
+1. **Store credentials as secrets** in your CI/CD platform
+   - `BB_USERNAME` - Your Bitbucket username
+   - `BB_API_TOKEN` - Your Bitbucket API token
+
+2. **Install the CLI** in your pipeline
+   ```bash
+   npm install -g @pilatos/bitbucket-cli
+   ```
+
+3. **Authenticate** using environment variables
+   ```bash
+   bb auth login
+   ```
+
+4. **Run commands** with explicit workspace/repo flags
+   ```bash
+   bb pr list -w myworkspace -r myrepo --json
+   ```
+
+</Steps>
+
+---
+
+## Platform Examples
+
+### GitHub Actions
+
+```yaml
+name: Bitbucket PR Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-bitbucket-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Bitbucket CLI
+        run: npm install -g @pilatos/bitbucket-cli
+
+      - name: Authenticate
+        env:
+          BB_USERNAME: ${{ secrets.BB_USERNAME }}
+          BB_API_TOKEN: ${{ secrets.BB_API_TOKEN }}
+        run: bb auth login
+
+      - name: List Open PRs
+        run: |
+          bb pr list -w myworkspace -r myrepo --json > prs.json
+          echo "Open PRs: $(jq length prs.json)"
+```
+
+#### Auto-Create PR on Push
+
+```yaml
+name: Auto-Create PR
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'fix/**'
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        run: npm install -g @pilatos/bitbucket-cli
+
+      - name: Create PR
+        env:
+          BB_USERNAME: ${{ secrets.BB_USERNAME }}
+          BB_API_TOKEN: ${{ secrets.BB_API_TOKEN }}
+        run: |
+          bb auth login
+
+          BRANCH=${GITHUB_REF#refs/heads/}
+          TITLE="$(echo $BRANCH | sed 's/[-_]/ /g' | sed 's/feature\///; s/fix\//Fix: /')"
+
+          # Check if PR already exists
+          EXISTING=$(bb pr list -w workspace -r repo --json | \
+            jq --arg branch "$BRANCH" '[.[] | select(.source.branch.name == $branch)] | length')
+
+          if [ "$EXISTING" -eq 0 ]; then
+            bb pr create -w workspace -r repo \
+              -t "$TITLE" \
+              -s "$BRANCH" \
+              -d main
+          fi
+```
+
+---
+
+### GitLab CI
+
+```yaml
+stages:
+  - check
+
+variables:
+  BB_WORKSPACE: myworkspace
+  BB_REPO: myrepo
+
+check-prs:
+  stage: check
+  image: node:20
+
+  before_script:
+    - npm install -g @pilatos/bitbucket-cli
+    - bb auth login
+
+  script:
+    - bb pr list -w $BB_WORKSPACE -r $BB_REPO --json
+    - bb repo view -w $BB_WORKSPACE -r $BB_REPO
+
+  variables:
+    BB_USERNAME: $BB_USERNAME  # From CI/CD variables
+    BB_API_TOKEN: $BB_API_TOKEN
+```
+
+---
+
+### Bitbucket Pipelines
+
+Using the CLI within Bitbucket Pipelines itself:
+
+```yaml
+image: node:20
+
+pipelines:
+  default:
+    - step:
+        name: Check PRs
+        script:
+          - npm install -g @pilatos/bitbucket-cli
+          - bb auth login
+          # Use built-in variables
+          - bb pr list -w $BITBUCKET_WORKSPACE -r $BITBUCKET_REPO_SLUG --json
+
+  pull-requests:
+    '**':
+      - step:
+          name: PR Info
+          script:
+            - npm install -g @pilatos/bitbucket-cli
+            - bb auth login
+            - bb pr view $BITBUCKET_PR_ID -w $BITBUCKET_WORKSPACE -r $BITBUCKET_REPO_SLUG
+
+definitions:
+  caches:
+    npm: ~/.npm
+```
+
+<Aside type="tip">
+Bitbucket Pipelines provides `BITBUCKET_WORKSPACE`, `BITBUCKET_REPO_SLUG`, and `BITBUCKET_PR_ID` automatically.
+</Aside>
+
+---
+
+### Jenkins
+
+**Jenkinsfile:**
+
+```groovy
+pipeline {
+    agent any
+
+    environment {
+        BB_USERNAME = credentials('bitbucket-username')
+        BB_API_TOKEN = credentials('bitbucket-token')
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                sh 'npm install -g @pilatos/bitbucket-cli'
+                sh 'bb auth login'
+            }
+        }
+
+        stage('Check PRs') {
+            steps {
+                sh '''
+                    bb pr list -w myworkspace -r myrepo --json > prs.json
+                    PR_COUNT=$(jq length prs.json)
+                    echo "Found $PR_COUNT open PRs"
+                '''
+            }
+        }
+
+        stage('Merge Ready PRs') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh '''
+                    APPROVED_PRS=$(bb pr list -w myworkspace -r myrepo --json | \
+                        jq -r '.[] | select(.participants | any(.approved == true)) | .id')
+
+                    for PR_ID in $APPROVED_PRS; do
+                        echo "Merging PR #$PR_ID"
+                        bb pr merge $PR_ID -w myworkspace -r myrepo --strategy squash
+                    done
+                '''
+            }
+        }
+    }
+}
+```
+
+---
+
+### Azure DevOps
+
+```yaml
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: bitbucket-credentials  # Variable group with BB_USERNAME, BB_API_TOKEN
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '20.x'
+
+  - script: npm install -g @pilatos/bitbucket-cli
+    displayName: 'Install Bitbucket CLI'
+
+  - script: bb auth login
+    displayName: 'Authenticate'
+    env:
+      BB_USERNAME: $(BB_USERNAME)
+      BB_API_TOKEN: $(BB_API_TOKEN)
+
+  - script: |
+      bb pr list -w myworkspace -r myrepo --json
+    displayName: 'List PRs'
+```
+
+---
+
+## Common Use Cases
+
+### Auto-Create PR for Dependency Updates
+
+```yaml
+# GitHub Actions example
+name: Dependency Update PR
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Weekly on Monday
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update dependencies
+        run: |
+          npm update
+          git config user.name "Bot"
+          git config user.email "bot@example.com"
+          git checkout -b deps/weekly-update
+          git add package*.json
+          git commit -m "chore: weekly dependency update" || exit 0
+          git push -u origin deps/weekly-update
+
+      - name: Create Bitbucket PR
+        env:
+          BB_USERNAME: ${{ secrets.BB_USERNAME }}
+          BB_API_TOKEN: ${{ secrets.BB_API_TOKEN }}
+        run: |
+          npm install -g @pilatos/bitbucket-cli
+          bb auth login
+          bb pr create -w workspace -r repo \
+            -t "chore: Weekly dependency update" \
+            -b "Automated dependency updates" \
+            -s deps/weekly-update \
+            -d main
+```
+
+### Merge Approved PRs Automatically
+
+```bash
+#!/bin/bash
+# auto-merge.sh - Run in CI on schedule
+
+set -e
+
+WORKSPACE="myworkspace"
+REPO="myrepo"
+
+# Find PRs that are approved and have passing builds
+approved_prs=$(bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '
+  .[] |
+  select(.participants | any(.approved == true)) |
+  select(.state == "OPEN") |
+  .id
+')
+
+for pr_id in $approved_prs; do
+  echo "Attempting to merge PR #$pr_id..."
+
+  if bb pr merge "$pr_id" -w "$WORKSPACE" -r "$REPO" --strategy squash --close-source-branch; then
+    echo "Successfully merged PR #$pr_id"
+  else
+    echo "Could not merge PR #$pr_id (may have conflicts or failing checks)"
+  fi
+
+  sleep 2
+done
+```
+
+### Generate Changelog from Merged PRs
+
+```bash
+#!/bin/bash
+# generate-changelog.sh
+
+WORKSPACE="myworkspace"
+REPO="myrepo"
+SINCE_DATE=$(date -d '7 days ago' +%Y-%m-%d)
+
+echo "# Changelog - Week of $(date +%Y-%m-%d)"
+echo ""
+
+bb pr list -w "$WORKSPACE" -r "$REPO" -s MERGED --json | jq -r --arg since "$SINCE_DATE" '
+  .[] |
+  select(.updated_on >= $since) |
+  "- \(.title) (#\(.id)) by @\(.author.username)"
+'
+```
+
+---
+
+## Security Considerations
+
+### Token Scopes
+
+Create a dedicated CI/CD token with minimal permissions:
+
+| Use Case | Required Scopes |
+|----------|----------------|
+| Read-only checks | `repository:read`, `pullrequest:read` |
+| Create PRs | + `pullrequest:write` |
+| Merge PRs | + `pullrequest:write` |
+| Delete repos | + `repository:admin` |
+
+### Secrets Management
+
+<Tabs>
+  <TabItem label="GitHub Actions">
+    Store in **Settings > Secrets and variables > Actions**
+  </TabItem>
+  <TabItem label="GitLab">
+    Store in **Settings > CI/CD > Variables** (masked, protected)
+  </TabItem>
+  <TabItem label="Jenkins">
+    Use **Credentials** plugin with Secret text type
+  </TabItem>
+</Tabs>
+
+### Audit Logging
+
+Track CLI usage in your pipelines:
+
+```bash
+echo "Running bb at $(date) by ${CI_USER:-unknown}"
+bb pr list -w workspace -r repo --json | tee pr-list-$(date +%s).json
+```
+
+---
+
+## Troubleshooting CI/CD
+
+### Authentication Fails
+
+```
+Error: Authentication required
+```
+
+**Check:**
+1. Environment variables are set correctly
+2. Secrets are available to the job
+3. Token hasn't expired
+
+**Debug:**
+```bash
+echo "Username set: $([ -n "$BB_USERNAME" ] && echo 'yes' || echo 'no')"
+echo "Token set: $([ -n "$BB_API_TOKEN" ] && echo 'yes' || echo 'no')"
+```
+
+### Rate Limiting in Loops
+
+Add delays between API calls:
+
+```bash
+for pr_id in $pr_ids; do
+  bb pr view "$pr_id" --json
+  sleep 2  # Prevent rate limiting
+done
+```
+
+### Command Not Found
+
+Ensure the CLI is installed and in PATH:
+
+```bash
+npm install -g @pilatos/bitbucket-cli
+export PATH="$(npm bin -g):$PATH"
+bb --version
+```

@@ -1,0 +1,272 @@
+---
+title: Frequently Asked Questions
+description: Common questions about Bitbucket CLI
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## General
+
+### Is this an official Atlassian/Bitbucket tool?
+
+No. This is an **unofficial**, community-maintained CLI tool. It is not affiliated with or endorsed by Atlassian or Bitbucket. The project is open source and maintained by volunteers.
+
+---
+
+### How does this compare to GitHub CLI (gh)?
+
+The Bitbucket CLI is inspired by GitHub's excellent `gh` CLI and aims to provide a similar experience for Bitbucket users:
+
+| Feature | GitHub CLI | Bitbucket CLI |
+|---------|-----------|---------------|
+| Authentication | OAuth/token | API token |
+| Repository management | Yes | Yes |
+| Pull requests | Yes | Yes |
+| Issues | Yes | Not yet |
+| Actions/Pipelines | Yes | Not yet |
+| Gists/Snippets | Yes | Not yet |
+| JSON output | Yes | Yes |
+| Shell completion | Yes | Yes |
+
+---
+
+### What Bitbucket features are supported?
+
+Currently supported:
+
+- **Authentication** - Login, logout, status, token display
+- **Repositories** - Clone, create, list, view, delete
+- **Pull Requests** - Create, list, view, merge, approve, decline, checkout, diff
+- **Configuration** - Get, set, list settings
+- **Shell Completion** - Bash, Zsh, Fish
+
+Not yet supported:
+- Issues
+- Pipelines
+- Snippets
+- Branch permissions
+- Webhooks
+
+---
+
+### Does this work with Bitbucket Server/Data Center?
+
+No. Currently, the CLI only supports **Bitbucket Cloud**. Bitbucket Server (self-hosted) uses a different API and is not supported.
+
+If you need Bitbucket Server support, please [open an issue](https://github.com/0pilatos0/bitbucket-cli/issues) to let us know.
+
+---
+
+## Authentication
+
+### Where are my credentials stored?
+
+Credentials are stored in a local configuration file:
+
+| Platform | Location |
+|----------|----------|
+| macOS/Linux | `~/.config/bb/config.json` |
+| Windows | `%APPDATA%\bb\config.json` |
+
+The file is created with restricted permissions (owner read/write only on Unix systems).
+
+<Aside type="caution">
+Never share this file or commit it to version control.
+</Aside>
+
+---
+
+### Can I use app passwords?
+
+**No, app passwords are deprecated.**
+
+As of September 9, 2025, Bitbucket app passwords can no longer be created. Existing app passwords will be disabled on June 9, 2026.
+
+Use **API tokens** instead:
+1. Go to [Bitbucket API Tokens](https://bitbucket.org/account/settings/api-tokens/)
+2. Create a new token with required scopes
+
+---
+
+### How do I use multiple Bitbucket accounts?
+
+The CLI doesn't have built-in multi-account support, but you can work around this:
+
+**Option 1: Environment variables per session**
+```bash
+# Terminal 1 - Account A
+export BB_USERNAME=account-a
+export BB_API_TOKEN=token-a
+
+# Terminal 2 - Account B
+export BB_USERNAME=account-b
+export BB_API_TOKEN=token-b
+```
+
+**Option 2: Alias with different configs**
+```bash
+# In your .bashrc/.zshrc
+alias bb-work='BB_USERNAME=work BB_API_TOKEN=work-token bb'
+alias bb-personal='BB_USERNAME=personal BB_API_TOKEN=personal-token bb'
+```
+
+---
+
+### What scopes does my token need?
+
+Minimum required scopes:
+
+| Scope | Required For |
+|-------|-------------|
+| `account:read` | `bb auth status` |
+| `repository:read` | `bb repo list`, `bb repo view` |
+| `repository:write` | `bb repo create` |
+| `repository:admin` | `bb repo delete` |
+| `pullrequest:read` | `bb pr list`, `bb pr view` |
+| `pullrequest:write` | `bb pr create`, `bb pr merge` |
+
+<Aside type="tip">
+For full functionality, grant all repository and pull request scopes.
+</Aside>
+
+---
+
+## Commands
+
+### How do I avoid typing workspace/repo every time?
+
+**Option 1:** Set defaults
+```bash
+bb config set workspace myworkspace
+bb config set repo myrepo
+```
+
+**Option 2:** Work from cloned repositories
+```bash
+cd /path/to/myrepo
+bb pr list  # Auto-detects from git remote
+```
+
+See [Repository Context](/guides/repository-context/) for details.
+
+---
+
+### Does bb support interactive mode?
+
+Not currently. All commands require flags or arguments. There's no interactive prompt mode like some other CLIs offer.
+
+If you'd like this feature, please [open an issue](https://github.com/0pilatos0/bitbucket-cli/issues).
+
+---
+
+### Can I create a PR from uncommitted changes?
+
+No. You must:
+1. Commit your changes
+2. Push to a remote branch
+3. Then create the PR
+
+```bash
+git add .
+git commit -m "My changes"
+git push -u origin my-branch
+bb pr create -t "My PR"
+```
+
+---
+
+### How do I see what's in a PR before checking it out?
+
+Use `bb pr diff`:
+```bash
+# View changes
+bb pr diff 42
+
+# Just see changed files
+bb pr diff 42 --name-only
+
+# See statistics
+bb pr diff 42 --stat
+```
+
+---
+
+## Integration
+
+### Can I use bb in CI/CD pipelines?
+
+Yes! See the [CI/CD Integration Guide](/guides/cicd/) for complete examples.
+
+Quick setup:
+1. Store credentials as CI/CD secrets
+2. Set environment variables: `BB_USERNAME`, `BB_API_TOKEN`
+3. Install the CLI and run commands
+
+---
+
+### How do I pipe output to other commands?
+
+Use the `--json` flag for machine-readable output:
+
+```bash
+# List PR titles
+bb pr list --json | jq '.[].title'
+
+# Get PR count
+bb pr list --json | jq 'length'
+
+# Filter by author
+bb pr list --json | jq '.[] | select(.author.username == "alice")'
+```
+
+---
+
+### Can I use bb with git hooks?
+
+Yes! Example pre-push hook to check for open PRs:
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-push
+
+branch=$(git branch --show-current)
+prs=$(bb pr list --json 2>/dev/null | jq --arg b "$branch" '[.[] | select(.source.branch.name == $b)] | length')
+
+if [ "$prs" -gt 0 ]; then
+  echo "Note: PR already exists for branch $branch"
+fi
+```
+
+---
+
+## Contributing
+
+### How can I contribute?
+
+We welcome contributions! See [CONTRIBUTING.md](https://github.com/0pilatos0/bitbucket-cli/blob/main/CONTRIBUTING.md) for:
+
+- Development setup
+- Code style guidelines
+- Pull request process
+- Changeset requirements
+
+---
+
+### How do I report bugs?
+
+1. Check [existing issues](https://github.com/0pilatos0/bitbucket-cli/issues)
+2. If not already reported, [open a new issue](https://github.com/0pilatos0/bitbucket-cli/issues/new)
+3. Include:
+   - CLI version (`bb --version`)
+   - Operating system
+   - Complete error message
+   - Steps to reproduce
+
+---
+
+### How do I request features?
+
+[Open an issue](https://github.com/0pilatos0/bitbucket-cli/issues/new) with:
+- Clear description of the feature
+- Use case / why it's needed
+- Examples of how it would work

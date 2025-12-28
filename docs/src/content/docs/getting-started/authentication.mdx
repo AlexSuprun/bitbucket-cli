@@ -3,11 +3,13 @@ title: Authentication
 description: How to authenticate with Bitbucket
 ---
 
+import { Aside, Steps } from '@astrojs/starlight/components';
+
 The Bitbucket CLI uses **API Tokens** for authentication. This is a secure way to grant CLI access without exposing your main account password.
 
-:::note[App Passwords Deprecated]
+<Aside type="caution" title="App Passwords Deprecated">
 As of September 9, 2025, Bitbucket app passwords are deprecated and can no longer be created. All existing app passwords will be disabled on June 9, 2026. Use API tokens instead.
-:::
+</Aside>
 
 ## Create an API Token
 
@@ -31,13 +33,15 @@ bb auth login -u your-username -p your-api-token
 
 ### Using Environment Variables
 
-You can also set credentials via environment variables:
+You can also set credentials via environment variables, which is especially useful for CI/CD pipelines:
 
 ```bash
 export BB_USERNAME=your-username
 export BB_API_TOKEN=your-api-token
 bb auth login
 ```
+
+See [Environment Variables Reference](/reference/environment-variables/) for more details on using environment variables in scripts and CI/CD.
 
 ## Check Auth Status
 
@@ -62,6 +66,14 @@ Credentials are stored in:
 - **Linux/macOS**: `~/.config/bb/config.json`
 - **Windows**: `%APPDATA%\bb\config.json`
 
-:::caution
+See [Configuration File Reference](/reference/configuration/) for details on the config file format.
+
+<Aside type="caution">
 Never share your API token or config file. Keep them secure!
-:::
+</Aside>
+
+## Next Steps
+
+- [Quick Start Guide](/getting-started/quickstart/) - Get up and running in 60 seconds
+- [Repository Context](/guides/repository-context/) - How the CLI detects your workspace/repo
+- [Troubleshooting](/help/troubleshooting/) - Common authentication issues and solutions

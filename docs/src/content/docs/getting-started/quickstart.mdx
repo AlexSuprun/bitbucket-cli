@@ -1,0 +1,154 @@
+---
+title: Quick Start
+description: Get up and running with Bitbucket CLI in 60 seconds
+---
+
+import { Steps, Aside, Code } from '@astrojs/starlight/components';
+
+Get productive with the Bitbucket CLI in under a minute.
+
+## TL;DR
+
+```bash
+npm install -g @pilatos/bitbucket-cli
+bb auth login -u your-username -p your-api-token
+bb repo clone myworkspace/myrepo
+bb pr create -t "My feature"
+```
+
+---
+
+## Prerequisites
+
+Before you begin, you'll need:
+
+- **Node.js 20+** or **Bun** installed
+- A **Bitbucket Cloud** account
+- An **API token** (we'll create one below)
+
+---
+
+## Step-by-Step Setup
+
+<Steps>
+
+1. **Install the CLI**
+
+   ```bash
+   npm install -g @pilatos/bitbucket-cli
+   ```
+
+   Verify the installation:
+   ```bash
+   bb --version
+   ```
+
+2. **Create an API Token**
+
+   1. Go to [Bitbucket API Tokens](https://bitbucket.org/account/settings/api-tokens/)
+   2. Click **Create API token**
+   3. Name it (e.g., "bb CLI")
+   4. Select scopes:
+      - Account: Read
+      - Repositories: Read, Write
+      - Pull requests: Read, Write
+   5. Click **Create** and copy the token
+
+   <Aside type="caution">
+   Save your token now! You won't be able to see it again.
+   </Aside>
+
+3. **Authenticate**
+
+   ```bash
+   bb auth login
+   ```
+
+   Enter your Bitbucket username and the API token when prompted.
+
+   Verify it worked:
+   ```bash
+   bb auth status
+   ```
+
+4. **Clone a Repository**
+
+   ```bash
+   bb repo clone myworkspace/myrepo
+   cd myrepo
+   ```
+
+5. **Create Your First PR**
+
+   ```bash
+   git checkout -b feature/my-feature
+   # Make some changes...
+   git add .
+   git commit -m "Add my feature"
+   git push -u origin feature/my-feature
+
+   bb pr create -t "Add my feature"
+   ```
+
+</Steps>
+
+---
+
+## Common Commands
+
+Here are the commands you'll use most often:
+
+| Command | Description |
+|---------|-------------|
+| `bb pr list` | List open pull requests |
+| `bb pr view 42` | View PR #42 details |
+| `bb pr create -t "Title"` | Create a new PR |
+| `bb pr merge 42` | Merge PR #42 |
+| `bb pr checkout 42` | Checkout PR #42 locally |
+| `bb pr diff 42` | View PR #42 diff |
+| `bb repo list` | List repositories |
+
+---
+
+## Set a Default Workspace
+
+If you work primarily in one workspace, set it as default:
+
+```bash
+bb config set workspace myworkspace
+```
+
+Now commands will use this workspace automatically:
+
+```bash
+bb repo list          # Lists repos in "myworkspace"
+bb pr list -r myrepo  # Lists PRs in "myworkspace/myrepo"
+```
+
+---
+
+## Enable Tab Completion
+
+Get intelligent tab completion for commands and options:
+
+```bash
+bb completion install
+```
+
+Restart your shell, then try:
+
+```bash
+bb pr <Tab>      # Shows: approve, checkout, create, decline, diff, list, merge, view
+bb pr create -<Tab>  # Shows available flags
+```
+
+---
+
+## Next Steps
+
+You're all set! Here's where to go next:
+
+- **[Command Reference](/commands/auth/)** - Full documentation for all commands
+- **[Repository Context](/guides/repository-context/)** - How the CLI detects your workspace/repo
+- **[Scripting & Automation](/guides/scripting/)** - Use bb in scripts and CI/CD
+- **[Troubleshooting](/help/troubleshooting/)** - Common issues and solutions

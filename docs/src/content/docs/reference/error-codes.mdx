@@ -1,0 +1,303 @@
+---
+title: Error Codes
+description: Complete reference of error codes and their meanings
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+When commands fail, the CLI returns structured errors with specific error codes. Understanding these codes helps you diagnose issues quickly.
+
+## Error Code Ranges
+
+| Range | Category | Description |
+|-------|----------|-------------|
+| 1xxx | Authentication | Login, credentials, and token issues |
+| 2xxx | API | Bitbucket API request failures |
+| 3xxx | Git | Local git operations |
+| 4xxx | Configuration | Config file read/write issues |
+| 5xxx | Validation | Invalid input or missing required fields |
+| 6xxx | Context | Repository/workspace detection issues |
+
+---
+
+## Authentication Errors (1xxx)
+
+### 1001 - AUTH_REQUIRED
+
+**Message:** Authentication required
+
+**Cause:** You haven't logged in yet, or your credentials have been cleared.
+
+**Solution:**
+```bash
+bb auth login
+```
+
+### 1002 - AUTH_INVALID
+
+**Message:** Invalid credentials
+
+**Cause:** Your username or API token is incorrect.
+
+**Solution:**
+1. Verify your Bitbucket username
+2. Generate a new API token at [Bitbucket API Tokens](https://bitbucket.org/account/settings/api-tokens/)
+3. Re-authenticate:
+```bash
+bb auth logout
+bb auth login
+```
+
+### 1003 - AUTH_EXPIRED
+
+**Message:** Token expired
+
+**Cause:** Your API token has expired or been revoked.
+
+**Solution:**
+1. Create a new API token in Bitbucket settings
+2. Re-authenticate with the new token
+
+---
+
+## API Errors (2xxx)
+
+### 2001 - API_REQUEST_FAILED
+
+**Message:** API request failed
+
+**Cause:** General network or API failure.
+
+**Solution:**
+- Check your internet connection
+- Verify Bitbucket status at [status.bitbucket.org](https://status.bitbucket.org)
+- Retry the command
+
+### 2002 - API_NOT_FOUND
+
+**Message:** Resource not found
+
+**Cause:** The requested repository, PR, or resource doesn't exist.
+
+**Solution:**
+- Check spelling of workspace and repository names
+- Verify the resource exists in Bitbucket
+- Ensure you have access to the repository
+
+### 2003 - API_FORBIDDEN
+
+**Message:** Access denied
+
+**Cause:** Your API token doesn't have the required permissions.
+
+**Solution:**
+1. Check your API token scopes at [Bitbucket API Tokens](https://bitbucket.org/account/settings/api-tokens/)
+2. Required scopes depend on the operation:
+   - **Read operations:** `account:read`, `repository:read`, `pullrequest:read`
+   - **Write operations:** `repository:write`, `pullrequest:write`
+   - **Delete operations:** `repository:admin`
+
+### 2004 - API_RATE_LIMITED
+
+**Message:** Rate limit exceeded
+
+**Cause:** You've made too many API requests in a short period.
+
+**Solution:**
+- Wait a few minutes before retrying
+- For scripts, implement exponential backoff
+- Consider caching results when possible
+
+### 2005 - API_SERVER_ERROR
+
+**Message:** Bitbucket server error
+
+**Cause:** Bitbucket's servers are experiencing issues.
+
+**Solution:**
+- Check [status.bitbucket.org](https://status.bitbucket.org)
+- Retry after a few minutes
+
+---
+
+## Git Errors (3xxx)
+
+### 3001 - GIT_NOT_REPOSITORY
+
+**Message:** Not a git repository
+
+**Cause:** The current directory is not a git repository, but the command requires one.
+
+**Solution:**
+- Navigate to a git repository directory, or
+- Use explicit flags: `-w <workspace> -r <repo>`
+
+### 3002 - GIT_COMMAND_FAILED
+
+**Message:** Git command failed
+
+**Cause:** A git operation (clone, fetch, checkout) failed.
+
+**Solution:**
+- Ensure git is installed and in your PATH
+- Check git error message for details
+- Verify you have proper SSH keys or credentials configured
+
+### 3003 - GIT_REMOTE_NOT_FOUND
+
+**Message:** No Bitbucket remote found
+
+**Cause:** The repository has no remote pointing to Bitbucket.
+
+**Solution:**
+- Add a Bitbucket remote:
+```bash
+git remote add origin git@bitbucket.org:workspace/repo.git
+```
+- Or use explicit flags: `-w <workspace> -r <repo>`
+
+---
+
+## Config Errors (4xxx)
+
+### 4001 - CONFIG_READ_FAILED
+
+**Message:** Cannot read config file
+
+**Cause:** The configuration file is corrupted or unreadable.
+
+**Solution:**
+1. Check file permissions
+2. If corrupted, delete and recreate:
+```bash
+# macOS/Linux
+rm ~/.config/bb/config.json
+bb auth login
+
+# Windows
+del %APPDATA%\bb\config.json
+bb auth login
+```
+
+### 4002 - CONFIG_WRITE_FAILED
+
+**Message:** Cannot write config file
+
+**Cause:** No write permission to the config directory.
+
+**Solution:**
+- Check directory permissions
+- Ensure the parent directory exists
+- On shared systems, verify you own the config directory
+
+### 4003 - CONFIG_INVALID_KEY
+
+**Message:** Invalid configuration key
+
+**Cause:** Attempted to get/set an unknown configuration key.
+
+**Solution:**
+Valid configuration keys are:
+- `workspace` - Default workspace
+- `repo` - Default repository
+
+```bash
+bb config set workspace myworkspace
+bb config list
+```
+
+---
+
+## Validation Errors (5xxx)
+
+### 5001 - VALIDATION_REQUIRED
+
+**Message:** Required field missing
+
+**Cause:** A required option or argument was not provided.
+
+**Solution:**
+Check command help for required options:
+```bash
+bb <command> --help
+```
+
+Common required fields:
+- `bb pr create` requires `--title`
+- `bb repo create` requires a name argument
+
+### 5002 - VALIDATION_INVALID
+
+**Message:** Invalid value
+
+**Cause:** A provided value doesn't match expected format.
+
+**Solution:**
+- Check the expected format in command help
+- Common issues:
+  - PR ID must be a number
+  - State must be one of: OPEN, MERGED, DECLINED, SUPERSEDED
+
+---
+
+## Context Errors (6xxx)
+
+### 6001 - CONTEXT_REPO_NOT_FOUND
+
+**Message:** Could not determine repository
+
+**Cause:** The CLI couldn't figure out which repository to use.
+
+**Solution:**
+1. Use explicit flags:
+```bash
+bb pr list -w myworkspace -r myrepo
+```
+2. Set a default:
+```bash
+bb config set workspace myworkspace
+```
+3. Run from within a cloned Bitbucket repository
+
+See [Understanding Repository Context](/guides/repository-context/) for details.
+
+### 6002 - CONTEXT_WORKSPACE_NOT_FOUND
+
+**Message:** Could not determine workspace
+
+**Cause:** The CLI couldn't figure out which workspace to use.
+
+**Solution:**
+1. Use the `-w` flag:
+```bash
+bb repo list -w myworkspace
+```
+2. Set a default workspace:
+```bash
+bb config set workspace myworkspace
+```
+
+---
+
+## Handling Errors in Scripts
+
+When using the CLI in scripts, check the exit code and handle errors appropriately:
+
+```bash
+#!/bin/bash
+set -e
+
+if ! bb pr list -w myworkspace -r myrepo --json > prs.json 2>&1; then
+  echo "Failed to list PRs"
+  exit 1
+fi
+
+# Process prs.json...
+```
+
+For JSON output, errors include the error code:
+
+```bash
+bb pr view 999 --json 2>&1
+# {"name":"BBError","code":2002,"message":"Pull request not found"}
+```

@@ -1,0 +1,365 @@
+---
+title: JSON Output
+description: Reference for JSON output format of all commands
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+All commands support the `--json` flag for machine-readable output. This page documents the JSON schema for each command.
+
+## Using JSON Output
+
+```bash
+# Basic usage
+bb pr list --json
+
+# Pipe to jq for processing
+bb pr list --json | jq '.[].title'
+
+# Save to file
+bb pr list --json > prs.json
+```
+
+---
+
+## Authentication Commands
+
+### `bb auth status --json`
+
+```json
+{
+  "authenticated": true,
+  "username": "myuser",
+  "displayName": "My Name",
+  "accountId": "123456:abcd-efgh-ijkl",
+  "defaultWorkspace": "myworkspace"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `authenticated` | boolean | Whether user is logged in |
+| `username` | string | Bitbucket username |
+| `displayName` | string | User's display name |
+| `accountId` | string | Bitbucket account ID |
+| `defaultWorkspace` | string \| null | Configured default workspace |
+
+---
+
+## Repository Commands
+
+### `bb repo list --json`
+
+```json
+[
+  {
+    "name": "my-repo",
+    "full_name": "myworkspace/my-repo",
+    "description": "Repository description",
+    "is_private": true,
+    "created_on": "2024-01-15T10:30:00.000000+00:00",
+    "updated_on": "2024-12-28T15:45:00.000000+00:00",
+    "language": "TypeScript",
+    "links": {
+      "html": {
+        "href": "https://bitbucket.org/myworkspace/my-repo"
+      },
+      "clone": [
+        {
+          "name": "https",
+          "href": "https://bitbucket.org/myworkspace/my-repo.git"
+        },
+        {
+          "name": "ssh",
+          "href": "git@bitbucket.org:myworkspace/my-repo.git"
+        }
+      ]
+    },
+    "mainbranch": {
+      "name": "main",
+      "type": "branch"
+    },
+    "owner": {
+      "username": "myworkspace",
+      "display_name": "My Workspace",
+      "type": "team"
+    }
+  }
+]
+```
+
+### `bb repo view --json`
+
+Same schema as a single item from `bb repo list --json`.
+
+### `bb repo create --json`
+
+Returns the created repository object (same schema as `bb repo view`).
+
+---
+
+## Pull Request Commands
+
+### `bb pr list --json`
+
+```json
+[
+  {
+    "id": 42,
+    "title": "Add new feature",
+    "description": "This PR adds...",
+    "state": "OPEN",
+    "created_on": "2024-12-20T09:00:00.000000+00:00",
+    "updated_on": "2024-12-28T14:30:00.000000+00:00",
+    "author": {
+      "username": "alice",
+      "display_name": "Alice Smith",
+      "account_id": "123:abc"
+    },
+    "source": {
+      "branch": {
+        "name": "feature/new-feature"
+      },
+      "repository": {
+        "full_name": "myworkspace/my-repo"
+      }
+    },
+    "destination": {
+      "branch": {
+        "name": "main"
+      }
+    },
+    "close_source_branch": true,
+    "comment_count": 5,
+    "task_count": 2,
+    "participants": [
+      {
+        "user": {
+          "username": "bob",
+          "display_name": "Bob Jones"
+        },
+        "role": "REVIEWER",
+        "approved": true
+      }
+    ],
+    "links": {
+      "html": {
+        "href": "https://bitbucket.org/myworkspace/my-repo/pull-requests/42"
+      },
+      "diff": {
+        "href": "https://api.bitbucket.org/2.0/repositories/myworkspace/my-repo/pullrequests/42/diff"
+      }
+    }
+  }
+]
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | number | Pull request ID |
+| `title` | string | PR title |
+| `description` | string | PR description/body |
+| `state` | string | `OPEN`, `MERGED`, `DECLINED`, `SUPERSEDED` |
+| `created_on` | string | ISO 8601 timestamp |
+| `updated_on` | string | ISO 8601 timestamp |
+| `author` | object | PR author details |
+| `source.branch.name` | string | Source branch name |
+| `destination.branch.name` | string | Target branch name |
+| `close_source_branch` | boolean | Delete source after merge |
+| `comment_count` | number | Number of comments |
+| `task_count` | number | Number of tasks |
+| `participants` | array | Reviewers and their status |
+
+### `bb pr view --json`
+
+Same schema as a single item from `bb pr list --json`, with additional details.
+
+### `bb pr create --json`
+
+Returns the created PR object (same schema as `bb pr view`).
+
+### `bb pr merge --json`
+
+Returns the merged PR object with `state: "MERGED"`.
+
+### `bb pr diff --stat --json`
+
+```json
+{
+  "stat": {
+    "filesChanged": 5,
+    "insertions": 120,
+    "deletions": 45,
+    "files": [
+      {
+        "path": "src/index.ts",
+        "additions": 50,
+        "deletions": 10
+      },
+      {
+        "path": "src/utils.ts",
+        "additions": 70,
+        "deletions": 35
+      }
+    ]
+  }
+}
+```
+
+### `bb pr diff --name-only --json`
+
+```json
+{
+  "diff": "src/index.ts\nsrc/utils.ts\npackage.json"
+}
+```
+
+### `bb pr diff --json` (full diff)
+
+```json
+{
+  "diff": "diff --git a/src/index.ts b/src/index.ts\n..."
+}
+```
+
+---
+
+## Config Commands
+
+### `bb config list --json`
+
+```json
+{
+  "username": "myuser",
+  "apiToken": "********",
+  "workspace": "myworkspace",
+  "repo": "myrepo"
+}
+```
+
+<Aside type="note">
+The API token is always masked in config list output.
+</Aside>
+
+### `bb config get --json`
+
+```json
+{
+  "key": "workspace",
+  "value": "myworkspace"
+}
+```
+
+---
+
+## Error Response Format
+
+When a command fails, JSON output includes error details:
+
+```json
+{
+  "name": "BBError",
+  "code": 2002,
+  "message": "Repository not found",
+  "context": {
+    "workspace": "myworkspace",
+    "repo": "nonexistent"
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Error type |
+| `code` | number | Error code (see [Error Codes](/reference/error-codes/)) |
+| `message` | string | Human-readable message |
+| `context` | object | Additional context (optional) |
+
+---
+
+## Parsing Examples
+
+### jq (Command Line)
+
+```bash
+# Get all PR titles
+bb pr list --json | jq -r '.[].title'
+
+# Count open PRs
+bb pr list --json | jq 'length'
+
+# Get PRs by specific author
+bb pr list --json | jq '.[] | select(.author.username == "alice")'
+
+# Extract specific fields
+bb pr list --json | jq '.[] | {id, title, author: .author.display_name}'
+
+# Get PR URLs
+bb pr list --json | jq -r '.[].links.html.href'
+
+# Filter PRs updated this week
+bb pr list --json | jq --arg date "$(date -d '7 days ago' -Iseconds)" \
+  '.[] | select(.updated_on > $date)'
+```
+
+### Node.js
+
+```javascript
+import { execSync } from 'child_process';
+
+const output = execSync('bb pr list --json', { encoding: 'utf8' });
+const prs = JSON.parse(output);
+
+// Filter approved PRs
+const approved = prs.filter(pr =>
+  pr.participants.some(p => p.approved)
+);
+
+// Get PR IDs
+const ids = prs.map(pr => pr.id);
+```
+
+### Python
+
+```python
+import subprocess
+import json
+
+result = subprocess.run(
+    ['bb', 'pr', 'list', '--json'],
+    capture_output=True,
+    text=True
+)
+prs = json.loads(result.stdout)
+
+# Group by author
+from collections import defaultdict
+by_author = defaultdict(list)
+for pr in prs:
+    by_author[pr['author']['username']].append(pr)
+```
+
+### Bash
+
+```bash
+#!/bin/bash
+
+# Parse with jq and iterate
+bb pr list --json | jq -c '.[]' | while read -r pr; do
+  id=$(echo "$pr" | jq -r '.id')
+  title=$(echo "$pr" | jq -r '.title')
+  echo "PR #$id: $title"
+done
+```
+
+---
+
+## Tips
+
+1. **Always use `--json` in scripts** for reliable parsing
+2. **Use jq's `-r` flag** for raw string output without quotes
+3. **Handle empty arrays** - `bb pr list --json` returns `[]` if no PRs
+4. **Errors go to stderr** - redirect stderr to capture error JSON:
+   ```bash
+   bb pr view 999 --json 2>&1 | jq '.code'
+   ```

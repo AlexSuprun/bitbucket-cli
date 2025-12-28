@@ -1,0 +1,243 @@
+---
+title: Environment Variables
+description: Configure Bitbucket CLI using environment variables
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Environment variables allow you to configure the CLI without storing credentials in files. This is especially useful for CI/CD pipelines and automation scripts.
+
+## Available Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `BB_USERNAME` | Your Bitbucket username | `myuser` |
+| `BB_API_TOKEN` | Your Bitbucket API token | `ATBB...` |
+
+## Configuration Priority
+
+The CLI resolves configuration in this order (highest priority first):
+
+1. **Command-line flags** (`--workspace`, `--repo`)
+2. **Environment variables** (`BB_USERNAME`, `BB_API_TOKEN`)
+3. **Git repository context** (detected from remote URL)
+4. **Configuration file** (`~/.config/bb/config.json`)
+
+---
+
+## Authentication with Environment Variables
+
+### Interactive Login
+
+When environment variables are set, `bb auth login` uses them automatically:
+
+```bash
+export BB_USERNAME=myuser
+export BB_API_TOKEN=ATBB_your_token_here
+
+bb auth login  # Uses env vars, no prompts
+```
+
+### Non-Interactive Usage
+
+For scripts and CI/CD, set both variables before running commands:
+
+```bash
+export BB_USERNAME=myuser
+export BB_API_TOKEN=ATBB_your_token_here
+
+bb pr list -w myworkspace -r myrepo
+```
+
+<Aside type="caution" title="Security Warning">
+Never commit environment variables containing tokens to version control. Use your CI/CD platform's secrets management instead.
+</Aside>
+
+---
+
+## Shell Configuration
+
+### Bash
+
+Add to `~/.bashrc` or `~/.bash_profile`:
+
+```bash
+export BB_USERNAME="your-username"
+export BB_API_TOKEN="your-api-token"
+```
+
+Then reload:
+```bash
+source ~/.bashrc
+```
+
+### Zsh
+
+Add to `~/.zshrc`:
+
+```zsh
+export BB_USERNAME="your-username"
+export BB_API_TOKEN="your-api-token"
+```
+
+Then reload:
+```bash
+source ~/.zshrc
+```
+
+### Fish
+
+Add to `~/.config/fish/config.fish`:
+
+```fish
+set -gx BB_USERNAME "your-username"
+set -gx BB_API_TOKEN "your-api-token"
+```
+
+Then reload:
+```bash
+source ~/.config/fish/config.fish
+```
+
+### PowerShell
+
+Add to your PowerShell profile (`$PROFILE`):
+
+```powershell
+$env:BB_USERNAME = "your-username"
+$env:BB_API_TOKEN = "your-api-token"
+```
+
+---
+
+## Temporary Session
+
+Set variables for a single terminal session:
+
+```bash
+# Linux/macOS
+export BB_USERNAME=myuser
+export BB_API_TOKEN=ATBB_token
+
+# Windows Command Prompt
+set BB_USERNAME=myuser
+set BB_API_TOKEN=ATBB_token
+
+# Windows PowerShell
+$env:BB_USERNAME = "myuser"
+$env:BB_API_TOKEN = "ATBB_token"
+```
+
+Or inline with a single command:
+
+```bash
+BB_USERNAME=myuser BB_API_TOKEN=ATBB_token bb pr list
+```
+
+---
+
+## Docker Usage
+
+Pass environment variables to containers:
+
+```bash
+docker run -e BB_USERNAME=myuser \
+           -e BB_API_TOKEN=ATBB_token \
+           your-image bb pr list -w workspace -r repo
+```
+
+Or use an env file:
+
+```bash
+# .env.bb (not committed to git!)
+BB_USERNAME=myuser
+BB_API_TOKEN=ATBB_token
+```
+
+```bash
+docker run --env-file .env.bb your-image bb pr list -w workspace -r repo
+```
+
+---
+
+## CI/CD Examples
+
+### GitHub Actions
+
+```yaml
+name: PR Status
+on: [push]
+
+jobs:
+  check-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bitbucket CLI
+        run: npm install -g @pilatos/bitbucket-cli
+
+      - name: List PRs
+        env:
+          BB_USERNAME: ${{ secrets.BB_USERNAME }}
+          BB_API_TOKEN: ${{ secrets.BB_API_TOKEN }}
+        run: |
+          bb auth login
+          bb pr list -w myworkspace -r myrepo --json
+```
+
+### GitLab CI
+
+```yaml
+check-prs:
+  image: node:20
+  variables:
+    BB_USERNAME: $BB_USERNAME
+    BB_API_TOKEN: $BB_API_TOKEN
+  script:
+    - npm install -g @pilatos/bitbucket-cli
+    - bb auth login
+    - bb pr list -w myworkspace -r myrepo --json
+```
+
+### Bitbucket Pipelines
+
+```yaml
+pipelines:
+  default:
+    - step:
+        name: Check PRs
+        script:
+          - npm install -g @pilatos/bitbucket-cli
+          - bb auth login
+          - bb pr list -w $BITBUCKET_WORKSPACE -r $BITBUCKET_REPO_SLUG --json
+```
+
+<Aside type="tip">
+In Bitbucket Pipelines, `BITBUCKET_WORKSPACE` and `BITBUCKET_REPO_SLUG` are automatically available.
+</Aside>
+
+---
+
+## Security Best Practices
+
+1. **Never commit tokens to git**
+   - Add `.env*` to your `.gitignore`
+   - Use CI/CD secrets management
+
+2. **Use minimal token scopes**
+   - Only grant permissions your script needs
+   - Read-only tokens for read-only operations
+
+3. **Rotate tokens regularly**
+   - Especially after team member departures
+   - Use short-lived tokens when possible
+
+4. **Use secrets managers in production**
+   - HashiCorp Vault
+   - AWS Secrets Manager
+   - Azure Key Vault
+
+5. **Audit token usage**
+   - Review which tokens are active
+   - Revoke unused tokens

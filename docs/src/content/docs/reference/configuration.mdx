@@ -1,0 +1,208 @@
+---
+title: Configuration File
+description: Complete reference for the bb configuration file
+---
+
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+The Bitbucket CLI stores configuration in a JSON file. This page documents the file format, location, and available settings.
+
+## File Location
+
+<Tabs>
+  <TabItem label="macOS / Linux">
+    ```
+    ~/.config/bb/config.json
+    ```
+  </TabItem>
+  <TabItem label="Windows">
+    ```
+    %APPDATA%\bb\config.json
+    ```
+
+    Typically: `C:\Users\<username>\AppData\Roaming\bb\config.json`
+  </TabItem>
+</Tabs>
+
+---
+
+## Configuration Schema
+
+| Key | Type | Description | Set By |
+|-----|------|-------------|--------|
+| `username` | string | Your Bitbucket username | `bb auth login` |
+| `apiToken` | string | Your API token (stored securely) | `bb auth login` |
+| `workspace` | string | Default workspace | `bb config set` |
+| `repo` | string | Default repository | `bb config set` |
+
+### Example Configuration
+
+```json
+{
+  "username": "myuser",
+  "apiToken": "ATBB_xxxxxxxxxxxxxxxxxxxx",
+  "workspace": "myworkspace",
+  "repo": "myrepo"
+}
+```
+
+---
+
+## Managing Configuration
+
+### View All Settings
+
+```bash
+bb config list
+```
+
+Output:
+```
+Configuration file: /Users/you/.config/bb/config.json
+
+Key              Value
+username         myuser
+apiToken         ********
+workspace        myworkspace
+repo             myrepo
+```
+
+<Aside type="note">
+The API token is masked for security. Use `bb auth token` to see the actual token.
+</Aside>
+
+### Get a Specific Value
+
+```bash
+bb config get workspace
+# Output: myworkspace
+```
+
+### Set a Value
+
+```bash
+bb config set workspace myworkspace
+bb config set repo myrepo
+```
+
+### Protected Keys
+
+Some configuration keys cannot be set directly:
+
+| Key | Reason | How to Set |
+|-----|--------|------------|
+| `username` | Tied to authentication | Use `bb auth login` |
+| `apiToken` | Security-sensitive | Use `bb auth login` |
+
+---
+
+## Configuration Precedence
+
+When determining workspace and repository, the CLI checks sources in this order:
+
+1. **Command-line flags** (highest priority)
+   ```bash
+   bb pr list -w otherworkspace -r otherrepo
+   ```
+
+2. **Git repository remote** (if in a git repo)
+   ```bash
+   cd /path/to/cloned-repo
+   bb pr list  # Uses workspace/repo from git remote
+   ```
+
+3. **Configuration file** (lowest priority)
+   ```bash
+   bb config set workspace myworkspace
+   bb pr list  # Uses config default
+   ```
+
+See [Understanding Repository Context](/guides/repository-context/) for detailed examples.
+
+---
+
+## File Permissions
+
+The configuration file contains sensitive data (API token). The CLI sets appropriate permissions automatically:
+
+| Platform | Permissions |
+|----------|-------------|
+| macOS/Linux | `0600` (owner read/write only) |
+| Windows | Inherits user profile permissions |
+
+<Aside type="caution" title="Security">
+Never share your config file or commit it to version control. The API token grants access to your Bitbucket account.
+</Aside>
+
+---
+
+## Reset Configuration
+
+### Clear Authentication Only
+
+```bash
+bb auth logout
+```
+
+This removes `username` and `apiToken` but keeps `workspace` and `repo` settings.
+
+### Full Reset
+
+Delete the configuration file entirely:
+
+<Tabs>
+  <TabItem label="macOS / Linux">
+    ```bash
+    rm ~/.config/bb/config.json
+    ```
+  </TabItem>
+  <TabItem label="Windows">
+    ```powershell
+    Remove-Item $env:APPDATA\bb\config.json
+    ```
+  </TabItem>
+</Tabs>
+
+Then re-authenticate:
+
+```bash
+bb auth login
+```
+
+---
+
+## Troubleshooting
+
+### "Cannot read config file"
+
+The file may be corrupted. Delete and recreate it:
+
+```bash
+rm ~/.config/bb/config.json
+bb auth login
+```
+
+### "Cannot write config file"
+
+Check directory permissions:
+
+```bash
+ls -la ~/.config/bb/
+```
+
+Create the directory if it doesn't exist:
+
+```bash
+mkdir -p ~/.config/bb
+```
+
+### Config Not Being Used
+
+Verify the CLI is reading from the expected location:
+
+```bash
+bb config list
+# Check the "Configuration file:" line
+```
+
+Remember that command-line flags and git context take precedence over config file settings.

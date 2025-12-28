@@ -24,17 +24,43 @@ export default defineConfig({
         {
           label: "Getting Started",
           items: [
+            { label: "Quick Start", slug: "getting-started/quickstart" },
             { label: "Installation", slug: "getting-started/installation" },
             { label: "Authentication", slug: "getting-started/authentication" },
           ],
         },
         {
-          label: "Commands",
+          label: "Command Reference",
           items: [
-            { label: "Auth", slug: "commands/auth" },
-            { label: "Repo", slug: "commands/repo" },
-            { label: "PR", slug: "commands/pr" },
-            { label: "Config", slug: "commands/config" },
+            { label: "Auth Commands", slug: "commands/auth" },
+            { label: "Repo Commands", slug: "commands/repo" },
+            { label: "PR Commands", slug: "commands/pr" },
+            { label: "Config Commands", slug: "commands/config" },
+            { label: "Completion", slug: "commands/completion" },
+          ],
+        },
+        {
+          label: "Guides",
+          items: [
+            { label: "Repository Context", slug: "guides/repository-context" },
+            { label: "Scripting & Automation", slug: "guides/scripting" },
+            { label: "CI/CD Integration", slug: "guides/cicd" },
+          ],
+        },
+        {
+          label: "Reference",
+          items: [
+            { label: "Environment Variables", slug: "reference/environment-variables" },
+            { label: "JSON Output", slug: "reference/json-output" },
+            { label: "Error Codes", slug: "reference/error-codes" },
+            { label: "Configuration File", slug: "reference/configuration" },
+          ],
+        },
+        {
+          label: "Help",
+          items: [
+            { label: "Troubleshooting", slug: "help/troubleshooting" },
+            { label: "FAQ", slug: "help/faq" },
           ],
         },
       ],

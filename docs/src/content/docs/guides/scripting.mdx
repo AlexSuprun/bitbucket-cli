@@ -1,0 +1,366 @@
+---
+title: Scripting & Automation
+description: Use Bitbucket CLI in scripts and automation workflows
+---
+
+import { Aside, Tabs, TabItem, Code } from '@astrojs/starlight/components';
+
+The Bitbucket CLI is designed for both interactive use and automation. This guide covers JSON output, exit codes, and scripting patterns.
+
+## JSON Output Mode
+
+All commands support the `--json` flag for machine-readable output:
+
+```bash
+bb pr list --json
+bb repo list --json
+bb pr view 42 --json
+```
+
+### Parsing with jq
+
+[jq](https://jqlang.github.io/jq/) is the standard tool for processing JSON:
+
+```bash
+# List all PR titles
+bb pr list --json | jq '.[].title'
+
+# Get PR count
+bb pr list --json | jq 'length'
+
+# Filter by state
+bb pr list -s MERGED --json | jq 'length'
+
+# Get specific fields
+bb pr list --json | jq '.[] | {id, title, author: .author.display_name}'
+
+# Filter by author
+bb pr list --json | jq '.[] | select(.author.username == "alice")'
+
+# Get PR URLs
+bb pr list --json | jq -r '.[].links.html.href'
+```
+
+### Common jq Patterns
+
+```bash
+# PRs updated in the last 7 days
+bb pr list --json | jq --arg date "$(date -d '7 days ago' -Iseconds)" \
+  '.[] | select(.updated_on > $date)'
+
+# PRs targeting main branch
+bb pr list --json | jq '.[] | select(.destination.branch.name == "main")'
+
+# Group PRs by author
+bb pr list --json | jq 'group_by(.author.username) | map({author: .[0].author.username, count: length})'
+```
+
+---
+
+## Exit Codes
+
+The CLI uses standard exit codes:
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | Error (authentication, API, validation, etc.) |
+
+### Checking Exit Codes
+
+```bash
+#!/bin/bash
+
+if bb pr list -w myworkspace -r myrepo > /dev/null 2>&1; then
+  echo "Success"
+else
+  echo "Failed with exit code: $?"
+fi
+```
+
+### Error Handling Patterns
+
+```bash
+#!/bin/bash
+set -e  # Exit on any error
+
+# Or handle errors explicitly
+bb pr list --json > prs.json || {
+  echo "Failed to list PRs"
+  exit 1
+}
+```
+
+<Aside type="tip">
+For detailed error information, capture stderr and parse JSON error output.
+</Aside>
+
+---
+
+## Environment Variables
+
+For non-interactive scripts, use environment variables:
+
+```bash
+export BB_USERNAME=myuser
+export BB_API_TOKEN=ATBB_token
+
+bb auth login  # Uses env vars
+bb pr list -w workspace -r repo
+```
+
+See [Environment Variables Reference](/reference/environment-variables/) for details.
+
+---
+
+## Scripting Best Practices
+
+### Always Use Explicit Flags
+
+Don't rely on context detection in scripts:
+
+```bash
+# Good - explicit and reliable
+bb pr list -w myworkspace -r myrepo --json
+
+# Bad - may fail if context can't be detected
+bb pr list --json
+```
+
+### Handle API Failures
+
+Implement retry logic for transient failures:
+
+```bash
+#!/bin/bash
+
+max_retries=3
+retry_delay=5
+
+for ((i=1; i<=max_retries; i++)); do
+  if bb pr list -w workspace -r repo --json > prs.json 2>&1; then
+    break
+  fi
+
+  if [ $i -lt $max_retries ]; then
+    echo "Attempt $i failed, retrying in ${retry_delay}s..."
+    sleep $retry_delay
+  else
+    echo "All attempts failed"
+    exit 1
+  fi
+done
+```
+
+### Respect Rate Limits
+
+Add delays between requests:
+
+```bash
+#!/bin/bash
+
+for pr_id in $(bb pr list --json | jq -r '.[].id'); do
+  bb pr view "$pr_id" --json
+  sleep 1  # Rate limit protection
+done
+```
+
+---
+
+## Example Scripts
+
+### Batch PR Approval
+
+Approve all open PRs from a specific author:
+
+```bash
+#!/bin/bash
+set -e
+
+WORKSPACE="myworkspace"
+REPO="myrepo"
+AUTHOR="trusted-bot"
+
+echo "Finding PRs from $AUTHOR..."
+
+pr_ids=$(bb pr list -w "$WORKSPACE" -r "$REPO" --json | \
+  jq -r --arg author "$AUTHOR" '.[] | select(.author.username == $author) | .id')
+
+for pr_id in $pr_ids; do
+  echo "Approving PR #$pr_id..."
+  bb pr approve "$pr_id" -w "$WORKSPACE" -r "$REPO"
+  sleep 1
+done
+
+echo "Done!"
+```
+
+### PR Status Report
+
+Generate a markdown report of open PRs:
+
+```bash
+#!/bin/bash
+
+WORKSPACE="myworkspace"
+REPO="myrepo"
+
+echo "# Open Pull Requests"
+echo ""
+echo "Generated: $(date)"
+echo ""
+
+bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '.[] |
+  "## PR #\(.id): \(.title)\n" +
+  "- **Author:** \(.author.display_name)\n" +
+  "- **Branch:** \(.source.branch.name) → \(.destination.branch.name)\n" +
+  "- **Created:** \(.created_on)\n" +
+  "- **Link:** \(.links.html.href)\n"'
+```
+
+### Auto-Close Stale PRs
+
+Decline PRs not updated in 30 days:
+
+```bash
+#!/bin/bash
+set -e
+
+WORKSPACE="myworkspace"
+REPO="myrepo"
+DAYS_OLD=30
+
+cutoff=$(date -d "$DAYS_OLD days ago" -Iseconds 2>/dev/null || \
+         date -v-${DAYS_OLD}d -Iseconds)  # macOS fallback
+
+echo "Finding PRs older than $DAYS_OLD days..."
+
+stale_prs=$(bb pr list -w "$WORKSPACE" -r "$REPO" --json | \
+  jq -r --arg cutoff "$cutoff" '.[] | select(.updated_on < $cutoff) | .id')
+
+if [ -z "$stale_prs" ]; then
+  echo "No stale PRs found"
+  exit 0
+fi
+
+for pr_id in $stale_prs; do
+  echo "Declining stale PR #$pr_id..."
+  bb pr decline "$pr_id" -w "$WORKSPACE" -r "$REPO"
+  sleep 1
+done
+```
+
+### Repository Backup Script
+
+Clone all repositories in a workspace:
+
+```bash
+#!/bin/bash
+set -e
+
+WORKSPACE="myworkspace"
+BACKUP_DIR="./bitbucket-backup-$(date +%Y%m%d)"
+
+mkdir -p "$BACKUP_DIR"
+cd "$BACKUP_DIR"
+
+echo "Fetching repository list..."
+repos=$(bb repo list -w "$WORKSPACE" --json | jq -r '.[].name')
+
+for repo in $repos; do
+  echo "Cloning $repo..."
+  bb repo clone "$WORKSPACE/$repo" || echo "Failed to clone $repo"
+  sleep 1
+done
+
+echo "Backup complete: $BACKUP_DIR"
+```
+
+### PR Diff Analysis
+
+Analyze changes across all open PRs:
+
+```bash
+#!/bin/bash
+
+WORKSPACE="myworkspace"
+REPO="myrepo"
+
+echo "Analyzing open PRs..."
+echo ""
+
+total_files=0
+total_additions=0
+total_deletions=0
+
+for pr_id in $(bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '.[].id'); do
+  stats=$(bb pr diff "$pr_id" -w "$WORKSPACE" -r "$REPO" --stat --json 2>/dev/null)
+
+  if [ -n "$stats" ]; then
+    files=$(echo "$stats" | jq '.stat.filesChanged // 0')
+    additions=$(echo "$stats" | jq '.stat.insertions // 0')
+    deletions=$(echo "$stats" | jq '.stat.deletions // 0')
+
+    echo "PR #$pr_id: $files files, +$additions -$deletions"
+
+    total_files=$((total_files + files))
+    total_additions=$((total_additions + additions))
+    total_deletions=$((total_deletions + deletions))
+  fi
+
+  sleep 1
+done
+
+echo ""
+echo "Total: $total_files files, +$total_additions -$total_deletions"
+```
+
+---
+
+## Python Integration
+
+```python
+import subprocess
+import json
+
+def run_bb(args):
+    """Run bb command and return parsed JSON output."""
+    result = subprocess.run(
+        ['bb'] + args + ['--json'],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        raise Exception(f"bb command failed: {result.stderr}")
+    return json.loads(result.stdout)
+
+# List PRs
+prs = run_bb(['pr', 'list', '-w', 'workspace', '-r', 'repo'])
+for pr in prs:
+    print(f"#{pr['id']}: {pr['title']}")
+
+# Get PR details
+pr = run_bb(['pr', 'view', '42', '-w', 'workspace', '-r', 'repo'])
+print(f"State: {pr['state']}")
+```
+
+---
+
+## Node.js Integration
+
+```javascript
+import { execSync } from 'child_process';
+
+function runBB(args) {
+  const result = execSync(`bb ${args.join(' ')} --json`, {
+    encoding: 'utf8'
+  });
+  return JSON.parse(result);
+}
+
+// List PRs
+const prs = runBB(['pr', 'list', '-w', 'workspace', '-r', 'repo']);
+prs.forEach(pr => {
+  console.log(`#${pr.id}: ${pr.title}`);
+});
+```
