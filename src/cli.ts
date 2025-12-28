@@ -3,10 +3,14 @@
  */
 
 import { Command } from "commander";
+import { createRequire } from "module";
 import { bootstrap } from "./bootstrap.js";
 import { Container, ServiceTokens } from "./core/container.js";
 import type { CommandContext } from "./core/interfaces/commands.js";
 import type { GlobalOptions } from "./types/config.js";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
 
 // Command types
 import type { LoginCommand } from "./commands/auth/login.command.js";
@@ -50,7 +54,7 @@ export const cli = new Command();
 cli
   .name("bb")
   .description("A command-line interface for Bitbucket Cloud")
-  .version("0.1.0")
+  .version(pkg.version)
   .option("--json", "Output as JSON")
   .option("-w, --workspace <workspace>", "Specify workspace")
   .option("-r, --repo <repo>", "Specify repository");
