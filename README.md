@@ -13,8 +13,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/bitbucket-cli"><img src="https://img.shields.io/npm/v/bitbucket-cli.svg?style=flat-square&color=blue" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/bitbucket-cli"><img src="https://img.shields.io/npm/dm/bitbucket-cli.svg?style=flat-square&color=blue" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/@pilatos/bitbucket-cli"><img src="https://img.shields.io/npm/v/@pilatos/bitbucket-cli.svg?style=flat-square&color=blue" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@pilatos/bitbucket-cli"><img src="https://img.shields.io/npm/dm/@pilatos/bitbucket-cli.svg?style=flat-square&color=blue" alt="npm downloads"></a>
   <a href="https://github.com/0pilatos0/bitbucket-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://github.com/0pilatos0/bitbucket-cli/issues"><img src="https://img.shields.io/github/issues/0pilatos0/bitbucket-cli.svg?style=flat-square" alt="GitHub issues"></a>
 </p>
@@ -66,19 +66,19 @@ If you've used GitHub's `gh` CLI and loved it, you've probably wished for someth
 ### Using npm (Recommended)
 
 ```bash
-npm install -g bitbucket-cli
+npm install -g @pilatos/bitbucket-cli
 ```
 
 ### Using Bun
 
 ```bash
-bun install -g bitbucket-cli
+bun install -g @pilatos/bitbucket-cli
 ```
 
 ### Using Yarn
 
 ```bash
-yarn global add bitbucket-cli
+yarn global add @pilatos/bitbucket-cli
 ```
 
 ### Verify Installation

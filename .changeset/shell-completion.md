@@ -1,5 +1,5 @@
 ---
-"bitbucket-cli": minor
+"@pilatos/bitbucket-cli": minor
 ---
 
 Add shell completion support for bash, zsh, and fish

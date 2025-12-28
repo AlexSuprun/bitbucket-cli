@@ -1,5 +1,5 @@
 ---
-"bitbucket-cli": patch
+"@pilatos/bitbucket-cli": patch
 ---
 
 Improve login command feedback on authentication failure
