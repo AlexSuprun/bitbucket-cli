@@ -13,7 +13,7 @@ export class SetConfigCommand extends BaseCommand<{ key: string; value: string }
   public readonly name = "set";
   public readonly description = "Set a configuration value";
 
-  private static readonly PROTECTED_KEYS = ["username", "appPassword"];
+  private static readonly PROTECTED_KEYS = ["username", "apiToken"];
 
   constructor(
     private readonly configService: IConfigService,

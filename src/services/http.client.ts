@@ -29,8 +29,8 @@ export class HttpClient implements IHttpClient {
       return credentialsResult;
     }
 
-    const { username, appPassword } = credentialsResult.value;
-    const encoded = Buffer.from(`${username}:${appPassword}`).toString("base64");
+    const { username, apiToken } = credentialsResult.value;
+    const encoded = Buffer.from(`${username}:${apiToken}`).toString("base64");
     return Result.ok(`Basic ${encoded}`);
   }
 

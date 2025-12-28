@@ -48,7 +48,7 @@ describe("LoginCommand", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("App password is required");
+      expect(result.error.message).toContain("API token is required");
     }
   });
 
@@ -75,7 +75,7 @@ describe("LoginCommand", () => {
     expect(credsResult.success).toBe(true);
     if (credsResult.success) {
       expect(credsResult.value.username).toBe("testuser");
-      expect(credsResult.value.appPassword).toBe("testpass");
+      expect(credsResult.value.apiToken).toBe("testpass");
     }
 
     expect(output.logs).toContain(`success:Logged in as ${mockUser.display_name} (${mockUser.username})`);
@@ -83,10 +83,10 @@ describe("LoginCommand", () => {
 
   it("should use environment variables for credentials", async () => {
     const originalUsername = process.env.BB_USERNAME;
-    const originalPassword = process.env.BB_APP_PASSWORD;
+    const originalPassword = process.env.BB_API_TOKEN;
 
     process.env.BB_USERNAME = "envuser";
-    process.env.BB_APP_PASSWORD = "envpass";
+    process.env.BB_API_TOKEN = "envpass";
 
     try {
       const configService = createMockConfigService();
@@ -107,7 +107,7 @@ describe("LoginCommand", () => {
       }
     } finally {
       process.env.BB_USERNAME = originalUsername;
-      process.env.BB_APP_PASSWORD = originalPassword;
+      process.env.BB_API_TOKEN = originalPassword;
     }
   });
 
@@ -141,7 +141,7 @@ describe("LoginCommand", () => {
     expect(configResult.success).toBe(true);
     if (configResult.success) {
       expect(configResult.value.username).toBeUndefined();
-      expect(configResult.value.appPassword).toBeUndefined();
+      expect(configResult.value.apiToken).toBeUndefined();
     }
   });
 });
@@ -150,7 +150,7 @@ describe("LogoutCommand", () => {
   it("should clear config on logout", async () => {
     const configService = createMockConfigService({
       username: "testuser",
-      appPassword: "testpass",
+      apiToken: "testpass",
     });
     const output = createMockOutputService();
 
@@ -164,7 +164,7 @@ describe("LogoutCommand", () => {
     expect(configResult.success).toBe(true);
     if (configResult.success) {
       expect(configResult.value.username).toBeUndefined();
-      expect(configResult.value.appPassword).toBeUndefined();
+      expect(configResult.value.apiToken).toBeUndefined();
     }
 
     expect(output.logs).toContain("success:Logged out of Bitbucket");
@@ -193,7 +193,7 @@ describe("StatusCommand", () => {
   it("should show logged in when credentials valid", async () => {
     const configService = createMockConfigService({
       username: "testuser",
-      appPassword: "testpass",
+      apiToken: "testpass",
     });
     const output = createMockOutputService();
     const userRepo: IUserRepository = {
@@ -215,7 +215,7 @@ describe("StatusCommand", () => {
   it("should output JSON when json flag is set", async () => {
     const configService = createMockConfigService({
       username: "testuser",
-      appPassword: "testpass",
+      apiToken: "testpass",
     });
     const output = createMockOutputService();
     const userRepo: IUserRepository = {
@@ -233,7 +233,7 @@ describe("TokenCommand", () => {
   it("should output base64 encoded token", async () => {
     const configService = createMockConfigService({
       username: "testuser",
-      appPassword: "testpass",
+      apiToken: "testpass",
     });
     const output = createMockOutputService();
 

@@ -4,13 +4,13 @@
 
 export interface BBConfig {
   username?: string;
-  appPassword?: string;
+  apiToken?: string;
   defaultWorkspace?: string;
 }
 
 export interface AuthCredentials {
   username: string;
-  appPassword: string;
+  apiToken: string;
 }
 
 export interface RepoContext {
@@ -24,7 +24,7 @@ export interface GlobalOptions {
   repo?: string;
 }
 
-export const CONFIG_KEYS = ["username", "appPassword", "defaultWorkspace"] as const;
+export const CONFIG_KEYS = ["username", "apiToken", "defaultWorkspace"] as const;
 export type ConfigKey = (typeof CONFIG_KEYS)[number];
 
 export const SETTABLE_CONFIG_KEYS = ["defaultWorkspace"] as const;

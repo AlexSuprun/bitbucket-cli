@@ -13,7 +13,7 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, string | unde
   public readonly name = "get";
   public readonly description = "Get a configuration value";
 
-  private static readonly HIDDEN_KEYS = ["appPassword"];
+  private static readonly HIDDEN_KEYS = ["apiToken"];
 
   constructor(
     private readonly configService: IConfigService,

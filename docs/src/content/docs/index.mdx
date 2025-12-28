@@ -20,7 +20,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid stagger>
   <Card title="Authentication" icon="lock">
-    Securely authenticate with Bitbucket using app passwords
+    Securely authenticate with Bitbucket using API tokens
   </Card>
   <Card title="Repository Management" icon="folder">
     Clone, create, list, and manage repositories
@@ -40,7 +40,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 bun install -g @pilatos/bitbucket-cli
 
 # Authenticate with Bitbucket
-bb auth login -u your-username -p your-app-password
+bb auth login -u your-username -p your-api-token
 
 # Clone a repository
 bb repo clone myworkspace/myrepo

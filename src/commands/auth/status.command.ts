@@ -44,7 +44,7 @@ export class StatusCommand extends BaseCommand<void, AuthStatus> {
     const config = configResult.value;
 
     // Check if credentials exist
-    if (!config.username || !config.appPassword) {
+    if (!config.username || !config.apiToken) {
       const status: AuthStatus = { authenticated: false };
 
       this.handleResult(Result.ok(status), context, () => {

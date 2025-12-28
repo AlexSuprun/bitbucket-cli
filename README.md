@@ -123,7 +123,7 @@ Manage your Bitbucket authentication securely.
 
 | Command | Description |
 |---------|-------------|
-| `bb auth login` | Authenticate with Bitbucket using an App Password |
+| `bb auth login` | Authenticate with Bitbucket using an API Token |
 | `bb auth logout` | Log out and remove stored credentials |
 | `bb auth status` | Check your current authentication status |
 | `bb auth token` | Print your current access token |
@@ -211,19 +211,21 @@ These options work with any command:
 
 ## Authentication Setup
 
-The CLI uses **Bitbucket App Passwords** for secure authentication. Here's how to set it up:
+The CLI uses **Bitbucket API Tokens** for secure authentication. Here's how to set it up:
 
-### Step 1: Create an App Password
+> **Note**: As of September 9, 2025, Bitbucket app passwords are deprecated and can no longer be created. All existing app passwords will be disabled on June 9, 2026. Use API tokens instead.
 
-1. Go to [Bitbucket App Passwords](https://bitbucket.org/account/settings/app-passwords/)
-2. Click **"Create app password"**
+### Step 1: Create an API Token
+
+1. Go to [Bitbucket API Tokens](https://bitbucket.org/account/settings/api-tokens/)
+2. Click **"Create API token"**
 3. Enter a descriptive label (e.g., "bb CLI")
-4. Select the required permissions:
+4. Select the required scopes:
    - **Account:** Read
    - **Repositories:** Read, Write, Admin (as needed)
    - **Pull requests:** Read, Write
 5. Click **"Create"**
-6. **Copy the generated password** (you won't see it again!)
+6. **Copy the generated token** (you won't see it again!)
 
 ### Step 2: Authenticate
 
@@ -231,7 +233,7 @@ The CLI uses **Bitbucket App Passwords** for secure authentication. Here's how t
 bb auth login
 ```
 
-Enter your Bitbucket username and the App Password when prompted.
+Enter your Bitbucket username and the API Token when prompted.
 
 ### Step 3: Verify
 

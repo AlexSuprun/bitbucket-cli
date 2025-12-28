@@ -92,9 +92,9 @@ export class ConfigService implements IConfigService {
       return configResult;
     }
 
-    const { username, appPassword } = configResult.value;
+    const { username, apiToken } = configResult.value;
 
-    if (!username || !appPassword) {
+    if (!username || !apiToken) {
       return Result.err(
         new BBError({
           code: ErrorCode.AUTH_REQUIRED,
@@ -103,7 +103,7 @@ export class ConfigService implements IConfigService {
       );
     }
 
-    return Result.ok({ username, appPassword });
+    return Result.ok({ username, apiToken });
   }
 
   public async setCredentials(credentials: AuthCredentials): Promise<Result<void, BBError>> {
@@ -115,7 +115,7 @@ export class ConfigService implements IConfigService {
     return this.setConfig({
       ...configResult.value,
       username: credentials.username,
-      appPassword: credentials.appPassword,
+      apiToken: credentials.apiToken,
     });
   }
 

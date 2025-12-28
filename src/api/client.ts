@@ -5,7 +5,7 @@ const BASE_URL = "https://api.bitbucket.org/2.0";
 
 export interface ApiClientConfig {
   username: string;
-  appPassword: string;
+  apiToken: string;
 }
 
 export interface ApiClient {
@@ -15,8 +15,8 @@ export interface ApiClient {
   delete<T>(path: string): Promise<T>;
 }
 
-function createAuthHeader(username: string, appPassword: string): string {
-  const credentials = Buffer.from(`${username}:${appPassword}`).toString("base64");
+function createAuthHeader(username: string, apiToken: string): string {
+  const credentials = Buffer.from(`${username}:${apiToken}`).toString("base64");
   return `Basic ${credentials}`;
 }
 
@@ -46,7 +46,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
-  const authHeader = createAuthHeader(config.username, config.appPassword);
+  const authHeader = createAuthHeader(config.username, config.apiToken);
 
   const headers: Record<string, string> = {
     Authorization: authHeader,
@@ -99,13 +99,13 @@ export async function getApiClient(): Promise<ApiClient> {
 
   const config = await getConfig();
 
-  if (!config.username || !config.appPassword) {
+  if (!config.username || !config.apiToken) {
     throw new AuthError();
   }
 
   cachedClient = createApiClient({
     username: config.username,
-    appPassword: config.appPassword,
+    apiToken: config.apiToken,
   });
 
   return cachedClient;
