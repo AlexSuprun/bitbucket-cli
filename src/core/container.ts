@@ -163,6 +163,10 @@ export const ServiceTokens = {
   GetConfigCommand: "GetConfigCommand",
   SetConfigCommand: "SetConfigCommand",
   ListConfigCommand: "ListConfigCommand",
+
+  // Commands - Completion
+  InstallCompletionCommand: "InstallCompletionCommand",
+  UninstallCompletionCommand: "UninstallCompletionCommand",
 } as const;
 
 export type ServiceToken = (typeof ServiceTokens)[keyof typeof ServiceTokens];

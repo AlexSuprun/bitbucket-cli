@@ -57,6 +57,29 @@ bb pr create --title "My PR" --source feature-branch --destination main
 - `bb config set <key> <value>` - Set a config value
 - `bb config list` - List all config values
 
+### Shell Completion
+- `bb completion install` - Install shell completions
+- `bb completion uninstall` - Uninstall shell completions
+
+## Shell Completion
+
+Enable tab completion for bash, zsh, or fish:
+
+```bash
+# Install completions (auto-detects your shell)
+bb completion install
+
+# Restart your shell or source your profile
+source ~/.bashrc  # or ~/.zshrc, ~/.config/fish/config.fish
+```
+
+After installation, press `Tab` to autocomplete commands:
+
+```bash
+bb re<Tab>     # completes to "bb repo"
+bb repo cl<Tab> # completes to "bb repo clone"
+```
+
 ## Global Options
 
 - `--json` - Output as JSON
