@@ -158,6 +158,7 @@ export const ServiceTokens = {
   ApprovePRCommand: "ApprovePRCommand",
   DeclinePRCommand: "DeclinePRCommand",
   CheckoutPRCommand: "CheckoutPRCommand",
+  DiffPRCommand: "DiffPRCommand",
 
   // Commands - Config
   GetConfigCommand: "GetConfigCommand",

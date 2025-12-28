@@ -37,7 +37,8 @@ export class HttpClient implements IHttpClient {
   private async request<T>(
     method: string,
     path: string,
-    body?: unknown
+    body?: unknown,
+    acceptText: boolean = false
   ): Promise<Result<T, BBError>> {
     const authResult = await this.getAuthHeader();
     if (!authResult.success) {
@@ -47,7 +48,7 @@ export class HttpClient implements IHttpClient {
     const headers: Record<string, string> = {
       Authorization: authResult.value,
       "Content-Type": "application/json",
-      Accept: "application/json",
+      Accept: acceptText ? "text/plain" : "application/json",
     };
 
     const url = `${this.baseUrl}${path}`;
@@ -65,7 +66,7 @@ export class HttpClient implements IHttpClient {
 
       clearTimeout(timeoutId);
 
-      return this.handleResponse<T>(response);
+      return acceptText ? this.handleTextResponse<T>(response) : this.handleResponse<T>(response);
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         return Result.err(
@@ -125,6 +126,43 @@ export class HttpClient implements IHttpClient {
     }
   }
 
+  private async handleTextResponse<T>(response: Response): Promise<Result<T, BBError>> {
+    if (!response.ok) {
+      let errorBody: unknown;
+      try {
+        errorBody = await response.json();
+      } catch {
+        errorBody = await response.text();
+      }
+
+      const message = this.extractErrorMessage(errorBody, response.statusText);
+
+      return Result.err(
+        new APIError(message, response.status, errorBody, {
+          url: response.url,
+        })
+      );
+    }
+
+    // Handle 204 No Content
+    if (response.status === 204) {
+      return Result.ok(undefined as T);
+    }
+
+    try {
+      const data = (await response.text()) as T;
+      return Result.ok(data);
+    } catch (error) {
+      return Result.err(
+        new BBError({
+          code: ErrorCode.API_REQUEST_FAILED,
+          message: "Failed to read response text",
+          cause: error instanceof Error ? error : undefined,
+        })
+      );
+    }
+  }
+
   private extractErrorMessage(body: unknown, fallback: string): string {
     if (typeof body === "object" && body !== null) {
       const obj = body as Record<string, unknown>;
@@ -143,6 +181,10 @@ export class HttpClient implements IHttpClient {
 
   public async get<T>(path: string): Promise<Result<T, BBError>> {
     return this.request<T>("GET", path);
+  }
+
+  public async getText(path: string): Promise<Result<string, BBError>> {
+    return this.request<string>("GET", path, undefined, true);
   }
 
   public async post<T>(path: string, body?: unknown): Promise<Result<T, BBError>> {

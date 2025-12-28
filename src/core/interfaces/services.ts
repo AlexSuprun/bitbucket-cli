@@ -20,6 +20,7 @@ import type {
   CreateRepositoryRequest,
   CreatePullRequestRequest,
   MergePullRequestRequest,
+  DiffStat,
 } from "../../types/api.js";
 
 /**
@@ -67,6 +68,7 @@ export interface IHttpClient {
   post<T>(path: string, body?: unknown): Promise<Result<T, BBError>>;
   put<T>(path: string, body?: unknown): Promise<Result<T, BBError>>;
   delete<T>(path: string): Promise<Result<T, BBError>>;
+  getText(path: string): Promise<Result<string, BBError>>;
 }
 
 /**
@@ -110,6 +112,8 @@ export interface IPullRequestRepository {
   ): Promise<Result<BitbucketPullRequest, BBError>>;
   approve(workspace: string, repoSlug: string, id: number): Promise<Result<BitbucketApproval, BBError>>;
   decline(workspace: string, repoSlug: string, id: number): Promise<Result<BitbucketPullRequest, BBError>>;
+  getDiff(workspace: string, repoSlug: string, id: number): Promise<Result<string, BBError>>;
+  getDiffstat(workspace: string, repoSlug: string, id: number): Promise<Result<DiffStat, BBError>>;
 }
 
 /**

@@ -32,6 +32,7 @@ import type {
   CreateRepositoryRequest,
   CreatePullRequestRequest,
   MergePullRequestRequest,
+  DiffStat,
 } from "../src/types/api.js";
 
 // Reset container before each test
@@ -165,6 +166,10 @@ export function createMockHttpClient<T>(
       const result = responses.get(`GET:${path}`);
       return (result as Result<R, BBError>) ?? Result.err({ code: 2002, message: "Not found" } as BBError);
     },
+    async getText(path: string): Promise<Result<string, BBError>> {
+      const result = responses.get(`GET:${path}`);
+      return (result as Result<string, BBError>) ?? Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
     async post<R>(path: string): Promise<Result<R, BBError>> {
       const result = responses.get(`POST:${path}`);
       return (result as Result<R, BBError>) ?? Result.err({ code: 2001, message: "Failed" } as BBError);
@@ -266,3 +271,34 @@ export const mockApproval: BitbucketApproval = {
   user: mockUser,
   date: "2024-01-02T00:00:00.000Z",
 };
+
+export const mockDiffStat: DiffStat = {
+  values: [
+    {
+      type: "diffstat",
+      status: "modified",
+      lines_removed: 5,
+      lines_added: 10,
+      old: { path: "src/file.ts" },
+      new: { path: "src/file.ts" },
+    },
+    {
+      type: "diffstat",
+      status: "added",
+      lines_removed: 0,
+      lines_added: 20,
+      new: { path: "src/newfile.ts" },
+    },
+  ],
+  pagelen: 2,
+  size: 2,
+};
+
+export const mockDiff = `diff --git a/src/file.ts b/src/file.ts
+index abc123..def456 100644
+--- a/src/file.ts
++++ b/src/file.ts
+@@ -1,3 +1,4 @@
+ line 1
++line 2
+ line 3`;

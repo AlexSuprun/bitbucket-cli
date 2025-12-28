@@ -37,6 +37,7 @@ import { MergePRCommand } from "./commands/pr/merge.command.js";
 import { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import { DeclinePRCommand } from "./commands/pr/decline.command.js";
 import { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
+import { DiffPRCommand } from "./commands/pr/diff.command.js";
 
 // Config commands
 import { GetConfigCommand } from "./commands/config/get.command.js";
@@ -198,6 +199,14 @@ export function bootstrap(): Container {
     const gitService = container.resolve<GitService>(ServiceTokens.GitService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new CheckoutPRCommand(prRepo, contextService, gitService, output);
+  });
+
+  container.register(ServiceTokens.DiffPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const gitService = container.resolve<GitService>(ServiceTokens.GitService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new DiffPRCommand(prRepo, contextService, gitService, output);
   });
 
   // Register config commands
