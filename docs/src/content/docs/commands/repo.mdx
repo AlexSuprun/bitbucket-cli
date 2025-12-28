@@ -24,6 +24,7 @@ bb repo clone <repository> [options]
 | Option | Description |
 |--------|-------------|
 | `-d, --directory <dir>` | Directory to clone into |
+| `--json` | Output as JSON |
 
 ### Examples
 
@@ -63,6 +64,7 @@ bb repo create <name> [options]
 | `--private` | Create a private repository (default) |
 | `--public` | Create a public repository |
 | `-p, --project <project>` | Project key |
+| `--json` | Output as JSON |
 
 ### Examples
 
@@ -72,6 +74,9 @@ bb repo create my-new-repo -w myworkspace
 
 # Create a public repository with description
 bb repo create my-new-repo -w myworkspace --public -d "My awesome project"
+
+# Create in a specific project
+bb repo create my-new-repo -w myworkspace -p PROJ
 ```
 
 ---
@@ -90,14 +95,18 @@ bb repo list [options]
 |--------|-------------|
 | `-w, --workspace <workspace>` | Workspace to list repositories from |
 | `--limit <number>` | Maximum number of repositories (default: 25) |
+| `--json` | Output as JSON |
 
 ### Examples
 
 ```bash
-# List repositories
+# List repositories in a workspace
 bb repo list -w myworkspace
 
-# List with JSON output
+# List more repositories
+bb repo list -w myworkspace --limit 50
+
+# List with JSON output for scripting
 bb repo list -w myworkspace --json
 ```
 
@@ -115,29 +124,40 @@ bb repo view [repository] [options]
 
 | Argument | Description |
 |----------|-------------|
-| `repository` | Repository to view (optional if in a repo directory) |
+| `repository` | Repository to view in `workspace/repo` format (optional if in a repo directory) |
 
 ### Options
 
 | Option | Description |
 |--------|-------------|
 | `-w, --workspace <workspace>` | Workspace |
+| `--json` | Output as JSON |
 
 ### Examples
 
 ```bash
-# View current repository
+# View current repository (from within repo directory)
 bb repo view
 
-# View specific repository
+# View specific repository using workspace/repo format
 bb repo view myworkspace/myrepo
+
+# View with explicit workspace option
+bb repo view myrepo -w myworkspace
+
+# Get repository details as JSON
+bb repo view --json
 ```
+
+### Notes
+
+The command will automatically detect the repository from your current directory's git remote if you don't specify one.
 
 ---
 
 ## `bb repo delete`
 
-Delete a repository.
+Delete a repository. This action is permanent and cannot be undone.
 
 ```bash
 bb repo delete <repository> [options]
@@ -147,7 +167,7 @@ bb repo delete <repository> [options]
 
 | Argument | Description |
 |----------|-------------|
-| `repository` | Repository to delete |
+| `repository` | Repository to delete in `workspace/repo` format |
 
 ### Options
 
@@ -155,14 +175,21 @@ bb repo delete <repository> [options]
 |--------|-------------|
 | `-w, --workspace <workspace>` | Workspace |
 | `-y, --yes` | Skip confirmation prompt |
+| `--json` | Output as JSON |
 
 ### Examples
 
 ```bash
-# Delete with confirmation
+# Delete with confirmation prompt
+bb repo delete myworkspace/myrepo
+
+# Delete without confirmation (use with caution!)
 bb repo delete myworkspace/myrepo --yes
+
+# Delete using explicit workspace option
+bb repo delete myrepo -w myworkspace --yes
 ```
 
 :::danger
-This action is permanent and cannot be undone!
+This action is permanent and cannot be undone! All repository data, including code, issues, and pull requests will be deleted.
 :::

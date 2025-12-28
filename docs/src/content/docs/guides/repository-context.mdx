@@ -1,0 +1,159 @@
+---
+title: Understanding Repository Context
+description: How the CLI determines which workspace and repository to use
+---
+
+Many commands in the Bitbucket CLI need to know which workspace and repository you're working with. The CLI uses a sophisticated resolution system to determine this automatically, so you don't always need to specify them explicitly.
+
+## Context Resolution Order
+
+The CLI checks multiple sources in this order:
+
+1. **Command-line flags** (`--workspace` and `--repo`)
+2. **Current Git repository** (automatically detected from your git remote URL)
+3. **Config file defaults** (`workspace` and `repo` settings)
+4. **Combinations** of the above sources
+
+### Examples
+
+#### Scenario 1: Inside a Git Repository
+
+```bash
+# You're in /projects/myrepo, which has a Bitbucket remote
+cd /projects/myrepo
+bb pr list  # ✅ Uses workspace/repo from git remote
+```
+
+The CLI reads your `.git/config` and extracts the workspace and repository from the remote URL.
+
+#### Scenario 2: Using Command-Line Flags
+
+```bash
+# Explicit specification always takes precedence
+bb pr list -w myworkspace -r myrepo  # ✅ Uses specified values
+```
+
+This works from anywhere, even outside a git repository.
+
+#### Scenario 3: Using Config Defaults
+
+```bash
+# Set defaults once
+bb config set workspace myworkspace
+bb config set repo myrepo
+
+# Then use commands without flags
+bb pr list  # ✅ Uses config defaults
+```
+
+#### Scenario 4: Mixed Sources
+
+```bash
+# Inside a git repo with workspace "gitworkspace/gitrepo"
+cd /projects/myrepo
+
+# Override just the workspace
+bb pr list -w anotherworkspace  # Uses "anotherworkspace/gitrepo"
+
+# Override just the repo
+bb pr list -r anotherrepo  # Uses "gitworkspace/anotherrepo"
+```
+
+## Repository Argument Formats
+
+Commands that accept a repository argument support multiple formats:
+
+### Full Format: `workspace/repo`
+
+```bash
+bb repo view myworkspace/myrepo
+bb repo delete myworkspace/myrepo --yes
+```
+
+This explicitly specifies both workspace and repository.
+
+### Short Format: `repo` only
+
+```bash
+# Uses default workspace from config or git context
+bb repo view myrepo
+```
+
+The CLI will:
+1. Check if you set a default workspace via `bb config set workspace`
+2. Check if you're in a git repository and use its workspace
+3. Error if neither is available
+
+## Supported Remote URL Formats
+
+When detecting context from git, the CLI supports these remote URL formats:
+
+### SSH Format
+```
+git@bitbucket.org:workspace/repo.git
+git@bitbucket.org:workspace/repo
+```
+
+### HTTPS Format
+```
+https://bitbucket.org/workspace/repo.git
+https://bitbucket.org/workspace/repo
+https://username@bitbucket.org/workspace/repo.git
+```
+
+## Error Messages
+
+### "Could not determine repository"
+
+This error appears when the CLI can't figure out which workspace/repo to use.
+
+**Solutions:**
+1. Use explicit flags: `-w myworkspace -r myrepo`
+2. Run from within a Bitbucket repository
+3. Set defaults: `bb config set workspace myworkspace`
+
+### "Repository not found"
+
+The workspace/repo combination was determined but doesn't exist.
+
+**Check:**
+1. Spelling of workspace and repository names
+2. That you have access to the repository
+3. That the repository exists in that workspace
+
+## Best Practices
+
+### For Daily Work
+
+Set your default workspace if you primarily work with one:
+```bash
+bb config set workspace myworkspace
+```
+
+Then work from within your git repositories - context will be automatic.
+
+### For Scripts
+
+Always use explicit flags for reliability:
+```bash
+#!/bin/bash
+WORKSPACE="myworkspace"
+REPO="myrepo"
+
+bb pr list -w "$WORKSPACE" -r "$REPO" --json
+```
+
+### For Multi-Workspace Teams
+
+Don't set a default workspace. Instead, use explicit flags or work from within cloned repositories:
+```bash
+# Each repository is self-contained
+cd project-a && bb pr list  # Uses project-a's workspace
+cd ../project-b && bb pr list  # Uses project-b's workspace
+```
+
+## Tips
+
+- Use `bb repo view` with no arguments to see what context the CLI detected
+- The `--json` flag works with most commands for scripting
+- Global flags (`-w`, `-r`, `--json`) work with all commands

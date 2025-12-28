@@ -19,11 +19,12 @@ bb auth login [options]
 |--------|-------------|
 | `-u, --username <username>` | Bitbucket username |
 | `-p, --password <password>` | Bitbucket app password |
+| `--json` | Output as JSON |
 
 ### Examples
 
 ```bash
-# Login with credentials
+# Login with credentials via command line
 bb auth login -u myuser -p myapppassword
 
 # Login using environment variables
@@ -32,6 +33,22 @@ export BB_APP_PASSWORD=myapppassword
 bb auth login
 ```
 
+### How It Works
+
+1. You provide your Bitbucket username and app password
+2. The CLI stores the credentials securely in your config file
+3. The CLI verifies the credentials by fetching your user information
+4. If verification fails, credentials are not saved
+
+### Required Permissions
+
+Your app password needs these permissions:
+- **Account**: Read (to verify your identity)
+- **Repositories**: Read, Write (depending on operations you'll perform)
+- **Pull requests**: Read, Write (for PR operations)
+
+See the [Authentication guide](/getting-started/authentication/) for detailed setup instructions.
+
 ---
 
 ## `bb auth logout`
@@ -39,17 +56,49 @@ bb auth login
 Log out of Bitbucket and remove stored credentials.
 
 ```bash
+bb auth logout [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
 bb auth logout
 ```
+
+### What Gets Removed
+
+This command removes your stored credentials (`username` and `appPassword`) from the config file. Other settings like `workspace` and `repo` are preserved.
 
 ---
 
 ## `bb auth status`
 
-Show current authentication status.
+Show current authentication status and account information.
 
 ```bash
+bb auth status [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# Check authentication status
 bb auth status
+
+# Get status as JSON
+bb auth status --json
 ```
 
 ### Output
@@ -75,7 +124,32 @@ Run bb auth login to authenticate.
 Print the current access token (base64 encoded credentials).
 
 ```bash
-bb auth token
+bb auth token [options]
 ```
 
-This is useful for debugging or for use with other tools.
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# Print the token
+bb auth token
+
+# Get token as JSON
+bb auth token --json
+```
+
+### Use Cases
+
+This is useful for:
+- Debugging authentication issues
+- Using the token with other tools or scripts
+- Verifying token format
+
+:::caution
+Keep your token secure! Anyone with this token can access your Bitbucket account with the permissions you've granted to the app password.
+:::

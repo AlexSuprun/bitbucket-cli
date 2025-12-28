@@ -14,9 +14,31 @@ Configuration is stored in a JSON file at:
 
 ## Available Settings
 
+The configuration file stores your CLI settings and authentication credentials.
+
 | Key | Description |
 |-----|-------------|
-| `defaultWorkspace` | Default workspace for commands |
+| `username` | Bitbucket username (set during `auth login`) |
+| `appPassword` | Bitbucket app password (set during `auth login`, masked in output) |
+| `workspace` | Default workspace for commands |
+| `repo` | Default repository for commands |
+
+### Configuration File Format
+
+The config file is stored as JSON:
+
+```json
+{
+  "username": "myuser",
+  "appPassword": "***",
+  "workspace": "myworkspace",
+  "repo": "myrepo"
+}
+```
+
+:::tip
+You typically won't edit this file manually. Use `bb config set` to change settings and `bb auth login` to set credentials.
+:::
 
 ## `bb config get`
 
@@ -35,7 +57,11 @@ bb config get <key>
 ### Examples
 
 ```bash
-bb config get defaultWorkspace
+# Get default workspace
+bb config get workspace
+
+# Get username
+bb config get username
 ```
 
 ---
@@ -59,8 +85,15 @@ bb config set <key> <value>
 
 ```bash
 # Set default workspace
-bb config set defaultWorkspace myworkspace
+bb config set workspace myworkspace
+
+# Set default repository
+bb config set repo myrepo
 ```
+
+:::caution
+Use `bb auth login` to set credentials instead of manually setting `username` and `appPassword`.
+:::
 
 ---
 
@@ -69,8 +102,14 @@ bb config set defaultWorkspace myworkspace
 List all configuration values.
 
 ```bash
-bb config list
+bb config list [options]
 ```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
 
 ### Examples
 
@@ -78,7 +117,7 @@ bb config list
 # List all config
 bb config list
 
-# List as JSON
+# List as JSON for scripting
 bb config list --json
 ```
 
@@ -90,6 +129,10 @@ Config file: /Users/you/.config/bb/config.json
 KEY               VALUE
 -----------------  ---------
 username          myuser
-defaultWorkspace  myworkspace
+workspace         myworkspace
 appPassword       ********
 ```
+
+:::note
+The `appPassword` value is always masked for security.
+:::
