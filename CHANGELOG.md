@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1
+
+### Patch Changes
+
+- [#18](https://github.com/0pilatos0/bitbucket-cli/pull/18) [`e7970f0`](https://github.com/0pilatos0/bitbucket-cli/commit/e7970f07b676d66a975e9d02970f3446d02fd182) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add npm trusted publisher workflow for secure automated releases
+
+  - New `publish.yml` workflow triggered on GitHub release events
+  - Uses OIDC trusted publishing (no NPM_TOKEN secret required)
+  - Improved security: no long-lived tokens needed for npm publishing
+
 ## 0.3.0
 
 ### Minor Changes
