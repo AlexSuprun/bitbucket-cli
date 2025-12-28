@@ -90,9 +90,9 @@ function createContext(program: Command): CommandContext {
 export function withGlobalOptions<T extends Record<string, unknown>>(options: T, context: CommandContext): T & { workspace?: string; repo?: string } {
   return {
     ...options,
-    workspace: options.workspace ?? context.globalOptions.workspace,
-    repo: options.repo ?? context.globalOptions.repo,
-  };
+    workspace: (options.workspace as string | undefined) ?? context.globalOptions.workspace,
+    repo: (options.repo as string | undefined) ?? context.globalOptions.repo,
+  } as T & { workspace?: string; repo?: string };
 }
 
 // Create CLI
