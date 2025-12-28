@@ -116,7 +116,10 @@ authCmd
   .option("-p, --password <password>", "Bitbucket app password")
   .action(async (options) => {
     const cmd = container.resolve<LoginCommand>(ServiceTokens.LoginCommand);
-    await cmd.execute(options, createContext(cli));
+    const result = await cmd.execute(options, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 authCmd
@@ -124,7 +127,10 @@ authCmd
   .description("Log out of Bitbucket")
   .action(async () => {
     const cmd = container.resolve<LogoutCommand>(ServiceTokens.LogoutCommand);
-    await cmd.execute(undefined, createContext(cli));
+    const result = await cmd.execute(undefined, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 authCmd
@@ -132,7 +138,10 @@ authCmd
   .description("Show authentication status")
   .action(async () => {
     const cmd = container.resolve<StatusCommand>(ServiceTokens.StatusCommand);
-    await cmd.execute(undefined, createContext(cli));
+    const result = await cmd.execute(undefined, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 authCmd
@@ -140,7 +149,10 @@ authCmd
   .description("Print the current access token")
   .action(async () => {
     const cmd = container.resolve<TokenCommand>(ServiceTokens.TokenCommand);
-    await cmd.execute(undefined, createContext(cli));
+    const result = await cmd.execute(undefined, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 cli.addCommand(authCmd);
@@ -154,7 +166,10 @@ repoCmd
   .option("-d, --directory <dir>", "Directory to clone into")
   .action(async (repository, options) => {
     const cmd = container.resolve<CloneCommand>(ServiceTokens.CloneCommand);
-    await cmd.execute({ repository, ...options }, createContext(cli));
+    const result = await cmd.execute({ repository, ...options }, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 repoCmd
@@ -167,7 +182,10 @@ repoCmd
   .action(async (name, options) => {
     const cmd = container.resolve<CreateRepoCommand>(ServiceTokens.CreateRepoCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ name, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ name, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 repoCmd
@@ -177,7 +195,10 @@ repoCmd
   .action(async (options) => {
     const cmd = container.resolve<ListReposCommand>(ServiceTokens.ListReposCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions(options, context), context);
+    const result = await cmd.execute(withGlobalOptions(options, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 repoCmd
@@ -186,7 +207,10 @@ repoCmd
   .action(async (repository, options) => {
     const cmd = container.resolve<ViewRepoCommand>(ServiceTokens.ViewRepoCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 repoCmd
@@ -196,7 +220,10 @@ repoCmd
   .action(async (repository, options) => {
     const cmd = container.resolve<DeleteRepoCommand>(ServiceTokens.DeleteRepoCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 cli.addCommand(repoCmd);
@@ -215,7 +242,10 @@ prCmd
   .action(async (options) => {
     const cmd = container.resolve<CreatePRCommand>(ServiceTokens.CreatePRCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions(options, context), context);
+    const result = await cmd.execute(withGlobalOptions(options, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 prCmd
@@ -226,7 +256,10 @@ prCmd
   .action(async (options) => {
     const cmd = container.resolve<ListPRsCommand>(ServiceTokens.ListPRsCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions(options, context), context);
+    const result = await cmd.execute(withGlobalOptions(options, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 prCmd
@@ -235,7 +268,10 @@ prCmd
   .action(async (id, options) => {
     const cmd = container.resolve<ViewPRCommand>(ServiceTokens.ViewPRCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 prCmd
@@ -247,7 +283,10 @@ prCmd
   .action(async (id, options) => {
     const cmd = container.resolve<MergePRCommand>(ServiceTokens.MergePRCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 prCmd
@@ -256,7 +295,10 @@ prCmd
   .action(async (id, options) => {
     const cmd = container.resolve<ApprovePRCommand>(ServiceTokens.ApprovePRCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 prCmd
@@ -265,7 +307,10 @@ prCmd
   .action(async (id, options) => {
     const cmd = container.resolve<DeclinePRCommand>(ServiceTokens.DeclinePRCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 prCmd
@@ -274,7 +319,10 @@ prCmd
   .action(async (id, options) => {
     const cmd = container.resolve<CheckoutPRCommand>(ServiceTokens.CheckoutPRCommand);
     const context = createContext(cli);
-    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 cli.addCommand(prCmd);
@@ -287,7 +335,10 @@ configCmd
   .description("Get a configuration value")
   .action(async (key) => {
     const cmd = container.resolve<GetConfigCommand>(ServiceTokens.GetConfigCommand);
-    await cmd.execute({ key }, createContext(cli));
+    const result = await cmd.execute({ key }, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 configCmd
@@ -295,7 +346,10 @@ configCmd
   .description("Set a configuration value")
   .action(async (key, value) => {
     const cmd = container.resolve<SetConfigCommand>(ServiceTokens.SetConfigCommand);
-    await cmd.execute({ key, value }, createContext(cli));
+    const result = await cmd.execute({ key, value }, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 configCmd
@@ -303,7 +357,10 @@ configCmd
   .description("List all configuration values")
   .action(async () => {
     const cmd = container.resolve<ListConfigCommand>(ServiceTokens.ListConfigCommand);
-    await cmd.execute(undefined, createContext(cli));
+    const result = await cmd.execute(undefined, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 cli.addCommand(configCmd);
@@ -316,7 +373,10 @@ completionCmd
   .description("Install shell completions for bash, zsh, or fish")
   .action(async () => {
     const cmd = container.resolve<InstallCompletionCommand>(ServiceTokens.InstallCompletionCommand);
-    await cmd.execute(undefined, createContext(cli));
+    const result = await cmd.execute(undefined, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 completionCmd
@@ -324,7 +384,10 @@ completionCmd
   .description("Uninstall shell completions")
   .action(async () => {
     const cmd = container.resolve<UninstallCompletionCommand>(ServiceTokens.UninstallCompletionCommand);
-    await cmd.execute(undefined, createContext(cli));
+    const result = await cmd.execute(undefined, createContext(cli));
+    if (!result.success) {
+      process.exit(1);
+    }
   });
 
 cli.addCommand(completionCmd);

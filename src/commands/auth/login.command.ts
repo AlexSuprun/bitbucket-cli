@@ -42,26 +42,31 @@ export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
 
     // Validate credentials
     if (!username) {
-      return Result.err(
+      const error = Result.err(
         new ValidationError(
           "username",
           "Username is required. Use --username option or set BB_USERNAME environment variable."
         )
       );
+      this.handleResult(error, context);
+      return error;
     }
 
     if (!appPassword) {
-      return Result.err(
+      const error = Result.err(
         new ValidationError(
           "password",
           "App password is required. Use --password option or set BB_APP_PASSWORD environment variable."
         )
       );
+      this.handleResult(error, context);
+      return error;
     }
 
     // Store credentials temporarily to test them
     const setResult = await this.configService.setCredentials({ username, appPassword });
     if (!setResult.success) {
+      this.handleResult(setResult, context);
       return setResult;
     }
 
