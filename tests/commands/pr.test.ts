@@ -10,12 +10,15 @@ import { MergePRCommand } from "../../src/commands/pr/merge.command.js";
 import { ApprovePRCommand } from "../../src/commands/pr/approve.command.js";
 import { DeclinePRCommand } from "../../src/commands/pr/decline.command.js";
 import { CheckoutPRCommand } from "../../src/commands/pr/checkout.command.js";
+import { DiffPRCommand } from "../../src/commands/pr/diff.command.js";
 import { Result } from "../../src/types/result.js";
 import {
   createMockOutputService,
   createMockGitService,
   mockPullRequest,
   mockApproval,
+  mockDiff,
+  mockDiffStat,
 } from "../setup.js";
 import type {
   IPullRequestRepository,
@@ -27,6 +30,7 @@ import type {
   PaginatedResponse,
   BitbucketPullRequest,
   BitbucketApproval,
+  DiffStat,
 } from "../../src/types/api.js";
 
 function createMockPRRepository(
@@ -70,6 +74,20 @@ function createMockPRRepository(
       const pr = prs.find((p) => p.id === id);
       if (pr) {
         return Result.ok({ ...pr, state: "DECLINED" as const });
+      }
+      return Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
+    async getDiff(workspace: string, repoSlug: string, id: number) {
+      const pr = prs.find((p) => p.id === id);
+      if (pr) {
+        return Result.ok(mockDiff);
+      }
+      return Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
+    async getDiffstat(workspace: string, repoSlug: string, id: number) {
+      const pr = prs.find((p) => p.id === id);
+      if (pr) {
+        return Result.ok(mockDiffStat);
       }
       return Result.err({ code: 2002, message: "Not found" } as BBError);
     },
@@ -665,6 +683,132 @@ describe("CheckoutPRCommand", () => {
       gitService,
       output
     );
+    const result = await command.execute({ id: "999" }, { globalOptions: {} });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("DiffPRCommand", () => {
+  it("should display full diff by ID", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.diff).toContain("diff --git");
+    }
+    expect(output.logs.some((log) => log.includes("text:diff --git"))).toBe(true);
+  });
+
+  it("should display diff for current branch when no ID provided", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService({ currentBranch: "feature-branch" });
+    const output = createMockOutputService();
+
+    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute({}, { globalOptions: {} });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.diff).toContain("diff --git");
+    }
+  });
+
+  it("should fail when no ID provided and branch not found", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService({ currentBranch: "other-branch" });
+    const output = createMockOutputService();
+
+    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute({}, { globalOptions: {} });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("should display diffstat when --stat flag is set", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute({ id: "1", stat: true }, { globalOptions: {} });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.stat).toBeDefined();
+      expect(result.value.stat!.filesChanged).toBe(2);
+      expect(result.value.stat!.insertions).toBe(30);
+      expect(result.value.stat!.deletions).toBe(5);
+    }
+    expect(output.logs.some((log) => log.includes("2 files changed"))).toBe(true);
+  });
+
+  it("should display file names only when --name-only flag is set", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute({ id: "1", nameOnly: true }, { globalOptions: {} });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.diff).toContain("src/file.ts");
+      expect(result.value.diff).toContain("src/newfile.ts");
+    }
+    expect(output.logs.some((log) => log.includes("text:src/file.ts"))).toBe(true);
+  });
+
+  it("should output JSON when flag is set", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
+    await command.execute({ id: "1" }, { globalOptions: { json: true } });
+
+    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+  });
+
+  it("should fail for non-existent PR", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
     const result = await command.execute({ id: "999" }, { globalOptions: {} });
 
     expect(result.success).toBe(false);

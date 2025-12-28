@@ -12,6 +12,7 @@ import type {
   PullRequestState,
   CreatePullRequestRequest,
   MergePullRequestRequest,
+  DiffStat,
 } from "../types/api.js";
 
 export class PullRequestRepository implements IPullRequestRepository {
@@ -83,6 +84,26 @@ export class PullRequestRepository implements IPullRequestRepository {
   ): Promise<Result<BitbucketPullRequest, BBError>> {
     return this.httpClient.post<BitbucketPullRequest>(
       this.buildPath(workspace, repoSlug, `/${id}/decline`)
+    );
+  }
+
+  public async getDiff(
+    workspace: string,
+    repoSlug: string,
+    id: number
+  ): Promise<Result<string, BBError>> {
+    return this.httpClient.getText(
+      this.buildPath(workspace, repoSlug, `/${id}/diff`)
+    );
+  }
+
+  public async getDiffstat(
+    workspace: string,
+    repoSlug: string,
+    id: number
+  ): Promise<Result<DiffStat, BBError>> {
+    return this.httpClient.get<DiffStat>(
+      this.buildPath(workspace, repoSlug, `/${id}/diffstat`)
     );
   }
 }

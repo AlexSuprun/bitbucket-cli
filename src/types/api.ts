@@ -157,3 +157,26 @@ export interface MergePullRequestRequest {
   close_source_branch?: boolean;
   merge_strategy?: MergeStrategy;
 }
+
+export interface DiffStatFile {
+  type: string;
+  status: string;
+  lines_removed: number;
+  lines_added: number;
+  old?: {
+    path: string;
+    escaped_path?: string;
+  };
+  new?: {
+    path: string;
+    escaped_path?: string;
+  };
+}
+
+export interface DiffStat {
+  values: DiffStatFile[];
+  pagelen?: number;
+  size?: number;
+  page?: number;
+  next?: string;
+}

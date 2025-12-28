@@ -330,4 +330,104 @@ describe("PullRequestRepository", () => {
       }
     });
   });
+
+  describe("getDiff", () => {
+    it("should return diff text", async () => {
+      const diffText = `diff --git a/file.ts b/file.ts
+index abc123..def456 100644
+--- a/file.ts
++++ b/file.ts
+@@ -1,3 +1,4 @@
+ line 1
++line 2
+ line 3`;
+      const responses = new Map([
+        ["GET:/repositories/workspace/repo/pullrequests/1/diff", Result.ok(diffText)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.getDiff("workspace", "repo", 1);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value).toContain("diff --git");
+        expect(result.value).toContain("+line 2");
+      }
+    });
+
+    it("should handle non-existent PR", async () => {
+      const responses = new Map<string, Result<unknown, BBError>>();
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.getDiff("workspace", "repo", 999);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe(2002);
+      }
+    });
+  });
+
+  describe("getDiffstat", () => {
+    it("should return diffstat", async () => {
+      const diffstat = {
+        values: [
+          {
+            type: "diffstat",
+            status: "modified",
+            lines_removed: 1,
+            lines_added: 2,
+            old: { path: "src/file.ts" },
+            new: { path: "src/file.ts" },
+          },
+          {
+            type: "diffstat",
+            status: "added",
+            lines_removed: 0,
+            lines_added: 10,
+            new: { path: "src/newfile.ts" },
+          },
+        ],
+        pagelen: 2,
+        size: 2,
+      };
+      const responses = new Map([
+        ["GET:/repositories/workspace/repo/pullrequests/1/diffstat", Result.ok(diffstat)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.getDiffstat("workspace", "repo", 1);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.values).toHaveLength(2);
+        expect(result.value.values[0].lines_added).toBe(2);
+        expect(result.value.values[0].lines_removed).toBe(1);
+        expect(result.value.values[1].status).toBe("added");
+      }
+    });
+
+    it("should handle empty diffstat", async () => {
+      const diffstat = {
+        values: [],
+        pagelen: 0,
+        size: 0,
+      };
+      const responses = new Map([
+        ["GET:/repositories/workspace/repo/pullrequests/1/diffstat", Result.ok(diffstat)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.getDiffstat("workspace", "repo", 1);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.values).toHaveLength(0);
+      }
+    });
+  });
 });

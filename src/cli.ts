@@ -29,6 +29,7 @@ import type { MergePRCommand } from "./commands/pr/merge.command.js";
 import type { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import type { DeclinePRCommand } from "./commands/pr/decline.command.js";
 import type { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
+import type { DiffPRCommand } from "./commands/pr/diff.command.js";
 import type { GetConfigCommand } from "./commands/config/get.command.js";
 import type { SetConfigCommand } from "./commands/config/set.command.js";
 import type { ListConfigCommand } from "./commands/config/list.command.js";
@@ -59,7 +60,7 @@ if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
     } else if (env.prev === "repo") {
       completions.push("clone", "create", "list", "view", "delete");
     } else if (env.prev === "pr") {
-      completions.push("create", "list", "view", "merge", "approve", "decline", "checkout");
+      completions.push("create", "list", "view", "merge", "approve", "decline", "checkout", "diff");
     } else if (env.prev === "config") {
       completions.push("get", "set", "list");
     } else if (env.prev === "completion") {
@@ -318,6 +319,22 @@ prCmd
   .description("Checkout a pull request locally")
   .action(async (id, options) => {
     const cmd = container.resolve<CheckoutPRCommand>(ServiceTokens.CheckoutPRCommand);
+    const context = createContext(cli);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+prCmd
+  .command("diff [id]")
+  .description("View pull request diff")
+  .option("--color <when>", "Colorize output (auto, always, never)", "auto")
+  .option("--name-only", "Show only names of changed files")
+  .option("--stat", "Show diffstat")
+  .option("-w, --web", "Open diff in web browser")
+  .action(async (id, options) => {
+    const cmd = container.resolve<DiffPRCommand>(ServiceTokens.DiffPRCommand);
     const context = createContext(cli);
     const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
     if (!result.success) {
