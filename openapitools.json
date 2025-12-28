@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.10.0",
+    "generators": {
+      "bitbucket": {
+        "generatorName": "typescript-fetch",
+        "output": "src/generated",
+        "inputSpec": "specs/bitbucket-cloud.json",
+        "additionalProperties": {
+          "supportsES6": true,
+          "typescriptThreePlus": true,
+          "withInterfaces": true,
+          "useSingleRequestParameter": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,81 @@
+---
+title: Auth Commands
+description: Authentication commands reference
+---
+
+Manage authentication with Bitbucket.
+
+## `bb auth login`
+
+Authenticate with Bitbucket using an app password.
+
+```bash
+bb auth login [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-u, --username <username>` | Bitbucket username |
+| `-p, --password <password>` | Bitbucket app password |
+
+### Examples
+
+```bash
+# Login with credentials
+bb auth login -u myuser -p myapppassword
+
+# Login using environment variables
+export BB_USERNAME=myuser
+export BB_APP_PASSWORD=myapppassword
+bb auth login
+```
+
+---
+
+## `bb auth logout`
+
+Log out of Bitbucket and remove stored credentials.
+
+```bash
+bb auth logout
+```
+
+---
+
+## `bb auth status`
+
+Show current authentication status.
+
+```bash
+bb auth status
+```
+
+### Output
+
+When authenticated:
+```
+✓ Logged in to Bitbucket
+  Username: myuser
+  Display name: My Name
+  Account ID: 123456789
+```
+
+When not authenticated:
+```
+ℹ Not logged in
+Run bb auth login to authenticate.
+```
+
+---
+
+## `bb auth token`
+
+Print the current access token (base64 encoded credentials).
+
+```bash
+bb auth token
+```
+
+This is useful for debugging or for use with other tools.

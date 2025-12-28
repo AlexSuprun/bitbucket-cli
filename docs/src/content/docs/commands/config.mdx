@@ -1,0 +1,95 @@
+---
+title: Config Commands
+description: Configuration commands reference
+---
+
+Manage CLI configuration settings.
+
+## Configuration File
+
+Configuration is stored in a JSON file at:
+
+- **Linux/macOS**: `~/.config/bb/config.json`
+- **Windows**: `%APPDATA%\bb\config.json`
+
+## Available Settings
+
+| Key | Description |
+|-----|-------------|
+| `defaultWorkspace` | Default workspace for commands |
+
+## `bb config get`
+
+Get a configuration value.
+
+```bash
+bb config get <key>
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `key` | Configuration key to retrieve |
+
+### Examples
+
+```bash
+bb config get defaultWorkspace
+```
+
+---
+
+## `bb config set`
+
+Set a configuration value.
+
+```bash
+bb config set <key> <value>
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `key` | Configuration key to set |
+| `value` | Value to set |
+
+### Examples
+
+```bash
+# Set default workspace
+bb config set defaultWorkspace myworkspace
+```
+
+---
+
+## `bb config list`
+
+List all configuration values.
+
+```bash
+bb config list
+```
+
+### Examples
+
+```bash
+# List all config
+bb config list
+
+# List as JSON
+bb config list --json
+```
+
+### Output
+
+```
+Config file: /Users/you/.config/bb/config.json
+
+KEY               VALUE
+-----------------  ---------
+username          myuser
+defaultWorkspace  myworkspace
+appPassword       ********
+```

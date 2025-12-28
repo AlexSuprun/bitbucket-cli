@@ -1,0 +1,201 @@
+---
+title: PR Commands
+description: Pull request commands reference
+---
+
+Manage pull requests in Bitbucket repositories.
+
+## `bb pr create`
+
+Create a new pull request.
+
+```bash
+bb pr create [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-t, --title <title>` | Pull request title (required) |
+| `-b, --body <body>` | Pull request description |
+| `-s, --source <branch>` | Source branch (default: current branch) |
+| `-d, --destination <branch>` | Destination branch (default: main) |
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `--close-source-branch` | Close source branch after merge |
+
+### Examples
+
+```bash
+# Create a PR from current branch to main
+bb pr create -t "Add new feature"
+
+# Create a PR with full details
+bb pr create -t "Add login page" -b "Implements user login functionality" -d develop
+```
+
+---
+
+## `bb pr list`
+
+List pull requests.
+
+```bash
+bb pr list [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `-s, --state <state>` | Filter by state: OPEN, MERGED, DECLINED, SUPERSEDED (default: OPEN) |
+| `--limit <number>` | Maximum number of PRs (default: 25) |
+
+### Examples
+
+```bash
+# List open PRs
+bb pr list
+
+# List merged PRs
+bb pr list -s MERGED
+
+# List with JSON output
+bb pr list --json
+```
+
+---
+
+## `bb pr view`
+
+View pull request details.
+
+```bash
+bb pr view <id> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+
+### Examples
+
+```bash
+# View PR #42
+bb pr view 42
+```
+
+---
+
+## `bb pr merge`
+
+Merge a pull request.
+
+```bash
+bb pr merge <id> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `-m, --message <message>` | Merge commit message |
+| `--close-source-branch` | Delete source branch after merge |
+| `--strategy <strategy>` | Merge strategy: merge_commit, squash, fast_forward |
+
+### Examples
+
+```bash
+# Merge PR #42
+bb pr merge 42
+
+# Merge with squash
+bb pr merge 42 --strategy squash --close-source-branch
+```
+
+---
+
+## `bb pr approve`
+
+Approve a pull request.
+
+```bash
+bb pr approve <id> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Examples
+
+```bash
+bb pr approve 42
+```
+
+---
+
+## `bb pr decline`
+
+Decline a pull request.
+
+```bash
+bb pr decline <id> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Examples
+
+```bash
+bb pr decline 42
+```
+
+---
+
+## `bb pr checkout`
+
+Checkout a pull request locally.
+
+```bash
+bb pr checkout <id> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Examples
+
+```bash
+# Checkout PR #42 to review locally
+bb pr checkout 42
+```

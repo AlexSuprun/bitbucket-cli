@@ -1,0 +1,56 @@
+---
+title: Installation
+description: How to install the Bitbucket CLI
+---
+
+## Prerequisites
+
+- [Bun](https://bun.sh) or [Node.js](https://nodejs.org) (v18+)
+- Git
+
+## Install via Package Manager
+
+### Using Bun (recommended)
+
+```bash
+bun install -g bitbucket-cli
+```
+
+### Using npm
+
+```bash
+npm install -g bitbucket-cli
+```
+
+### Using pnpm
+
+```bash
+pnpm add -g bitbucket-cli
+```
+
+## Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/bitbucket-cli.git
+cd bitbucket-cli
+
+# Install dependencies
+bun install
+
+# Build
+bun run build
+
+# Link globally
+bun link
+```
+
+## Verify Installation
+
+```bash
+bb --version
+```
+
+## Next Steps
+
+After installation, you'll need to [authenticate](/getting-started/authentication/) with your Bitbucket account.

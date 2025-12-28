@@ -1,0 +1,168 @@
+---
+title: Repo Commands
+description: Repository commands reference
+---
+
+Manage Bitbucket repositories.
+
+## `bb repo clone`
+
+Clone a Bitbucket repository.
+
+```bash
+bb repo clone <repository> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `repository` | Repository to clone (`workspace/repo` or full URL) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-d, --directory <dir>` | Directory to clone into |
+
+### Examples
+
+```bash
+# Clone using workspace/repo format
+bb repo clone myworkspace/myrepo
+
+# Clone into a specific directory
+bb repo clone myworkspace/myrepo -d my-local-dir
+
+# Clone using full URL
+bb repo clone git@bitbucket.org:myworkspace/myrepo.git
+```
+
+---
+
+## `bb repo create`
+
+Create a new repository.
+
+```bash
+bb repo create <name> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Name for the new repository |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace to create repository in |
+| `-d, --description <description>` | Repository description |
+| `--private` | Create a private repository (default) |
+| `--public` | Create a public repository |
+| `-p, --project <project>` | Project key |
+
+### Examples
+
+```bash
+# Create a private repository
+bb repo create my-new-repo -w myworkspace
+
+# Create a public repository with description
+bb repo create my-new-repo -w myworkspace --public -d "My awesome project"
+```
+
+---
+
+## `bb repo list`
+
+List repositories in a workspace.
+
+```bash
+bb repo list [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace to list repositories from |
+| `--limit <number>` | Maximum number of repositories (default: 25) |
+
+### Examples
+
+```bash
+# List repositories
+bb repo list -w myworkspace
+
+# List with JSON output
+bb repo list -w myworkspace --json
+```
+
+---
+
+## `bb repo view`
+
+View repository details.
+
+```bash
+bb repo view [repository] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `repository` | Repository to view (optional if in a repo directory) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+
+### Examples
+
+```bash
+# View current repository
+bb repo view
+
+# View specific repository
+bb repo view myworkspace/myrepo
+```
+
+---
+
+## `bb repo delete`
+
+Delete a repository.
+
+```bash
+bb repo delete <repository> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `repository` | Repository to delete |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-y, --yes` | Skip confirmation prompt |
+
+### Examples
+
+```bash
+# Delete with confirmation
+bb repo delete myworkspace/myrepo --yes
+```
+
+:::danger
+This action is permanent and cannot be undone!
+:::

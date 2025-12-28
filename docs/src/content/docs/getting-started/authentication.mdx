@@ -1,0 +1,63 @@
+---
+title: Authentication
+description: How to authenticate with Bitbucket
+---
+
+The Bitbucket CLI uses **App Passwords** for authentication. This is a secure way to grant CLI access without exposing your main account password.
+
+## Create an App Password
+
+1. Log in to [Bitbucket](https://bitbucket.org)
+2. Go to **Personal settings** (click your avatar in the bottom left)
+3. Navigate to **App passwords** under "Access management"
+4. Click **Create app password**
+5. Give it a descriptive name (e.g., "Bitbucket CLI")
+6. Select the required permissions:
+   - **Account**: Read
+   - **Repositories**: Read, Write, Admin (depending on your needs)
+   - **Pull requests**: Read, Write
+7. Click **Create**
+8. **Copy the generated password** - you won't be able to see it again!
+
+## Login
+
+```bash
+bb auth login -u your-username -p your-app-password
+```
+
+### Using Environment Variables
+
+You can also set credentials via environment variables:
+
+```bash
+export BB_USERNAME=your-username
+export BB_APP_PASSWORD=your-app-password
+bb auth login
+```
+
+## Check Auth Status
+
+```bash
+bb auth status
+```
+
+This shows your current authentication status and account information.
+
+## Logout
+
+```bash
+bb auth logout
+```
+
+This removes stored credentials from your system.
+
+## Configuration Storage
+
+Credentials are stored in:
+
+- **Linux/macOS**: `~/.config/bb/config.json`
+- **Windows**: `%APPDATA%\bb\config.json`
+
+:::caution
+Never share your app password or config file. Keep them secure!
+:::

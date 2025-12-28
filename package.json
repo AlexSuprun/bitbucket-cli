@@ -1,0 +1,31 @@
+{
+  "name": "bitbucket-cli",
+  "version": "0.1.0",
+  "description": "A command-line interface for Bitbucket Cloud",
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "bb": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "test": "bun test",
+    "lint": "tsc --noEmit",
+    "generate:api": "openapi-generator-cli generate",
+    "docs:dev": "cd docs && bun run dev",
+    "docs:build": "cd docs && bun run build"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.15.3",
+    "@types/bun": "latest",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
