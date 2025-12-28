@@ -3,6 +3,11 @@ name: Publish to npm
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (for manual trigger)'
+        required: false
 
 permissions:
   contents: read
