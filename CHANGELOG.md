@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- [#36](https://github.com/0pilatos0/bitbucket-cli/pull/36) [`c470d86`](https://github.com/0pilatos0/bitbucket-cli/commit/c470d86ac90a8b80101a6d8a2e32e398b27ea1e9) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add `bb pr edit` command to edit pull request title and description
+
+  - Update title with `--title` / `-t` flag
+  - Update description with `--body` / `-b` flag
+  - Read description from file with `--body-file` / `-F` flag
+  - Auto-detect PR from current branch when ID is omitted
+  - Support JSON output with `--json` flag
+
+### Patch Changes
+
+- [#34](https://github.com/0pilatos0/bitbucket-cli/pull/34) [`8613233`](https://github.com/0pilatos0/bitbucket-cli/commit/861323343607f7ea62dada578df0de2f89e06fe2) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix "Body already used" error when API requests fail (e.g., `pr approve`, `pr decline`)
+
 ## 1.0.0
 
 ### Major Changes
