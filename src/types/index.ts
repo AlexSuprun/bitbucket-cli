@@ -1,22 +1,8 @@
-export interface BBConfig {
-  username?: string;
-  appPassword?: string;
-  defaultWorkspace?: string;
-}
+/**
+ * Central export for all types
+ */
 
-export interface GlobalOptions {
-  json?: boolean;
-  workspace?: string;
-  repo?: string;
-}
-
-export interface RepoContext {
-  workspace: string;
-  repoSlug: string;
-}
-
-export interface CommandResult<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+export * from "./result.js";
+export * from "./errors.js";
+export * from "./api.js";
+export * from "./config.js";

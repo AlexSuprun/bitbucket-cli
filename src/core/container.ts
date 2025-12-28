@@ -1,0 +1,168 @@
+/**
+ * Dependency Injection Container
+ * Simple IoC container for managing service dependencies
+ */
+
+type Constructor<T> = new (...args: unknown[]) => T;
+type Factory<T> = () => T;
+
+interface ServiceRegistration<T> {
+  factory: Factory<T>;
+  singleton: boolean;
+  instance?: T;
+}
+
+export class Container {
+  private services = new Map<string, ServiceRegistration<unknown>>();
+  private static instance: Container | null = null;
+
+  /**
+   * Get the singleton container instance
+   */
+  public static getInstance(): Container {
+    if (!Container.instance) {
+      Container.instance = new Container();
+    }
+    return Container.instance;
+  }
+
+  /**
+   * Reset the container (useful for testing)
+   */
+  public static reset(): void {
+    Container.instance = null;
+  }
+
+  /**
+   * Register a service with a factory function
+   */
+  public register<T>(
+    token: string,
+    factory: Factory<T>,
+    options: { singleton?: boolean } = {}
+  ): this {
+    this.services.set(token, {
+      factory,
+      singleton: options.singleton ?? true,
+    });
+    return this;
+  }
+
+  /**
+   * Register a service instance directly
+   */
+  public registerInstance<T>(token: string, instance: T): this {
+    this.services.set(token, {
+      factory: () => instance,
+      singleton: true,
+      instance,
+    });
+    return this;
+  }
+
+  /**
+   * Register a class with automatic instantiation
+   */
+  public registerClass<T>(
+    token: string,
+    constructor: Constructor<T>,
+    dependencies: string[] = [],
+    options: { singleton?: boolean } = {}
+  ): this {
+    this.services.set(token, {
+      factory: () => {
+        const deps = dependencies.map((dep) => this.resolve(dep));
+        return new constructor(...deps);
+      },
+      singleton: options.singleton ?? true,
+    });
+    return this;
+  }
+
+  /**
+   * Resolve a service by token
+   */
+  public resolve<T>(token: string): T {
+    const registration = this.services.get(token);
+
+    if (!registration) {
+      throw new Error(`Service not registered: ${token}`);
+    }
+
+    if (registration.singleton) {
+      if (!registration.instance) {
+        registration.instance = registration.factory();
+      }
+      return registration.instance as T;
+    }
+
+    return registration.factory() as T;
+  }
+
+  /**
+   * Check if a service is registered
+   */
+  public has(token: string): boolean {
+    return this.services.has(token);
+  }
+
+  /**
+   * Unregister a service
+   */
+  public unregister(token: string): boolean {
+    return this.services.delete(token);
+  }
+
+  /**
+   * Clear all registrations
+   */
+  public clear(): void {
+    this.services.clear();
+  }
+}
+
+/**
+ * Service tokens for dependency injection
+ */
+export const ServiceTokens = {
+  // Core services
+  ConfigService: "ConfigService",
+  GitService: "GitService",
+  ContextService: "ContextService",
+  OutputService: "OutputService",
+  HttpClient: "HttpClient",
+
+  // Repositories
+  UserRepository: "UserRepository",
+  RepoRepository: "RepoRepository",
+  PullRequestRepository: "PullRequestRepository",
+
+  // Commands - Auth
+  LoginCommand: "LoginCommand",
+  LogoutCommand: "LogoutCommand",
+  StatusCommand: "StatusCommand",
+  TokenCommand: "TokenCommand",
+
+  // Commands - Repo
+  CloneCommand: "CloneCommand",
+  CreateRepoCommand: "CreateRepoCommand",
+  ListReposCommand: "ListReposCommand",
+  ViewRepoCommand: "ViewRepoCommand",
+  DeleteRepoCommand: "DeleteRepoCommand",
+
+  // Commands - PR
+  CreatePRCommand: "CreatePRCommand",
+  ListPRsCommand: "ListPRsCommand",
+  ViewPRCommand: "ViewPRCommand",
+  MergePRCommand: "MergePRCommand",
+  ApprovePRCommand: "ApprovePRCommand",
+  DeclinePRCommand: "DeclinePRCommand",
+  CheckoutPRCommand: "CheckoutPRCommand",
+
+  // Commands - Config
+  GetConfigCommand: "GetConfigCommand",
+  SetConfigCommand: "SetConfigCommand",
+  ListConfigCommand: "ListConfigCommand",
+} as const;
+
+export type ServiceToken = (typeof ServiceTokens)[keyof typeof ServiceTokens];
