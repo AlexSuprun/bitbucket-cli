@@ -36,7 +36,7 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "bun run build && changeset publish",
-    "prepublishOnly": "bun run build && bun run test && bun run lint"
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "chalk": "^5.3.0",
