@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+### Patch Changes
+
+- [#22](https://github.com/0pilatos0/bitbucket-cli/pull/22) [`5fa1bf3`](https://github.com/0pilatos0/bitbucket-cli/commit/5fa1bf3ac7a182e8bf810001db4ec08438d505fa) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix commands not displaying error messages when validation fails. Commands now properly show error messages and exit with code 1 when required arguments are missing or validation fails.
+
 ## 0.3.1
 
 ### Patch Changes
