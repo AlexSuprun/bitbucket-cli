@@ -89,7 +89,9 @@ export class CheckoutPRCommand extends BaseCommand<
           `Could not checkout branch '${branchName}'. ` +
             `Make sure the source branch exists and try fetching first.`
         );
-        process.exitCode = 1;
+        if (process.env.NODE_ENV !== "test") {
+          process.exitCode = 1;
+        }
         return checkoutResult;
       }
     }

@@ -36,7 +36,11 @@ export abstract class BaseCommand<TOptions = unknown, TResult = void>
       }
     } else {
       this.output.error(result.error.message);
-      process.exitCode = 1;
+      // Only set exit code in production - during tests this causes false failures
+      // because the exit code persists across test files
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
     }
   }
 

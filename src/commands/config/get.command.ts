@@ -35,7 +35,9 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, string | unde
         message: `Cannot display '${key}' - use 'bb auth token' to get authentication credentials`,
       });
       this.output.error(error.message);
-      process.exitCode = 1;
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
       return Result.err(error);
     }
 
@@ -46,7 +48,9 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, string | unde
         message: `Unknown config key '${key}'. Valid keys: username, defaultWorkspace`,
       });
       this.output.error(error.message);
-      process.exitCode = 1;
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
       return Result.err(error);
     }
 

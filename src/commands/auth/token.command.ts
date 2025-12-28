@@ -26,7 +26,9 @@ export class TokenCommand extends BaseCommand<void, string> {
     const credentialsResult = await this.configService.getCredentials();
     if (!credentialsResult.success) {
       this.output.error(credentialsResult.error.message);
-      process.exitCode = 1;
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
       return credentialsResult;
     }
 
