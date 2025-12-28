@@ -1,5 +1,66 @@
 # Changelog
 
+## 1.0.0
+
+### Major Changes
+
+- [#29](https://github.com/0pilatos0/bitbucket-cli/pull/29) [`df9a3e7`](https://github.com/0pilatos0/bitbucket-cli/commit/df9a3e76013b16a171d8ccb52ba41242dc19e732) Thanks [@0pilatos0](https://github.com/0pilatos0)! - **BREAKING CHANGE**: Migrate from app passwords to API tokens
+
+  As of September 9, 2025, Bitbucket has deprecated app passwords in favor of API tokens. All existing app passwords will be disabled on June 9, 2026.
+
+  ## Breaking Changes
+
+  - Configuration field `appPassword` renamed to `apiToken`
+  - Environment variable `BB_APP_PASSWORD` renamed to `BB_API_TOKEN`
+  - All references to "app password" updated to "API token" in docs and CLI output
+
+  ## Migration Guide
+
+  After upgrading, users will need to:
+
+  1. Create a new API token at https://bitbucket.org/account/settings/api-tokens/
+  2. Re-authenticate using `bb auth login -u your-username -p your-api-token`
+
+  The authentication mechanism (HTTP Basic Auth) remains unchanged - only the terminology and configuration field names have changed.
+
+  ## Documentation Updates
+
+  - Updated authentication guide with API token creation instructions
+  - Updated all command documentation references
+  - Added deprecation notices about app passwords
+
+### Minor Changes
+
+- [#30](https://github.com/0pilatos0/bitbucket-cli/pull/30) [`dc169ff`](https://github.com/0pilatos0/bitbucket-cli/commit/dc169fff1211b279f4aadb025a893a4ae22c7544) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add `bb pr diff` command to view pull request diffs from the CLI
+
+  Implements issue #20 by adding a new `bb pr diff` command that allows users to view pull request diffs directly from the command line without opening the web interface.
+
+  Features:
+
+  - View full unified diff for a specified PR or current branch
+  - `--stat` flag to show diffstat (files changed, insertions, deletions)
+  - `--name-only` flag to show only names of changed files
+  - `--color` flag to control colored output (auto, always, never)
+  - `--web` flag to open PR diff in web browser
+  - Automatic PR detection based on current git branch when no ID provided
+  - Full unit test coverage for command and repository methods
+  - Supports all global options (--workspace, --repo, --json)
+
+### Patch Changes
+
+- [#26](https://github.com/0pilatos0/bitbucket-cli/pull/26) [`d3e14e2`](https://github.com/0pilatos0/bitbucket-cli/commit/d3e14e2820d3da314dd4d7dcddbd33a00a67ae8c) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Comprehensive documentation improvements addressing #25
+
+  - Add missing global options (--workspace, --repo, --json) to all command documentation
+  - Fix config key naming inconsistency (defaultWorkspace → workspace)
+  - Document all available config keys (username, appPassword, workspace, repo)
+  - Add detailed explanations for auth command behavior and requirements
+  - Enhance command examples with more use cases
+  - Add comprehensive repository context resolution guide
+  - Fix Node.js version requirement (v18+ → v20+)
+  - Add notes about command behavior (e.g., PR checkout branch naming)
+  - Document JSON output support across all commands
+  - Add security warnings and best practices throughout
+
 ## 0.3.2
 
 ### Patch Changes
