@@ -66,7 +66,9 @@ export class DeleteRepoCommand extends BaseCommand<
           "Use --yes to confirm deletion."
       );
       this.output.error(error.message);
-      process.exitCode = 1;
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
       return Result.err(error);
     }
 

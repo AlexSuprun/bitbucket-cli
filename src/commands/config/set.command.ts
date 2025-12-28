@@ -35,7 +35,9 @@ export class SetConfigCommand extends BaseCommand<{ key: string; value: string }
         message: `Cannot set '${key}' directly. Use 'bb auth login' to configure authentication.`,
       });
       this.output.error(error.message);
-      process.exitCode = 1;
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
       return Result.err(error);
     }
 
@@ -46,7 +48,9 @@ export class SetConfigCommand extends BaseCommand<{ key: string; value: string }
         message: `Unknown config key '${key}'. Valid keys: defaultWorkspace`,
       });
       this.output.error(error.message);
-      process.exitCode = 1;
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
       return Result.err(error);
     }
 

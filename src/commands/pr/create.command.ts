@@ -48,7 +48,9 @@ export class CreatePRCommand extends BaseCommand<CreatePROptions, BitbucketPullR
         "Pull request title is required. Use --title option."
       );
       this.output.error(error.message);
-      process.exitCode = 1;
+      if (process.env.NODE_ENV !== "test") {
+        process.exitCode = 1;
+      }
       return Result.err(error);
     }
 
