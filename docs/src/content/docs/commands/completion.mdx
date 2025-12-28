@@ -1,0 +1,92 @@
+---
+title: Completion Commands
+description: Shell completion utilities reference
+---
+
+Enable tab completion for bash, zsh, or fish shells.
+
+## Supported Shells
+
+| Shell | Config File |
+|-------|-------------|
+| bash | `~/.bashrc` |
+| zsh | `~/.zshrc` |
+| fish | `~/.config/fish/config.fish` |
+
+## `bb completion install`
+
+Install shell completions for your current shell.
+
+```bash
+bb completion install
+```
+
+The installer auto-detects your shell and adds the necessary configuration.
+
+### Post-Installation
+
+After installing, restart your shell or source your config:
+
+```bash
+# Bash
+source ~/.bashrc
+
+# Zsh
+source ~/.zshrc
+
+# Fish
+source ~/.config/fish/config.fish
+```
+
+### Examples
+
+```bash
+# Install completions
+bb completion install
+
+# Test it works
+bb <Tab>        # Shows: auth, repo, pr, config, completion
+bb repo <Tab>   # Shows: clone, create, list, view, delete
+```
+
+---
+
+## `bb completion uninstall`
+
+Remove shell completions.
+
+```bash
+bb completion uninstall
+```
+
+### Examples
+
+```bash
+# Remove completions
+bb completion uninstall
+```
+
+---
+
+## What Gets Completed
+
+Tab completion works for:
+
+- **Commands**: `auth`, `repo`, `pr`, `config`, `completion`
+- **Subcommands**: `login`, `clone`, `create`, `list`, etc.
+- **Options**: `--json`, `--workspace`, `--repo`, `--help`
+
+### Example Session
+
+```bash
+$ bb pr<Tab>
+pr
+
+$ bb pr <Tab>
+approve   checkout  create    decline   list      merge     view
+
+$ bb pr create --<Tab>
+--body               --destination        --repo
+--close-source-branch --help              --source
+--title              --workspace
+```

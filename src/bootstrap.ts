@@ -43,6 +43,10 @@ import { GetConfigCommand } from "./commands/config/get.command.js";
 import { SetConfigCommand } from "./commands/config/set.command.js";
 import { ListConfigCommand } from "./commands/config/list.command.js";
 
+// Completion commands
+import { InstallCompletionCommand } from "./commands/completion/install.command.js";
+import { UninstallCompletionCommand } from "./commands/completion/uninstall.command.js";
+
 export function bootstrap(): Container {
   const container = Container.getInstance();
 
@@ -213,6 +217,17 @@ export function bootstrap(): Container {
     const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new ListConfigCommand(configService, output);
+  });
+
+  // Register completion commands
+  container.register(ServiceTokens.InstallCompletionCommand, () => {
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new InstallCompletionCommand(output);
+  });
+
+  container.register(ServiceTokens.UninstallCompletionCommand, () => {
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new UninstallCompletionCommand(output);
   });
 
   return container;

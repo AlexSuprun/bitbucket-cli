@@ -32,6 +32,44 @@ import type { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
 import type { GetConfigCommand } from "./commands/config/get.command.js";
 import type { SetConfigCommand } from "./commands/config/set.command.js";
 import type { ListConfigCommand } from "./commands/config/list.command.js";
+import type { InstallCompletionCommand } from "./commands/completion/install.command.js";
+import type { UninstallCompletionCommand } from "./commands/completion/uninstall.command.js";
+import tabtab from "tabtab";
+
+// Handle tabtab completion
+if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
+  const env = tabtab.parseEnv(process.env);
+  if (env.complete) {
+    const completions = [
+      "auth",
+      "repo",
+      "pr",
+      "config",
+      "completion",
+      "--help",
+      "--version",
+      "--json",
+      "--workspace",
+      "--repo",
+    ];
+
+    // Add subcommands based on current command
+    if (env.prev === "auth") {
+      completions.push("login", "logout", "status", "token");
+    } else if (env.prev === "repo") {
+      completions.push("clone", "create", "list", "view", "delete");
+    } else if (env.prev === "pr") {
+      completions.push("create", "list", "view", "merge", "approve", "decline", "checkout");
+    } else if (env.prev === "config") {
+      completions.push("get", "set", "list");
+    } else if (env.prev === "completion") {
+      completions.push("install", "uninstall");
+    }
+
+    tabtab.log(completions);
+    process.exit(0);
+  }
+}
 
 // Bootstrap the container
 const container = bootstrap();
@@ -267,3 +305,24 @@ configCmd
   });
 
 cli.addCommand(configCmd);
+
+// Completion commands
+const completionCmd = new Command("completion").description("Shell completion utilities");
+
+completionCmd
+  .command("install")
+  .description("Install shell completions for bash, zsh, or fish")
+  .action(async () => {
+    const cmd = container.resolve<InstallCompletionCommand>(ServiceTokens.InstallCompletionCommand);
+    await cmd.execute(undefined, createContext(cli));
+  });
+
+completionCmd
+  .command("uninstall")
+  .description("Uninstall shell completions")
+  .action(async () => {
+    const cmd = container.resolve<UninstallCompletionCommand>(ServiceTokens.UninstallCompletionCommand);
+    await cmd.execute(undefined, createContext(cli));
+  });
+
+cli.addCommand(completionCmd);
