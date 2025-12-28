@@ -18,8 +18,9 @@ jobs:
       - name: Check for changesets
         id: changesets
         run: |
-          CHANGESETS=$(ls .changeset/*.md 2>/dev/null | grep -v README.md | wc -l | tr -d ' ')
-          echo "count=$CHANGESETS" >> $GITHUB_OUTPUT
+          # Count only changesets added in this PR, not pre-existing ones
+          NEW_CHANGESETS=$(git diff --name-only origin/main...HEAD | grep '\.changeset/.*\.md$' | grep -v README.md | wc -l | tr -d ' ')
+          echo "count=$NEW_CHANGESETS" >> $GITHUB_OUTPUT
 
       - name: Get changed files
         id: changed
@@ -58,7 +59,7 @@ jobs:
       - name: Changeset found
         if: steps.changesets.outputs.count != '0'
         run: |
-          echo "Changeset found! Ready for review."
+          echo "New changeset found in this PR! Ready for review."
 
       - name: Docs-only change
         if: steps.changesets.outputs.count == '0' && steps.changed.outputs.docs_only == 'true'
