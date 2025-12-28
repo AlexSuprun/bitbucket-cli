@@ -25,6 +25,7 @@ import type { DeleteRepoCommand } from "./commands/repo/delete.command.js";
 import type { CreatePRCommand } from "./commands/pr/create.command.js";
 import type { ListPRsCommand } from "./commands/pr/list.command.js";
 import type { ViewPRCommand } from "./commands/pr/view.command.js";
+import type { EditPRCommand } from "./commands/pr/edit.command.js";
 import type { MergePRCommand } from "./commands/pr/merge.command.js";
 import type { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import type { DeclinePRCommand } from "./commands/pr/decline.command.js";
@@ -60,7 +61,7 @@ if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
     } else if (env.prev === "repo") {
       completions.push("clone", "create", "list", "view", "delete");
     } else if (env.prev === "pr") {
-      completions.push("create", "list", "view", "merge", "approve", "decline", "checkout", "diff");
+      completions.push("create", "list", "view", "edit", "merge", "approve", "decline", "checkout", "diff");
     } else if (env.prev === "config") {
       completions.push("get", "set", "list");
     } else if (env.prev === "completion") {
@@ -268,6 +269,21 @@ prCmd
   .description("View pull request details")
   .action(async (id, options) => {
     const cmd = container.resolve<ViewPRCommand>(ServiceTokens.ViewPRCommand);
+    const context = createContext(cli);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+prCmd
+  .command("edit [id]")
+  .description("Edit a pull request")
+  .option("-t, --title <title>", "New pull request title")
+  .option("-b, --body <body>", "New pull request description")
+  .option("-F, --body-file <file>", "Read description from file")
+  .action(async (id, options) => {
+    const cmd = container.resolve<EditPRCommand>(ServiceTokens.EditPRCommand);
     const context = createContext(cli);
     const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
     if (!result.success) {

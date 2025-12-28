@@ -41,6 +41,61 @@ bb pr create -t "Hotfix: Critical bug" --close-source-branch
 
 ---
 
+## `bb pr edit`
+
+Edit an existing pull request's title or description.
+
+```bash
+bb pr edit [id] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID (optional - auto-detects from current branch) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-t, --title <title>` | New pull request title |
+| `-b, --body <body>` | New pull request description |
+| `-F, --body-file <file>` | Read description from file |
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# Edit PR title by ID
+bb pr edit 42 -t "Updated: Add new feature"
+
+# Edit PR description
+bb pr edit 42 -b "This PR implements the new login flow"
+
+# Edit both title and description
+bb pr edit 42 -t "New title" -b "New description"
+
+# Auto-detect PR from current branch and update title
+bb pr edit -t "Updated title"
+
+# Read description from a file
+bb pr edit 42 -F description.md
+
+# Get updated PR as JSON
+bb pr edit 42 -t "New title" --json
+```
+
+### Notes
+
+- When no ID is provided, the command searches for an open PR where the source branch matches your current git branch
+- At least one of `--title`, `--body`, or `--body-file` must be provided
+- The `--body-file` option reads the entire file contents as the new description
+
+---
+
 ## `bb pr list`
 
 List pull requests.

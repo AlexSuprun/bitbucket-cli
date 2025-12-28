@@ -158,6 +158,11 @@ export interface MergePullRequestRequest {
   merge_strategy?: MergeStrategy;
 }
 
+export interface UpdatePullRequestRequest {
+  title?: string;
+  description?: string;
+}
+
 export interface DiffStatFile {
   type: string;
   status: string;

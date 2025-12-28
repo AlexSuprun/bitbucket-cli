@@ -33,6 +33,7 @@ import { DeleteRepoCommand } from "./commands/repo/delete.command.js";
 import { CreatePRCommand } from "./commands/pr/create.command.js";
 import { ListPRsCommand } from "./commands/pr/list.command.js";
 import { ViewPRCommand } from "./commands/pr/view.command.js";
+import { EditPRCommand } from "./commands/pr/edit.command.js";
 import { MergePRCommand } from "./commands/pr/merge.command.js";
 import { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import { DeclinePRCommand } from "./commands/pr/decline.command.js";
@@ -170,6 +171,14 @@ export function bootstrap(): Container {
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new ViewPRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.EditPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const gitService = container.resolve<GitService>(ServiceTokens.GitService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new EditPRCommand(prRepo, contextService, gitService, output);
   });
 
   container.register(ServiceTokens.MergePRCommand, () => {

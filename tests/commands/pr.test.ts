@@ -6,6 +6,7 @@ import { describe, it, expect } from "bun:test";
 import { ListPRsCommand } from "../../src/commands/pr/list.command.js";
 import { ViewPRCommand } from "../../src/commands/pr/view.command.js";
 import { CreatePRCommand } from "../../src/commands/pr/create.command.js";
+import { EditPRCommand } from "../../src/commands/pr/edit.command.js";
 import { MergePRCommand } from "../../src/commands/pr/merge.command.js";
 import { ApprovePRCommand } from "../../src/commands/pr/approve.command.js";
 import { DeclinePRCommand } from "../../src/commands/pr/decline.command.js";
@@ -88,6 +89,17 @@ function createMockPRRepository(
       const pr = prs.find((p) => p.id === id);
       if (pr) {
         return Result.ok(mockDiffStat);
+      }
+      return Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
+    async update(workspace: string, repoSlug: string, id: number, request: { title?: string; description?: string }) {
+      const pr = prs.find((p) => p.id === id);
+      if (pr) {
+        return Result.ok({
+          ...pr,
+          title: request.title ?? pr.title,
+          description: request.description ?? pr.description,
+        });
       }
       return Result.err({ code: 2002, message: "Not found" } as BBError);
     },
@@ -812,5 +824,179 @@ describe("DiffPRCommand", () => {
     const result = await command.execute({ id: "999" }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
+  });
+});
+
+describe("EditPRCommand", () => {
+  it("should update PR title", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute(
+      { id: "1", title: "New Title" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.title).toBe("New Title");
+    }
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
+  });
+
+  it("should update PR body", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute(
+      { id: "1", body: "New description" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.description).toBe("New description");
+    }
+  });
+
+  it("should update both title and body", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute(
+      { id: "1", title: "New Title", body: "New description" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.title).toBe("New Title");
+      expect(result.value.description).toBe("New description");
+    }
+  });
+
+  it("should auto-detect PR from current branch", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService({ currentBranch: "feature-branch" });
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute(
+      { title: "Updated via auto-detect" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.title).toBe("Updated via auto-detect");
+    }
+  });
+
+  it("should fail when no changes provided", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+
+    expect(result.success).toBe(false);
+    expect(output.logs.some((log) => log.includes("At least one of"))).toBe(true);
+  });
+
+  it("should fail when PR not found", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute(
+      { id: "999", title: "New Title" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(false);
+  });
+
+  it("should fail when no repo context", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService();
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute(
+      { id: "1", title: "New Title" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(false);
+  });
+
+  it("should fail when auto-detect finds no matching PR", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService({ currentBranch: "other-branch" });
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    const result = await command.execute(
+      { title: "New Title" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(false);
+    expect(output.logs.some((log) => log.includes("No open pull request found"))).toBe(true);
+  });
+
+  it("should output JSON when flag is set", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService();
+    const output = createMockOutputService();
+
+    const command = new EditPRCommand(prRepository, contextService, gitService, output);
+    await command.execute(
+      { id: "1", title: "New Title" },
+      { globalOptions: { json: true } }
+    );
+
+    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
   });
 });
