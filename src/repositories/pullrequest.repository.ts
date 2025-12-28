@@ -11,6 +11,7 @@ import type {
   PaginatedResponse,
   PullRequestState,
   CreatePullRequestRequest,
+  UpdatePullRequestRequest,
   MergePullRequestRequest,
   DiffStat,
 } from "../types/api.js";
@@ -51,6 +52,18 @@ export class PullRequestRepository implements IPullRequestRepository {
   ): Promise<Result<BitbucketPullRequest, BBError>> {
     return this.httpClient.post<BitbucketPullRequest>(
       this.buildPath(workspace, repoSlug),
+      request
+    );
+  }
+
+  public async update(
+    workspace: string,
+    repoSlug: string,
+    id: number,
+    request: UpdatePullRequestRequest
+  ): Promise<Result<BitbucketPullRequest, BBError>> {
+    return this.httpClient.put<BitbucketPullRequest>(
+      this.buildPath(workspace, repoSlug, `/${id}`),
       request
     );
   }

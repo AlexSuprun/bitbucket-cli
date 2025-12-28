@@ -20,6 +20,7 @@ import type {
   CreateRepositoryRequest,
   CreatePullRequestRequest,
   MergePullRequestRequest,
+  UpdatePullRequestRequest,
   DiffStat,
 } from "../../types/api.js";
 
@@ -103,6 +104,12 @@ export interface IPullRequestRepository {
     workspace: string,
     repoSlug: string,
     request: CreatePullRequestRequest
+  ): Promise<Result<BitbucketPullRequest, BBError>>;
+  update(
+    workspace: string,
+    repoSlug: string,
+    id: number,
+    request: UpdatePullRequestRequest
   ): Promise<Result<BitbucketPullRequest, BBError>>;
   merge(
     workspace: string,
