@@ -86,6 +86,15 @@ function createContext(program: Command): CommandContext {
   };
 }
 
+// Helper to merge global options with local options
+export function withGlobalOptions<T extends Record<string, unknown>>(options: T, context: CommandContext): T & { workspace?: string; repo?: string } {
+  return {
+    ...options,
+    workspace: (options.workspace as string | undefined) ?? context.globalOptions.workspace,
+    repo: (options.repo as string | undefined) ?? context.globalOptions.repo,
+  } as T & { workspace?: string; repo?: string };
+}
+
 // Create CLI
 export const cli = new Command();
 
@@ -151,43 +160,43 @@ repoCmd
 repoCmd
   .command("create <name>")
   .description("Create a new repository")
-  .option("-w, --workspace <workspace>", "Workspace to create repository in")
   .option("-d, --description <description>", "Repository description")
   .option("--private", "Create a private repository (default)")
   .option("--public", "Create a public repository")
   .option("-p, --project <project>", "Project key")
   .action(async (name, options) => {
     const cmd = container.resolve<CreateRepoCommand>(ServiceTokens.CreateRepoCommand);
-    await cmd.execute({ name, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ name, ...options }, context), context);
   });
 
 repoCmd
   .command("list")
   .description("List repositories")
-  .option("-w, --workspace <workspace>", "Workspace to list repositories from")
   .option("--limit <number>", "Maximum number of repositories to list", "25")
   .action(async (options) => {
     const cmd = container.resolve<ListReposCommand>(ServiceTokens.ListReposCommand);
-    await cmd.execute(options, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions(options, context), context);
   });
 
 repoCmd
   .command("view [repository]")
   .description("View repository details")
-  .option("-w, --workspace <workspace>", "Workspace")
   .action(async (repository, options) => {
     const cmd = container.resolve<ViewRepoCommand>(ServiceTokens.ViewRepoCommand);
-    await cmd.execute({ repository, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
   });
 
 repoCmd
   .command("delete <repository>")
   .description("Delete a repository")
-  .option("-w, --workspace <workspace>", "Workspace")
   .option("-y, --yes", "Skip confirmation prompt")
   .action(async (repository, options) => {
     const cmd = container.resolve<DeleteRepoCommand>(ServiceTokens.DeleteRepoCommand);
-    await cmd.execute({ repository, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
   });
 
 cli.addCommand(repoCmd);
@@ -202,77 +211,70 @@ prCmd
   .option("-b, --body <body>", "Pull request description")
   .option("-s, --source <branch>", "Source branch (default: current branch)")
   .option("-d, --destination <branch>", "Destination branch (default: main)")
-  .option("-w, --workspace <workspace>", "Workspace")
-  .option("-r, --repo <repo>", "Repository")
   .option("--close-source-branch", "Close source branch after merge")
   .action(async (options) => {
     const cmd = container.resolve<CreatePRCommand>(ServiceTokens.CreatePRCommand);
-    await cmd.execute(options, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions(options, context), context);
   });
 
 prCmd
   .command("list")
   .description("List pull requests")
-  .option("-w, --workspace <workspace>", "Workspace")
-  .option("-r, --repo <repo>", "Repository")
   .option("-s, --state <state>", "Filter by state (OPEN, MERGED, DECLINED, SUPERSEDED)", "OPEN")
   .option("--limit <number>", "Maximum number of PRs to list", "25")
   .action(async (options) => {
     const cmd = container.resolve<ListPRsCommand>(ServiceTokens.ListPRsCommand);
-    await cmd.execute(options, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions(options, context), context);
   });
 
 prCmd
   .command("view <id>")
   .description("View pull request details")
-  .option("-w, --workspace <workspace>", "Workspace")
-  .option("-r, --repo <repo>", "Repository")
   .action(async (id, options) => {
     const cmd = container.resolve<ViewPRCommand>(ServiceTokens.ViewPRCommand);
-    await cmd.execute({ id, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
   });
 
 prCmd
   .command("merge <id>")
   .description("Merge a pull request")
-  .option("-w, --workspace <workspace>", "Workspace")
-  .option("-r, --repo <repo>", "Repository")
   .option("-m, --message <message>", "Merge commit message")
   .option("--close-source-branch", "Delete the source branch after merging")
   .option("--strategy <strategy>", "Merge strategy (merge_commit, squash, fast_forward)")
   .action(async (id, options) => {
     const cmd = container.resolve<MergePRCommand>(ServiceTokens.MergePRCommand);
-    await cmd.execute({ id, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
   });
 
 prCmd
   .command("approve <id>")
   .description("Approve a pull request")
-  .option("-w, --workspace <workspace>", "Workspace")
-  .option("-r, --repo <repo>", "Repository")
   .action(async (id, options) => {
     const cmd = container.resolve<ApprovePRCommand>(ServiceTokens.ApprovePRCommand);
-    await cmd.execute({ id, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
   });
 
 prCmd
   .command("decline <id>")
   .description("Decline a pull request")
-  .option("-w, --workspace <workspace>", "Workspace")
-  .option("-r, --repo <repo>", "Repository")
   .action(async (id, options) => {
     const cmd = container.resolve<DeclinePRCommand>(ServiceTokens.DeclinePRCommand);
-    await cmd.execute({ id, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
   });
 
 prCmd
   .command("checkout <id>")
   .description("Checkout a pull request locally")
-  .option("-w, --workspace <workspace>", "Workspace")
-  .option("-r, --repo <repo>", "Repository")
   .action(async (id, options) => {
     const cmd = container.resolve<CheckoutPRCommand>(ServiceTokens.CheckoutPRCommand);
-    await cmd.execute({ id, ...options }, createContext(cli));
+    const context = createContext(cli);
+    await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
   });
 
 cli.addCommand(prCmd);
