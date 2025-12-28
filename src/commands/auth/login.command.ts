@@ -72,6 +72,7 @@ export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
     if (!userResult.success) {
       // Clear invalid credentials
       await this.configService.clearConfig();
+      this.output.error(`Authentication failed: ${userResult.error.message}`);
       return userResult;
     }
 
