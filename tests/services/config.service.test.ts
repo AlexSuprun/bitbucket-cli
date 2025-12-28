@@ -94,7 +94,7 @@ describe("ConfigService", () => {
     it("should create config file with correct permissions", async () => {
       const result = await configService.setConfig({
         username: "testuser",
-        appPassword: "secret",
+        apiToken: "secret",
       });
 
       expect(result.success).toBe(true);
@@ -102,7 +102,7 @@ describe("ConfigService", () => {
       const content = await readFile(join(testConfigDir, "config.json"), "utf-8");
       const parsed = JSON.parse(content);
       expect(parsed.username).toBe("testuser");
-      expect(parsed.appPassword).toBe("secret");
+      expect(parsed.apiToken).toBe("secret");
     });
 
     it("should update cached config", async () => {
@@ -135,10 +135,10 @@ describe("ConfigService", () => {
   });
 
   describe("getCredentials", () => {
-    it("should return credentials when both username and appPassword exist", async () => {
+    it("should return credentials when both username and apiToken exist", async () => {
       await configService.setConfig({
         username: "testuser",
-        appPassword: "testpass",
+        apiToken: "testpass",
       });
 
       const result = await configService.getCredentials();
@@ -146,12 +146,12 @@ describe("ConfigService", () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.username).toBe("testuser");
-        expect(result.value.appPassword).toBe("testpass");
+        expect(result.value.apiToken).toBe("testpass");
       }
     });
 
     it("should return error when username is missing", async () => {
-      await configService.setConfig({ appPassword: "testpass" });
+      await configService.setConfig({ apiToken: "testpass" });
 
       const result = await configService.getCredentials();
 
@@ -161,7 +161,7 @@ describe("ConfigService", () => {
       }
     });
 
-    it("should return error when appPassword is missing", async () => {
+    it("should return error when apiToken is missing", async () => {
       await configService.setConfig({ username: "testuser" });
 
       const result = await configService.getCredentials();
@@ -184,10 +184,10 @@ describe("ConfigService", () => {
   });
 
   describe("setCredentials", () => {
-    it("should set username and appPassword", async () => {
+    it("should set username and apiToken", async () => {
       await configService.setCredentials({
         username: "newuser",
-        appPassword: "newpass",
+        apiToken: "newpass",
       });
 
       const result = await configService.getCredentials();
@@ -195,7 +195,7 @@ describe("ConfigService", () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.username).toBe("newuser");
-        expect(result.value.appPassword).toBe("newpass");
+        expect(result.value.apiToken).toBe("newpass");
       }
     });
 
@@ -207,7 +207,7 @@ describe("ConfigService", () => {
 
       await configService.setCredentials({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
 
       const result = await configService.getConfig();
@@ -225,7 +225,7 @@ describe("ConfigService", () => {
     it("should clear all config values", async () => {
       await configService.setConfig({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
         defaultWorkspace: "workspace",
       });
 

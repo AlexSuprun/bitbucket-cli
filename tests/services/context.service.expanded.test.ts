@@ -55,10 +55,10 @@ function createMockConfigService(config: BBConfig = {}): IConfigService {
       return Result.ok(undefined);
     },
     async getCredentials() {
-      if (config.username && config.appPassword) {
+      if (config.username && config.apiToken) {
         return Result.ok({
           username: config.username,
-          appPassword: config.appPassword,
+          apiToken: config.apiToken,
         });
       }
       return Result.err({ code: ErrorCode.AUTH_REQUIRED, message: "Auth required" } as BBError);

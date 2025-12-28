@@ -111,9 +111,9 @@ const authCmd = new Command("auth").description("Authenticate with Bitbucket");
 
 authCmd
   .command("login")
-  .description("Authenticate with Bitbucket using an app password")
+  .description("Authenticate with Bitbucket using an API token")
   .option("-u, --username <username>", "Bitbucket username")
-  .option("-p, --password <password>", "Bitbucket app password")
+  .option("-p, --password <password>", "Bitbucket API token")
   .action(async (options) => {
     const cmd = container.resolve<LoginCommand>(ServiceTokens.LoginCommand);
     const result = await cmd.execute(options, createContext(cli));

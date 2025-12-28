@@ -32,8 +32,8 @@ export class TokenCommand extends BaseCommand<void, string> {
       return credentialsResult;
     }
 
-    const { username, appPassword } = credentialsResult.value;
-    const token = Buffer.from(`${username}:${appPassword}`).toString("base64");
+    const { username, apiToken } = credentialsResult.value;
+    const token = Buffer.from(`${username}:${apiToken}`).toString("base64");
 
     // Always output the raw token (not JSON formatted)
     this.output.text(token);

@@ -14,7 +14,7 @@ function createMockConfigService(
   credentials?: AuthCredentials
 ): IConfigService {
   const config: BBConfig = credentials
-    ? { username: credentials.username, appPassword: credentials.appPassword }
+    ? { username: credentials.username, apiToken: credentials.apiToken }
     : {};
 
   return {
@@ -67,7 +67,7 @@ describe("HttpClient", () => {
     it("should use default baseUrl", () => {
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -78,7 +78,7 @@ describe("HttpClient", () => {
     it("should accept custom baseUrl", () => {
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService, {
         baseUrl: "https://custom-api.example.com",
@@ -90,7 +90,7 @@ describe("HttpClient", () => {
     it("should accept custom timeout", () => {
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService, {
         timeout: 5000,
@@ -114,7 +114,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "testuser",
-        appPassword: "testpass",
+        apiToken: "testpass",
       });
       const client = new HttpClient(configService);
 
@@ -150,7 +150,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -172,7 +172,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "wrong",
+        apiToken: "wrong",
       });
       const client = new HttpClient(configService);
 
@@ -194,7 +194,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -216,7 +216,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -238,7 +238,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -257,7 +257,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -279,7 +279,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -309,7 +309,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -332,7 +332,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -356,7 +356,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -378,7 +378,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -395,7 +395,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -419,7 +419,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -441,7 +441,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -467,7 +467,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -490,7 +490,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "user",
-        appPassword: "pass",
+        apiToken: "pass",
       });
       const client = new HttpClient(configService);
 
@@ -518,7 +518,7 @@ describe("HttpClient", () => {
 
       const configService = createMockConfigService({
         username: "testuser",
-        appPassword: "testpass",
+        apiToken: "testpass",
       });
       const client = new HttpClient(configService);
 

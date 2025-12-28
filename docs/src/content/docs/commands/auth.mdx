@@ -7,7 +7,7 @@ Manage authentication with Bitbucket.
 
 ## `bb auth login`
 
-Authenticate with Bitbucket using an app password.
+Authenticate with Bitbucket using an API token.
 
 ```bash
 bb auth login [options]
@@ -18,36 +18,40 @@ bb auth login [options]
 | Option | Description |
 |--------|-------------|
 | `-u, --username <username>` | Bitbucket username |
-| `-p, --password <password>` | Bitbucket app password |
+| `-p, --password <password>` | Bitbucket API token |
 | `--json` | Output as JSON |
 
 ### Examples
 
 ```bash
 # Login with credentials via command line
-bb auth login -u myuser -p myapppassword
+bb auth login -u myuser -p your-api-token
 
 # Login using environment variables
 export BB_USERNAME=myuser
-export BB_APP_PASSWORD=myapppassword
+export BB_API_TOKEN=your-api-token
 bb auth login
 ```
 
 ### How It Works
 
-1. You provide your Bitbucket username and app password
+1. You provide your Bitbucket username and API token
 2. The CLI stores the credentials securely in your config file
 3. The CLI verifies the credentials by fetching your user information
 4. If verification fails, credentials are not saved
 
-### Required Permissions
+### Required Scopes
 
-Your app password needs these permissions:
+Your API token needs these scopes:
 - **Account**: Read (to verify your identity)
 - **Repositories**: Read, Write (depending on operations you'll perform)
 - **Pull requests**: Read, Write (for PR operations)
 
 See the [Authentication guide](/getting-started/authentication/) for detailed setup instructions.
+
+:::note[App Passwords Deprecated]
+As of September 9, 2025, app passwords are deprecated. Use API tokens instead. Create one at [bitbucket.org/account/settings/api-tokens](https://bitbucket.org/account/settings/api-tokens/).
+:::
 
 ---
 
@@ -73,7 +77,7 @@ bb auth logout
 
 ### What Gets Removed
 
-This command removes your stored credentials (`username` and `appPassword`) from the config file. Other settings like `workspace` and `repo` are preserved.
+This command removes your stored credentials (`username` and `apiToken`) from the config file. Other settings like `workspace` and `repo` are preserved.
 
 ---
 
@@ -151,5 +155,5 @@ This is useful for:
 - Verifying token format
 
 :::caution
-Keep your token secure! Anyone with this token can access your Bitbucket account with the permissions you've granted to the app password.
+Keep your token secure! Anyone with this token can access your Bitbucket account with the scopes you've granted to the API token.
 :::

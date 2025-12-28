@@ -13,7 +13,7 @@ import type { BBConfig } from "../../types/config.js";
 export interface ConfigDisplay {
   username: string;
   defaultWorkspace: string;
-  appPassword: string;
+  apiToken: string;
 }
 
 export class ListConfigCommand extends BaseCommand<void, ConfigDisplay> {
@@ -43,7 +43,7 @@ export class ListConfigCommand extends BaseCommand<void, ConfigDisplay> {
     const displayConfig: ConfigDisplay = {
       username: config.username || "",
       defaultWorkspace: config.defaultWorkspace || "",
-      appPassword: config.appPassword ? "********" : "",
+      apiToken: config.apiToken ? "********" : "",
     };
 
     this.handleResult(Result.ok(displayConfig), context, (data) => {

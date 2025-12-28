@@ -43,15 +43,15 @@ describe("GetConfigCommand", () => {
     expect(output.logs).toContain("text:");
   });
 
-  it("should reject hidden keys like appPassword", async () => {
+  it("should reject hidden keys like apiToken", async () => {
     const configService = createMockConfigService({
-      appPassword: "secret",
+      apiToken: "secret",
     });
     const output = createMockOutputService();
 
     const command = new GetConfigCommand(configService, output);
     const result = await command.execute(
-      { key: "appPassword" },
+      { key: "apiToken" },
       { globalOptions: {} }
     );
 
@@ -111,13 +111,13 @@ describe("SetConfigCommand", () => {
     expect(output.logs.some((log) => log.includes("Cannot set"))).toBe(true);
   });
 
-  it("should reject protected keys like appPassword", async () => {
+  it("should reject protected keys like apiToken", async () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
     const command = new SetConfigCommand(configService, output);
     const result = await command.execute(
-      { key: "appPassword", value: "newpass" },
+      { key: "apiToken", value: "newpass" },
       { globalOptions: {} }
     );
 
@@ -143,7 +143,7 @@ describe("ListConfigCommand", () => {
   it("should list all config values", async () => {
     const configService = createMockConfigService({
       username: "testuser",
-      appPassword: "testpass",
+      apiToken: "testpass",
       defaultWorkspace: "myworkspace",
     });
     const output = createMockOutputService();
@@ -155,7 +155,7 @@ describe("ListConfigCommand", () => {
     if (result.success) {
       expect(result.value.username).toBe("testuser");
       expect(result.value.defaultWorkspace).toBe("myworkspace");
-      expect(result.value.appPassword).toBe("********"); // Masked
+      expect(result.value.apiToken).toBe("********"); // Masked
     }
   });
 

@@ -22,7 +22,7 @@ export interface LoginOptions {
 
 export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
   public readonly name = "login";
-  public readonly description = "Authenticate with Bitbucket using an app password";
+  public readonly description = "Authenticate with Bitbucket using an API token";
 
   constructor(
     private readonly configService: IConfigService,
@@ -38,7 +38,7 @@ export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
   ): Promise<Result<BitbucketUser, BBError>> {
     // Get credentials from options or environment
     const username = options.username || process.env.BB_USERNAME;
-    const appPassword = options.password || process.env.BB_APP_PASSWORD;
+    const apiToken = options.password || process.env.BB_API_TOKEN;
 
     // Validate credentials
     if (!username) {
@@ -52,11 +52,11 @@ export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
       return error;
     }
 
-    if (!appPassword) {
+    if (!apiToken) {
       const error = Result.err(
         new ValidationError(
           "password",
-          "App password is required. Use --password option or set BB_APP_PASSWORD environment variable."
+          "API token is required. Use --password option or set BB_API_TOKEN environment variable."
         )
       );
       this.handleResult(error, context);
@@ -64,7 +64,7 @@ export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
     }
 
     // Store credentials temporarily to test them
-    const setResult = await this.configService.setCredentials({ username, appPassword });
+    const setResult = await this.configService.setCredentials({ username, apiToken });
     if (!setResult.success) {
       this.handleResult(setResult, context);
       return setResult;

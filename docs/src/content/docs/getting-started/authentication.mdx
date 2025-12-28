@@ -3,26 +3,30 @@ title: Authentication
 description: How to authenticate with Bitbucket
 ---
 
-The Bitbucket CLI uses **App Passwords** for authentication. This is a secure way to grant CLI access without exposing your main account password.
+The Bitbucket CLI uses **API Tokens** for authentication. This is a secure way to grant CLI access without exposing your main account password.
 
-## Create an App Password
+:::note[App Passwords Deprecated]
+As of September 9, 2025, Bitbucket app passwords are deprecated and can no longer be created. All existing app passwords will be disabled on June 9, 2026. Use API tokens instead.
+:::
+
+## Create an API Token
 
 1. Log in to [Bitbucket](https://bitbucket.org)
 2. Go to **Personal settings** (click your avatar in the bottom left)
-3. Navigate to **App passwords** under "Access management"
-4. Click **Create app password**
+3. Navigate to **API tokens** under "Access management"
+4. Click **Create API token**
 5. Give it a descriptive name (e.g., "Bitbucket CLI")
-6. Select the required permissions:
+6. Select the required scopes:
    - **Account**: Read
    - **Repositories**: Read, Write, Admin (depending on your needs)
    - **Pull requests**: Read, Write
 7. Click **Create**
-8. **Copy the generated password** - you won't be able to see it again!
+8. **Copy the generated token** - you won't be able to see it again!
 
 ## Login
 
 ```bash
-bb auth login -u your-username -p your-app-password
+bb auth login -u your-username -p your-api-token
 ```
 
 ### Using Environment Variables
@@ -31,7 +35,7 @@ You can also set credentials via environment variables:
 
 ```bash
 export BB_USERNAME=your-username
-export BB_APP_PASSWORD=your-app-password
+export BB_API_TOKEN=your-api-token
 bb auth login
 ```
 
@@ -59,5 +63,5 @@ Credentials are stored in:
 - **Windows**: `%APPDATA%\bb\config.json`
 
 :::caution
-Never share your app password or config file. Keep them secure!
+Never share your API token or config file. Keep them secure!
 :::

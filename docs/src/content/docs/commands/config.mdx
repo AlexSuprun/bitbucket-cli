@@ -19,7 +19,7 @@ The configuration file stores your CLI settings and authentication credentials.
 | Key | Description |
 |-----|-------------|
 | `username` | Bitbucket username (set during `auth login`) |
-| `appPassword` | Bitbucket app password (set during `auth login`, masked in output) |
+| `apiToken` | Bitbucket API token (set during `auth login`, masked in output) |
 | `workspace` | Default workspace for commands |
 | `repo` | Default repository for commands |
 
@@ -30,7 +30,7 @@ The config file is stored as JSON:
 ```json
 {
   "username": "myuser",
-  "appPassword": "***",
+  "apiToken": "***",
   "workspace": "myworkspace",
   "repo": "myrepo"
 }

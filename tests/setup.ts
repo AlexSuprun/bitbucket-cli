@@ -59,7 +59,7 @@ export function createMockConfigService(config: BBConfig = {}): IConfigService {
       return Result.ok(undefined);
     },
     async getCredentials() {
-      if (!currentConfig.username || !currentConfig.appPassword) {
+      if (!currentConfig.username || !currentConfig.apiToken) {
         return Result.err({
           code: 1001,
           message: "Auth required",
@@ -67,12 +67,12 @@ export function createMockConfigService(config: BBConfig = {}): IConfigService {
       }
       return Result.ok({
         username: currentConfig.username,
-        appPassword: currentConfig.appPassword,
+        apiToken: currentConfig.apiToken,
       });
     },
     async setCredentials(creds: AuthCredentials) {
       currentConfig.username = creds.username;
-      currentConfig.appPassword = creds.appPassword;
+      currentConfig.apiToken = creds.apiToken;
       return Result.ok(undefined);
     },
     async clearConfig() {
