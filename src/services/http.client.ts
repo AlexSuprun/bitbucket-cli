@@ -91,11 +91,13 @@ export class HttpClient implements IHttpClient {
 
   private async handleResponse<T>(response: Response): Promise<Result<T, BBError>> {
     if (!response.ok) {
+      // Read body as text first to avoid "Body already used" error
+      const textBody = await response.text();
       let errorBody: unknown;
       try {
-        errorBody = await response.json();
+        errorBody = JSON.parse(textBody);
       } catch {
-        errorBody = await response.text();
+        errorBody = textBody;
       }
 
       const message = this.extractErrorMessage(errorBody, response.statusText);
@@ -128,11 +130,13 @@ export class HttpClient implements IHttpClient {
 
   private async handleTextResponse<T>(response: Response): Promise<Result<T, BBError>> {
     if (!response.ok) {
+      // Read body as text first to avoid "Body already used" error
+      const textBody = await response.text();
       let errorBody: unknown;
       try {
-        errorBody = await response.json();
+        errorBody = JSON.parse(textBody);
       } catch {
-        errorBody = await response.text();
+        errorBody = textBody;
       }
 
       const message = this.extractErrorMessage(errorBody, response.statusText);
