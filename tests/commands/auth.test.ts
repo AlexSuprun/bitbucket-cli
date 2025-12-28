@@ -14,6 +14,7 @@ import {
   mockUser,
 } from "../setup.js";
 import type { IUserRepository } from "../../src/core/interfaces/services.js";
+import type { BBError } from "../../src/types/errors.js";
 
 describe("LoginCommand", () => {
   it("should fail when username is not provided", async () => {
@@ -107,6 +108,40 @@ describe("LoginCommand", () => {
     } finally {
       process.env.BB_USERNAME = originalUsername;
       process.env.BB_APP_PASSWORD = originalPassword;
+    }
+  });
+
+  it("should output error message when authentication fails", async () => {
+    const configService = createMockConfigService();
+    const output = createMockOutputService();
+    const authError: BBError = {
+      code: 2001,
+      message: "Invalid credentials or expired token",
+    };
+    const userRepoFactory = () => ({
+      getCurrentUser: async () => Result.err(authError),
+    } as IUserRepository);
+
+    const command = new LoginCommand(configService, userRepoFactory, output);
+    const result = await command.execute(
+      { username: "testuser", password: "badpassword" },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toBe("Invalid credentials or expired token");
+    }
+
+    // Verify error message was output to user
+    expect(output.logs).toContain("error:Authentication failed: Invalid credentials or expired token");
+
+    // Verify credentials were cleared
+    const configResult = await configService.getConfig();
+    expect(configResult.success).toBe(true);
+    if (configResult.success) {
+      expect(configResult.value.username).toBeUndefined();
+      expect(configResult.value.appPassword).toBeUndefined();
     }
   });
 });
