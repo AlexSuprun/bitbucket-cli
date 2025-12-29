@@ -45,6 +45,7 @@ export default defineConfig({
             { label: "Repository Context", slug: "guides/repository-context" },
             { label: "Scripting & Automation", slug: "guides/scripting" },
             { label: "CI/CD Integration", slug: "guides/cicd" },
+            { label: "AI Agent Integration", slug: "guides/ai-agents" },
           ],
         },
         {
