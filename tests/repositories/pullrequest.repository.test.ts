@@ -232,6 +232,56 @@ describe("PullRequestRepository", () => {
     });
   });
 
+  describe("update", () => {
+    it("should update pull request", async () => {
+      const updatedPR = { ...mockPullRequest, title: "Updated Title" };
+      const responses = new Map([
+        ["PUT:/repositories/workspace/repo/pullrequests/1", Result.ok(updatedPR)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.update("workspace", "repo", 1, {
+        title: "Updated Title",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.title).toBe("Updated Title");
+      }
+    });
+
+    it("should update with description", async () => {
+      const updatedPR = { ...mockPullRequest, description: "Updated description" };
+      const responses = new Map([
+        ["PUT:/repositories/workspace/repo/pullrequests/1", Result.ok(updatedPR)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.update("workspace", "repo", 1, {
+        description: "Updated description",
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("should update with reviewers", async () => {
+      const updatedPR = { ...mockPullRequest, reviewers: [{ uuid: "{user-uuid}" }] };
+      const responses = new Map([
+        ["PUT:/repositories/workspace/repo/pullrequests/1", Result.ok(updatedPR)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.update("workspace", "repo", 1, {
+        reviewers: [{ uuid: "{user-uuid}" }],
+      });
+
+      expect(result.success).toBe(true);
+    });
+  });
+
   describe("merge", () => {
     it("should merge pull request", async () => {
       const mergedPR = { ...mockPullRequest, state: "MERGED" as const };
