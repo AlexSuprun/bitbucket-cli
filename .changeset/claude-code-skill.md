@@ -1,5 +1,5 @@
 ---
-"@anthropic/bb": patch
+"@pilatos/bitbucket-cli": patch
 ---
 
 Add AI Agent Integration guide for Claude Code
