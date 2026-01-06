@@ -1,5 +1,5 @@
 ---
-"@anthropic/bb": patch
+"@pilatos/bitbucket-cli": patch
 ---
 
 Add comprehensive test coverage for API client, completion command, and base command
