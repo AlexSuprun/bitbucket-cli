@@ -43,7 +43,7 @@ describe("BaseCommand", () => {
   beforeEach(() => {
     output = createMockOutputService();
     originalNodeEnv = process.env.NODE_ENV;
-    process.exitCode = undefined;
+    process.exitCode = 0;
   });
 
   afterEach(() => {
@@ -127,7 +127,7 @@ describe("BaseCommand", () => {
 
       command.handleResult(result, context);
 
-      expect(process.exitCode).toBeUndefined();
+      expect(process.exitCode).toBe(0);
     });
 
     it("should not set exit code when NODE_ENV is not set", () => {
