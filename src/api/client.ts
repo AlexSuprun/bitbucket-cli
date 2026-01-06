@@ -22,11 +22,12 @@ function createAuthHeader(username: string, apiToken: string): string {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
+    const textBody = await response.text();
     let errorBody: unknown;
     try {
-      errorBody = await response.json();
+      errorBody = JSON.parse(textBody);
     } catch {
-      errorBody = await response.text();
+      errorBody = textBody;
     }
 
     const message =

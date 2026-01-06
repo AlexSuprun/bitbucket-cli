@@ -528,4 +528,155 @@ describe("HttpClient", () => {
       expect(capturedAuth).toBe(`Basic ${expectedToken}`);
     });
   });
+
+  describe("getText", () => {
+    it("should make GET request and return text", async () => {
+      let capturedAccept: string | undefined;
+
+      globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const headers = new Headers(init?.headers);
+        capturedAccept = headers.get("Accept") ?? undefined;
+        return new Response("plain text response", {
+          status: 200,
+          headers: { "Content-Type": "text/plain" },
+        });
+      };
+
+      const configService = createMockConfigService({
+        username: "user",
+        apiToken: "pass",
+      });
+      const client = new HttpClient(configService);
+
+      const result = await client.getText("/text-endpoint");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value).toBe("plain text response");
+      }
+      expect(capturedAccept).toBe("text/plain");
+    });
+
+    it("should handle 204 No Content with text", async () => {
+      globalThis.fetch = async () => {
+        return new Response(null, { status: 204 });
+      };
+
+      const configService = createMockConfigService({
+        username: "user",
+        apiToken: "pass",
+      });
+      const client = new HttpClient(configService);
+
+      const result = await client.getText("/text-endpoint");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value).toBeUndefined();
+      }
+    });
+
+    it("should handle error responses with text", async () => {
+      globalThis.fetch = async () => {
+        return new Response("Error message", {
+          status: 500,
+          statusText: "Internal Server Error",
+          headers: { "Content-Type": "text/plain" },
+        });
+      };
+
+      const configService = createMockConfigService({
+        username: "user",
+        apiToken: "pass",
+      });
+      const client = new HttpClient(configService);
+
+      const result = await client.getText("/text-endpoint");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toBe("Internal Server Error");
+      }
+    });
+
+    it("should handle text reading failures", async () => {
+      globalThis.fetch = async () => {
+        return new Response(
+          new ReadableStream({
+            async start(controller) {
+              controller.error(new Error("Stream error"));
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "text/plain" } }
+        );
+      };
+
+      const configService = createMockConfigService({
+        username: "user",
+        apiToken: "pass",
+      });
+      const client = new HttpClient(configService);
+
+      const result = await client.getText("/text-endpoint");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe(ErrorCode.API_REQUEST_FAILED);
+        expect(result.error.message).toContain("text");
+      }
+    });
+  });
+
+  describe("timeout handling", () => {
+    it("should handle request timeout", async () => {
+      globalThis.fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const signal = (init as { signal?: AbortSignal }).signal;
+        return new Promise<Response>((_, reject) => {
+          if (signal) {
+            signal.addEventListener("abort", () => {
+              const error = new Error("AbortError") as Error & { name: string };
+              error.name = "AbortError";
+              reject(error);
+            });
+          }
+        });
+      };
+
+      const configService = createMockConfigService({
+        username: "user",
+        apiToken: "pass",
+      });
+      const client = new HttpClient(configService, { timeout: 50 });
+
+      const result = await client.get("/slow-endpoint");
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe(ErrorCode.API_REQUEST_FAILED);
+        expect(result.error.message).toContain("timeout");
+      }
+    });
+
+    it("should use custom timeout", async () => {
+      let capturedController: AbortController | undefined;
+
+      globalThis.fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
+        capturedController = (init as { signal?: AbortSignal }).signal as any;
+        return new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      };
+
+      const configService = createMockConfigService({
+        username: "user",
+        apiToken: "pass",
+      });
+      const client = new HttpClient(configService, { timeout: 5000 });
+
+      await client.get("/api");
+
+      expect(capturedController).toBeDefined();
+    });
+  });
 });
