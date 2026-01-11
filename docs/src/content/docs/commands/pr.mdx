@@ -380,3 +380,174 @@ bb pr diff 42 --stat --json
 - The `--stat` output shows files changed with insertions (+) and deletions (-)
 - Use `--color never` when piping output to files or other commands
 - The diff is colorized by default when output is a terminal (green for additions, red for deletions, cyan for hunk headers)
+
+---
+
+## `bb pr comments`
+
+Manage pull request comments.
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `list <id>` | List comments on a pull request |
+| `add <id> <message>` | Add a comment to a pull request |
+| `edit <pr-id> <comment-id> <message>` | Edit a comment on a pull request |
+| `delete <pr-id> <comment-id>` | Delete a comment on a pull request |
+
+---
+
+## `bb pr comments list`
+
+List comments on a pull request.
+
+```bash
+bb pr comments list <id>
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Options
+
+| Option | Description |
+|---------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `--limit <number>` | Maximum number of comments (default: 25) |
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# List comments on PR #42
+bb pr comments list 42
+
+# List more comments
+bb pr comments list 42 --limit 50
+
+# List comments in specific repository
+bb pr comments list 42 -w myworkspace -r myrepo
+
+# Get comments as JSON
+bb pr comments list 42 --json
+```
+
+---
+
+## `bb pr comments add`
+
+Add a comment to a pull request.
+
+```bash
+bb pr comments add <id> <message>
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+| `message` | Comment message |
+
+### Options
+
+| Option | Description |
+|---------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# Add a comment to PR #42
+bb pr comments add 42 "LGTM! This looks great."
+
+# Add a comment to PR in specific repository
+bb pr comments add 42 "Please review this." -w myworkspace -r myrepo
+
+# Get comment as JSON
+bb pr comments add 42 "Good job!" --json
+```
+
+---
+
+## `bb pr comments edit`
+
+Edit a comment on a pull request.
+
+```bash
+bb pr comments edit <pr-id> <comment-id> <message>
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `pr-id` | Pull request ID |
+| `comment-id` | Comment ID |
+| `message` | New comment message |
+
+### Options
+
+| Option | Description |
+|---------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# Edit comment #123 on PR #42
+bb pr comments edit 42 123 "Updated: I noticed something else..."
+
+# Edit comment in specific repository
+bb pr comments edit 42 123 "Revised feedback" -w myworkspace -r myrepo
+
+# Get updated comment as JSON
+bb pr comments edit 42 123 "Final comment" --json
+```
+
+---
+
+## `bb pr comments delete`
+
+Delete a comment from a pull request.
+
+```bash
+bb pr comments delete <pr-id> <comment-id>
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `pr-id` | Pull request ID |
+| `comment-id` | Comment ID |
+
+### Options
+
+| Option | Description |
+|---------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+
+### Examples
+
+```bash
+# Delete comment #123 from PR #42
+bb pr comments delete 42 123
+
+# Delete comment in specific repository
+bb pr comments delete 42 456 -w myworkspace -r myrepo
+```
+
+### Notes
+
+- Deleting a comment is permanent and cannot be undone

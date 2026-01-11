@@ -39,6 +39,10 @@ import { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import { DeclinePRCommand } from "./commands/pr/decline.command.js";
 import { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
 import { DiffPRCommand } from "./commands/pr/diff.command.js";
+import { CommentPRCommand } from "./commands/pr/comment.command.js";
+import { ListCommentsPRCommand } from "./commands/pr/comments.list.command.js";
+import { EditCommentPRCommand } from "./commands/pr/comments.edit.command.js";
+import { DeleteCommentPRCommand } from "./commands/pr/comments.delete.command.js";
 
 // Config commands
 import { GetConfigCommand } from "./commands/config/get.command.js";
@@ -216,6 +220,34 @@ export function bootstrap(): Container {
     const gitService = container.resolve<GitService>(ServiceTokens.GitService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new DiffPRCommand(prRepo, contextService, gitService, output);
+  });
+
+  container.register(ServiceTokens.CommentPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new CommentPRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.ListCommentsPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new ListCommentsPRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.EditCommentPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new EditCommentPRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.DeleteCommentPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new DeleteCommentPRCommand(prRepo, contextService, output);
   });
 
   // Register config commands

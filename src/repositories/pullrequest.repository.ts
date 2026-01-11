@@ -8,6 +8,7 @@ import type { BBError } from "../types/errors.js";
 import type {
   BitbucketPullRequest,
   BitbucketApproval,
+  BitbucketComment,
   PaginatedResponse,
   PullRequestState,
   CreatePullRequestRequest,
@@ -121,6 +122,65 @@ export class PullRequestRepository implements IPullRequestRepository {
   ): Promise<Result<DiffStat, BBError>> {
     return this.httpClient.get<DiffStat>(
       this.buildPath(workspace, repoSlug, `/${id}/diffstat`)
+    );
+  }
+
+  public async listComments(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    limit: number = 25
+  ): Promise<Result<PaginatedResponse<BitbucketComment>, BBError>> {
+    const safeLimit = Math.min(limit, API_PAGELEN_LIMITS.PULL_REQUESTS);
+    return this.httpClient.get<PaginatedResponse<BitbucketComment>>(
+      `/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/pullrequests/${prId}/comments?pagelen=${safeLimit}`
+    );
+  }
+
+  public async getComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    commentId: number
+  ): Promise<Result<BitbucketComment, BBError>> {
+    return this.httpClient.get<BitbucketComment>(
+      `/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/pullrequests/${prId}/comments/${commentId}`
+    );
+  }
+
+  public async createComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    content: string
+  ): Promise<Result<BitbucketComment, BBError>> {
+    return this.httpClient.post<BitbucketComment>(
+      `/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/pullrequests/${prId}/comments`,
+      { content: { raw: content } }
+    );
+  }
+
+  public async updateComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    commentId: number,
+    content: string
+  ): Promise<Result<BitbucketComment, BBError>> {
+    return this.httpClient.put<BitbucketComment>(
+      `/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/pullrequests/${prId}/comments/${commentId}`,
+      { content: { raw: content } }
+    );
+  }
+
+  public async deleteComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    commentId: number
+  ): Promise<Result<void, BBError>> {
+    return this.httpClient.delete<void>(
+      `/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/pullrequests/${prId}/comments/${commentId}`
     );
   }
 }

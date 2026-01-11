@@ -15,6 +15,7 @@ import type {
   BitbucketRepository,
   BitbucketPullRequest,
   BitbucketApproval,
+  BitbucketComment,
   PaginatedResponse,
   PullRequestState,
   CreateRepositoryRequest,
@@ -121,6 +122,37 @@ export interface IPullRequestRepository {
   decline(workspace: string, repoSlug: string, id: number): Promise<Result<BitbucketPullRequest, BBError>>;
   getDiff(workspace: string, repoSlug: string, id: number): Promise<Result<string, BBError>>;
   getDiffstat(workspace: string, repoSlug: string, id: number): Promise<Result<DiffStat, BBError>>;
+  listComments(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    limit?: number
+  ): Promise<Result<PaginatedResponse<BitbucketComment>, BBError>>;
+  getComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    commentId: number
+  ): Promise<Result<BitbucketComment, BBError>>;
+  createComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    content: string
+  ): Promise<Result<BitbucketComment, BBError>>;
+  updateComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    commentId: number,
+    content: string
+  ): Promise<Result<BitbucketComment, BBError>>;
+  deleteComment(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    commentId: number
+  ): Promise<Result<void, BBError>>;
 }
 
 /**

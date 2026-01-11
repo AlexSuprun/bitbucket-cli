@@ -160,6 +160,10 @@ export const ServiceTokens = {
   DeclinePRCommand: "DeclinePRCommand",
   CheckoutPRCommand: "CheckoutPRCommand",
   DiffPRCommand: "DiffPRCommand",
+  CommentPRCommand: "CommentPRCommand",
+  ListCommentsPRCommand: "ListCommentsPRCommand",
+  EditCommentPRCommand: "EditCommentPRCommand",
+  DeleteCommentPRCommand: "DeleteCommentPRCommand",
 
   // Commands - Config
   GetConfigCommand: "GetConfigCommand",

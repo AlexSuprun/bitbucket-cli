@@ -121,6 +121,22 @@ export type PullRequestState = "OPEN" | "MERGED" | "DECLINED" | "SUPERSEDED";
 
 export type MergeStrategy = "merge_commit" | "squash" | "fast_forward";
 
+export interface BitbucketComment {
+  id: number;
+  content: {
+    raw: string;
+  };
+  author?: BitbucketUser;
+  created_on: string;
+  updated_on: string;
+  links: {
+    self: LinkObject;
+    html: LinkObject;
+    parent?: LinkObject;
+  };
+  deleted?: boolean;
+}
+
 export interface LinkObject {
   href: string;
 }
