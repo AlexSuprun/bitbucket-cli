@@ -10,6 +10,7 @@ import type {
   PaginatedResponse,
   CreateRepositoryRequest,
 } from "../types/api.js";
+import { API_PAGELEN_LIMITS } from "../constants.js";
 
 export class RepoRepository implements IRepoRepository {
   constructor(private readonly httpClient: IHttpClient) {}
@@ -27,8 +28,9 @@ export class RepoRepository implements IRepoRepository {
     workspace: string,
     limit: number = 25
   ): Promise<Result<PaginatedResponse<BitbucketRepository>, BBError>> {
+    const safeLimit = Math.min(limit, API_PAGELEN_LIMITS.REPOSITORIES);
     return this.httpClient.get<PaginatedResponse<BitbucketRepository>>(
-      `/repositories/${encodeURIComponent(workspace)}?pagelen=${limit}`
+      `/repositories/${encodeURIComponent(workspace)}?pagelen=${safeLimit}`
     );
   }
 

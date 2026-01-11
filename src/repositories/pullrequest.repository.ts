@@ -15,6 +15,7 @@ import type {
   MergePullRequestRequest,
   DiffStat,
 } from "../types/api.js";
+import { API_PAGELEN_LIMITS } from "../constants.js";
 
 export class PullRequestRepository implements IPullRequestRepository {
   constructor(private readonly httpClient: IHttpClient) {}
@@ -40,8 +41,9 @@ export class PullRequestRepository implements IPullRequestRepository {
     state: PullRequestState = "OPEN",
     limit: number = 25
   ): Promise<Result<PaginatedResponse<BitbucketPullRequest>, BBError>> {
+    const safeLimit = Math.min(limit, API_PAGELEN_LIMITS.PULL_REQUESTS);
     return this.httpClient.get<PaginatedResponse<BitbucketPullRequest>>(
-      this.buildPath(workspace, repoSlug, `?state=${state}&pagelen=${limit}`)
+      this.buildPath(workspace, repoSlug, `?state=${state}&pagelen=${safeLimit}`)
     );
   }
 

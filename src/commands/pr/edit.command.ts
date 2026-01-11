@@ -16,6 +16,7 @@ import { Result } from "../../types/result.js";
 import { BBError, ValidationError } from "../../types/errors.js";
 import type { BitbucketPullRequest, UpdatePullRequestRequest } from "../../types/api.js";
 import type { GlobalOptions } from "../../types/config.js";
+import { DEFAULT_PAGELEN } from "../../constants.js";
 
 export interface EditPROptions extends GlobalOptions {
   id?: string;
@@ -67,7 +68,12 @@ export class EditPRCommand extends BaseCommand<EditPROptions, BitbucketPullReque
       }
 
       const currentBranch = branchResult.value;
-      const prsResult = await this.prRepository.list(workspace, repoSlug, "OPEN");
+      const prsResult = await this.prRepository.list(
+        workspace,
+        repoSlug,
+        "OPEN",
+        DEFAULT_PAGELEN.PULL_REQUESTS
+      );
       if (!prsResult.success) {
         this.handleResult(prsResult, context);
         return prsResult;

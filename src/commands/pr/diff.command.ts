@@ -16,6 +16,7 @@ import type {
 import { Result } from "../../types/result.js";
 import { BBError, ErrorCode } from "../../types/errors.js";
 import type { GlobalOptions } from "../../types/config.js";
+import { DEFAULT_PAGELEN } from "../../constants.js";
 
 const execAsync = promisify(exec);
 
@@ -92,7 +93,12 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, DiffResult> {
       }
 
       const currentBranch = currentBranchResult.value;
-      const prsResult = await this.prRepository.list(workspace, repoSlug, "OPEN", 100);
+      const prsResult = await this.prRepository.list(
+        workspace,
+        repoSlug,
+        "OPEN",
+        DEFAULT_PAGELEN.PULL_REQUESTS
+      );
 
       if (!prsResult.success) {
         this.handleResult(prsResult, context);
