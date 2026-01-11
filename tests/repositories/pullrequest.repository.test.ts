@@ -146,11 +146,30 @@ describe("PullRequestRepository", () => {
     it("should use custom limit", async () => {
       const paginatedResponse: PaginatedResponse<BitbucketPullRequest> = {
         values: [],
-        pagelen: 100,
+        pagelen: 10,
       };
       const responses = new Map([
         [
-          "GET:/repositories/workspace/repo/pullrequests?state=OPEN&pagelen=100",
+          "GET:/repositories/workspace/repo/pullrequests?state=OPEN&pagelen=10",
+          Result.ok(paginatedResponse),
+        ],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.list("workspace", "repo", "OPEN", 10);
+
+      expect(result.success).toBe(true);
+    });
+
+    it("should cap limit to maximum 50", async () => {
+      const paginatedResponse: PaginatedResponse<BitbucketPullRequest> = {
+        values: [],
+        pagelen: 50,
+      };
+      const responses = new Map([
+        [
+          "GET:/repositories/workspace/repo/pullrequests?state=OPEN&pagelen=50",
           Result.ok(paginatedResponse),
         ],
       ]);
@@ -160,6 +179,53 @@ describe("PullRequestRepository", () => {
       const result = await repository.list("workspace", "repo", "OPEN", 100);
 
       expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.pagelen).toBe(50);
+      }
+    });
+
+    it("should cap limit 75 to 50", async () => {
+      const paginatedResponse: PaginatedResponse<BitbucketPullRequest> = {
+        values: [],
+        pagelen: 50,
+      };
+      const responses = new Map([
+        [
+          "GET:/repositories/workspace/repo/pullrequests?state=OPEN&pagelen=50",
+          Result.ok(paginatedResponse),
+        ],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.list("workspace", "repo", "OPEN", 75);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.pagelen).toBe(50);
+      }
+    });
+
+    it("should pass through valid limit below maximum", async () => {
+      const paginatedResponse: PaginatedResponse<BitbucketPullRequest> = {
+        values: [],
+        pagelen: 25,
+      };
+      const responses = new Map([
+        [
+          "GET:/repositories/workspace/repo/pullrequests?state=OPEN&pagelen=25",
+          Result.ok(paginatedResponse),
+        ],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.list("workspace", "repo", "OPEN", 25);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.pagelen).toBe(25);
+      }
     });
   });
 
