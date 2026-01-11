@@ -86,7 +86,8 @@ export class PullRequestRepository implements IPullRequestRepository {
     id: number
   ): Promise<Result<BitbucketApproval, BBError>> {
     return this.httpClient.post<BitbucketApproval>(
-      this.buildPath(workspace, repoSlug, `/${id}/approve`)
+      this.buildPath(workspace, repoSlug, `/${id}/approve`),
+      {}
     );
   }
 
@@ -96,7 +97,8 @@ export class PullRequestRepository implements IPullRequestRepository {
     id: number
   ): Promise<Result<BitbucketPullRequest, BBError>> {
     return this.httpClient.post<BitbucketPullRequest>(
-      this.buildPath(workspace, repoSlug, `/${id}/decline`)
+      this.buildPath(workspace, repoSlug, `/${id}/decline`),
+      {}
     );
   }
 

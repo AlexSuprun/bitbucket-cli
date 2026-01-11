@@ -361,6 +361,18 @@ describe("PullRequestRepository", () => {
         expect(result.value.user.username).toBe("testuser");
       }
     });
+
+    it("should send empty JSON object as body", async () => {
+      const responses = new Map([
+        ["POST:/repositories/workspace/repo/pullrequests/1/approve", Result.ok(mockApproval)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      await repository.approve("workspace", "repo", 1);
+
+      expect(httpClient.capturedBodies.get("POST:/repositories/workspace/repo/pullrequests/1/approve")).toEqual({});
+    });
   });
 
   describe("decline", () => {
@@ -378,6 +390,19 @@ describe("PullRequestRepository", () => {
       if (result.success) {
         expect(result.value.state).toBe("DECLINED");
       }
+    });
+
+    it("should send empty JSON object as body", async () => {
+      const declinedPR = { ...mockPullRequest, state: "DECLINED" as const };
+      const responses = new Map([
+        ["POST:/repositories/workspace/repo/pullrequests/1/decline", Result.ok(declinedPR)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      await repository.decline("workspace", "repo", 1);
+
+      expect(httpClient.capturedBodies.get("POST:/repositories/workspace/repo/pullrequests/1/decline")).toEqual({});
     });
   });
 

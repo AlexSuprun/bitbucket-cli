@@ -160,8 +160,11 @@ export function createMockOutputService(): IOutputService & { logs: string[] } {
 
 export function createMockHttpClient<T>(
   responses: Map<string, Result<T, BBError>>
-): IHttpClient {
+): IHttpClient & { capturedBodies: Map<string, unknown> } {
+  const capturedBodies = new Map<string, unknown>();
+  
   return {
+    capturedBodies,
     async get<R>(path: string): Promise<Result<R, BBError>> {
       const result = responses.get(`GET:${path}`);
       return (result as Result<R, BBError>) ?? Result.err({ code: 2002, message: "Not found" } as BBError);
@@ -170,11 +173,13 @@ export function createMockHttpClient<T>(
       const result = responses.get(`GET:${path}`);
       return (result as Result<string, BBError>) ?? Result.err({ code: 2002, message: "Not found" } as BBError);
     },
-    async post<R>(path: string): Promise<Result<R, BBError>> {
+    async post<R>(path: string, body?: unknown): Promise<Result<R, BBError>> {
+      capturedBodies.set(`POST:${path}`, body);
       const result = responses.get(`POST:${path}`);
       return (result as Result<R, BBError>) ?? Result.err({ code: 2001, message: "Failed" } as BBError);
     },
-    async put<R>(path: string): Promise<Result<R, BBError>> {
+    async put<R>(path: string, body?: unknown): Promise<Result<R, BBError>> {
+      capturedBodies.set(`PUT:${path}`, body);
       const result = responses.get(`PUT:${path}`);
       return (result as Result<R, BBError>) ?? Result.err({ code: 2001, message: "Failed" } as BBError);
     },
