@@ -1,5 +1,73 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- [#52](https://github.com/0pilatos0/bitbucket-cli/pull/52) [`5e66281`](https://github.com/0pilatos0/bitbucket-cli/commit/5e66281d9f94b61d53f399084aa02e9a4aaab05e) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add PR comments management feature (issue #44)
+
+  Implemented commands:
+
+  - `bb pr comments list <id>` - List comments on a PR
+  - `bb pr comments add <id> <message>` - Add a comment to a PR
+  - `bb pr comments edit <comment-id> <message>` - Edit a comment
+  - `bb pr comments delete <comment-id>` - Delete a comment
+
+### Patch Changes
+
+- [#38](https://github.com/0pilatos0/bitbucket-cli/pull/38) [`58ce559`](https://github.com/0pilatos0/bitbucket-cli/commit/58ce559b93d93e2ddac5dcae4622b28f40775d55) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add AI Agent Integration guide for Claude Code
+
+  New documentation at `/guides/ai-agents/` that helps users set up a Claude Code skill for the Bitbucket CLI. The guide includes:
+
+  - Complete, copy-paste ready skill file
+  - Explanation of how skills work (frontmatter, allowed-tools, instructions)
+  - Example conversations showing natural language interactions
+  - Customization tips for encoding team conventions
+  - Troubleshooting section for common issues
+
+- [#50](https://github.com/0pilatos0/bitbucket-cli/pull/50) [`7f1458a`](https://github.com/0pilatos0/bitbucket-cli/commit/7f1458a1c979a8dfb742603ce53c2b7b9dd6d452) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix approve/decline PR commands failing with Bad Request error
+
+  Bug fix for issue #41:
+
+  - Fixed `approve()` method to send empty JSON object `{}` as request body
+  - Fixed `decline()` method to send empty JSON object `{}` as request body
+  - Enhanced mock HTTP client to capture and verify request bodies in tests
+  - Added tests to verify approve/decline send correct body format
+
+  The Bitbucket Cloud API requires POST requests to approve/decline endpoints to have a request body. Previously, the body was `undefined`, causing 400 Bad Request errors.
+
+- [#51](https://github.com/0pilatos0/bitbucket-cli/pull/51) [`03d4ec9`](https://github.com/0pilatos0/bitbucket-cli/commit/03d4ec9b5ee45b71b11c99992bafd279913dce98) Thanks [@0pilatos0](https://github.com/0pilatos0)! - This fixes \`Invalid pagelen\` error when running \`bb pr diff\` without a PR ID.
+
+  The issue was that command was requesting \`pagelen=100\` which exceeds Bitbucket Cloud's maximum of 50 for pull requests.
+
+  **Changes:**
+
+  - Added \`src/constants.ts\` with API pagination limits
+  - Added validation to \`PullRequestRepository.list()\` to cap limit at 50
+  - Fixed \`diff.command.ts\` to use \`DEFAULT_PAGELEN.PULL_REQUESTS\` (25)
+  - Fixed \`edit.command.ts\` to use explicit default limit
+  - Added tests for pagelen validation
+
+  **Testing:**
+
+  - All 432 tests pass
+  - TypeScript linter passes
+
+  Fixes #42
+
+- [#39](https://github.com/0pilatos0/bitbucket-cli/pull/39) [`7d1ad4e`](https://github.com/0pilatos0/bitbucket-cli/commit/7d1ad4ebfb6b9df8f18dcd5a3aefb7fb1355fdd6) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add comprehensive test coverage for API client, completion command, and base command
+
+  Improvements to test infrastructure:
+
+  - Added `tests/api/client.test.ts` with 397 lines of tests for the API client
+  - Added `tests/commands/completion.test.ts` with 179 lines of completion command tests
+  - Added `tests/core/base-command.test.ts` with 280 lines of base command tests
+  - Enhanced `tests/repositories/pullrequest.repository.test.ts` with 50 additional lines
+  - Enhanced `tests/services/http.client.test.ts` with 151 additional lines
+  - Updated `src/api/client.ts` with minor improvements (+5 lines)
+
+  Total: 1060 test additions and improvements
+
 ## 1.1.0
 
 ### Minor Changes
