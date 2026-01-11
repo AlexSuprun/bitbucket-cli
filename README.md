@@ -83,7 +83,7 @@ bb pr list
 |----------|----------|
 | **Authentication** | `login`, `logout`, `status`, `token` |
 | **Repositories** | `clone`, `create`, `list`, `view`, `delete` |
-| **Pull Requests** | `create`, `list`, `view`, `edit`, `merge`, `approve`, `decline`, `checkout`, `diff` |
+| **Pull Requests** | `create`, `list`, `view`, `edit`, `merge`, `approve`, `decline`, `checkout`, `diff`, `comment`, `comments` |
 | **Configuration** | `get`, `set`, `list` |
 | **Shell Completion** | `install`, `uninstall` |
 

@@ -31,6 +31,10 @@ import type { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import type { DeclinePRCommand } from "./commands/pr/decline.command.js";
 import type { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
 import type { DiffPRCommand } from "./commands/pr/diff.command.js";
+import type { CommentPRCommand } from "./commands/pr/comment.command.js";
+import type { ListCommentsPRCommand } from "./commands/pr/comments.list.command.js";
+import type { EditCommentPRCommand } from "./commands/pr/comments.edit.command.js";
+import type { DeleteCommentPRCommand } from "./commands/pr/comments.delete.command.js";
 import type { GetConfigCommand } from "./commands/config/get.command.js";
 import type { SetConfigCommand } from "./commands/config/set.command.js";
 import type { ListConfigCommand } from "./commands/config/list.command.js";
@@ -61,7 +65,7 @@ if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
     } else if (env.prev === "repo") {
       completions.push("clone", "create", "list", "view", "delete");
     } else if (env.prev === "pr") {
-      completions.push("create", "list", "view", "edit", "merge", "approve", "decline", "checkout", "diff");
+      completions.push("create", "list", "view", "edit", "merge", "approve", "decline", "checkout", "diff", "comments");
     } else if (env.prev === "config") {
       completions.push("get", "set", "list");
     } else if (env.prev === "completion") {
@@ -358,7 +362,59 @@ prCmd
     }
   });
 
-cli.addCommand(prCmd);
+  const prCommentsCmd = new Command("comments").description("Manage pull request comments");
+
+  prCommentsCmd
+    .command("list <id>")
+    .description("List comments on a pull request")
+    .option("--limit <number>", "Maximum number of comments (default: 25)")
+    .action(async (id, options) => {
+      const cmd = container.resolve<ListCommentsPRCommand>(ServiceTokens.ListCommentsPRCommand);
+      const context = createContext(cli);
+      const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+      if (!result.success) {
+        process.exit(1);
+      }
+    });
+
+  prCommentsCmd
+    .command("add <id> <message>")
+    .description("Add a comment to a pull request")
+    .action(async (id, message, options) => {
+      const cmd = container.resolve<CommentPRCommand>(ServiceTokens.CommentPRCommand);
+      const context = createContext(cli);
+      const result = await cmd.execute(withGlobalOptions({ id, message }, context), context);
+      if (!result.success) {
+        process.exit(1);
+      }
+    });
+
+  prCommentsCmd
+    .command("edit <pr-id> <comment-id> <message>")
+    .description("Edit a comment on a pull request")
+    .action(async (prId, commentId, message, options) => {
+      const cmd = container.resolve<EditCommentPRCommand>(ServiceTokens.EditCommentPRCommand);
+      const context = createContext(cli);
+      const result = await cmd.execute(withGlobalOptions({ prId, commentId, message }, context), context);
+      if (!result.success) {
+        process.exit(1);
+      }
+    });
+
+  prCommentsCmd
+    .command("delete <pr-id> <comment-id>")
+    .description("Delete a comment on a pull request")
+    .action(async (prId, commentId, options) => {
+      const cmd = container.resolve<DeleteCommentPRCommand>(ServiceTokens.DeleteCommentPRCommand);
+      const context = createContext(cli);
+      const result = await cmd.execute(withGlobalOptions({ prId, commentId }, context), context);
+      if (!result.success) {
+        process.exit(1);
+      }
+    });
+
+  cli.addCommand(prCmd);
+  prCmd.addCommand(prCommentsCmd);
 
 // Config commands
 const configCmd = new Command("config").description("Manage configuration");

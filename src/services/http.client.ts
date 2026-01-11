@@ -15,10 +15,7 @@ export class HttpClient implements IHttpClient {
   private readonly baseUrl: string;
   private readonly timeout: number;
 
-  constructor(
-    private readonly configService: IConfigService,
-    config?: Partial<HttpClientConfig>
-  ) {
+  constructor(private readonly configService: IConfigService, config?: Partial<HttpClientConfig>) {
     this.baseUrl = config?.baseUrl ?? "https://api.bitbucket.org/2.0";
     this.timeout = config?.timeout ?? 30000;
   }
@@ -34,12 +31,7 @@ export class HttpClient implements IHttpClient {
     return Result.ok(`Basic ${encoded}`);
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
-    acceptText: boolean = false
-  ): Promise<Result<T, BBError>> {
+  private async request<T>(method: string, path: string, body?: unknown, acceptText: boolean = false): Promise<Result<T, BBError>> {
     const authResult = await this.getAuthHeader();
     if (!authResult.success) {
       return authResult;
@@ -63,6 +55,12 @@ export class HttpClient implements IHttpClient {
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });
+
+      if (process.env.DEBUG === "true") {
+        console.debug(`[HTTP] ${method} ${url} - ${response.status}`);
+        console.debug(`[HTTP] Response Headers:`, Object.fromEntries(response.headers.entries()));
+        console.debug(`[HTTP] Response Body:`, await response.clone().text());
+      }
 
       clearTimeout(timeoutId);
 
