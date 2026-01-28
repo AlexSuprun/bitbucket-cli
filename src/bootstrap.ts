@@ -37,6 +37,7 @@ import { EditPRCommand } from "./commands/pr/edit.command.js";
 import { MergePRCommand } from "./commands/pr/merge.command.js";
 import { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import { DeclinePRCommand } from "./commands/pr/decline.command.js";
+import { ReadyPRCommand } from "./commands/pr/ready.command.js";
 import { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
 import { DiffPRCommand } from "./commands/pr/diff.command.js";
 import { CommentPRCommand } from "./commands/pr/comment.command.js";
@@ -204,6 +205,13 @@ export function bootstrap(): Container {
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new DeclinePRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.ReadyPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new ReadyPRCommand(prRepo, contextService, output);
   });
 
   container.register(ServiceTokens.CheckoutPRCommand, () => {

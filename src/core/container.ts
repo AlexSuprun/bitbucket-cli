@@ -158,6 +158,7 @@ export const ServiceTokens = {
   MergePRCommand: "MergePRCommand",
   ApprovePRCommand: "ApprovePRCommand",
   DeclinePRCommand: "DeclinePRCommand",
+  ReadyPRCommand: "ReadyPRCommand",
   CheckoutPRCommand: "CheckoutPRCommand",
   DiffPRCommand: "DiffPRCommand",
   CommentPRCommand: "CommentPRCommand",

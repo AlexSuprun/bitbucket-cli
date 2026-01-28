@@ -22,6 +22,7 @@ export interface CreatePROptions extends GlobalOptions {
   source?: string;
   destination?: string;
   closeSourceBranch?: boolean;
+  draft?: boolean;
 }
 
 export class CreatePRCommand extends BaseCommand<CreatePROptions, BitbucketPullRequest> {
@@ -93,6 +94,10 @@ export class CreatePRCommand extends BaseCommand<CreatePROptions, BitbucketPullR
 
     if (options.closeSourceBranch) {
       request.close_source_branch = true;
+    }
+
+    if (options.draft) {
+      request.draft = true;
     }
 
     // Create pull request
