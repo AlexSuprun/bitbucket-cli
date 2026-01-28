@@ -29,6 +29,7 @@ import type { EditPRCommand } from "./commands/pr/edit.command.js";
 import type { MergePRCommand } from "./commands/pr/merge.command.js";
 import type { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import type { DeclinePRCommand } from "./commands/pr/decline.command.js";
+import type { ReadyPRCommand } from "./commands/pr/ready.command.js";
 import type { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
 import type { DiffPRCommand } from "./commands/pr/diff.command.js";
 import type { CommentPRCommand } from "./commands/pr/comment.command.js";
@@ -65,7 +66,19 @@ if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
     } else if (env.prev === "repo") {
       completions.push("clone", "create", "list", "view", "delete");
     } else if (env.prev === "pr") {
-      completions.push("create", "list", "view", "edit", "merge", "approve", "decline", "checkout", "diff", "comments");
+      completions.push(
+        "create",
+        "list",
+        "view",
+        "edit",
+        "merge",
+        "approve",
+        "decline",
+        "ready",
+        "checkout",
+        "diff",
+        "comments"
+      );
     } else if (env.prev === "config") {
       completions.push("get", "set", "list");
     } else if (env.prev === "completion") {
@@ -245,6 +258,7 @@ prCmd
   .option("-s, --source <branch>", "Source branch (default: current branch)")
   .option("-d, --destination <branch>", "Destination branch (default: main)")
   .option("--close-source-branch", "Close source branch after merge")
+  .option("--draft", "Create the pull request as draft")
   .action(async (options) => {
     const cmd = container.resolve<CreatePRCommand>(ServiceTokens.CreatePRCommand);
     const context = createContext(cli);
@@ -327,6 +341,18 @@ prCmd
   .description("Decline a pull request")
   .action(async (id, options) => {
     const cmd = container.resolve<DeclinePRCommand>(ServiceTokens.DeclinePRCommand);
+    const context = createContext(cli);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+prCmd
+  .command("ready <id>")
+  .description("Mark a draft pull request as ready for review")
+  .action(async (id, options) => {
+    const cmd = container.resolve<ReadyPRCommand>(ServiceTokens.ReadyPRCommand);
     const context = createContext(cli);
     const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
     if (!result.success) {

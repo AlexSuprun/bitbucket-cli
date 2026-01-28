@@ -66,12 +66,15 @@ export class ListPRsCommand extends BaseCommand<
         return;
       }
 
-      const rows = data.values.map((pr) => [
-        `#${pr.id}`,
-        this.truncate(pr.title, 50),
-        pr.author.display_name,
-        `${pr.source.branch.name} → ${pr.destination.branch.name}`,
-      ]);
+      const rows = data.values.map((pr) => {
+        const title = pr.draft ? `[DRAFT] ${pr.title}` : pr.title;
+        return [
+          `#${pr.id}`,
+          this.truncate(title, 50),
+          pr.author.display_name,
+          `${pr.source.branch.name} → ${pr.destination.branch.name}`,
+        ];
+      });
 
       this.output.table(["ID", "TITLE", "AUTHOR", "BRANCHES"], rows);
     });

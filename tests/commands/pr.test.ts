@@ -10,6 +10,7 @@ import { EditPRCommand } from "../../src/commands/pr/edit.command.js";
 import { MergePRCommand } from "../../src/commands/pr/merge.command.js";
 import { ApprovePRCommand } from "../../src/commands/pr/approve.command.js";
 import { DeclinePRCommand } from "../../src/commands/pr/decline.command.js";
+import { ReadyPRCommand } from "../../src/commands/pr/ready.command.js";
 import { CheckoutPRCommand } from "../../src/commands/pr/checkout.command.js";
 import { DiffPRCommand } from "../../src/commands/pr/diff.command.js";
 import { Result } from "../../src/types/result.js";
@@ -32,6 +33,8 @@ import type {
   BitbucketPullRequest,
   BitbucketApproval,
   DiffStat,
+  UpdatePullRequestRequest,
+  BitbucketComment,
 } from "../../src/types/api.js";
 
 function createMockPRRepository(
@@ -57,8 +60,9 @@ function createMockPRRepository(
       return Result.ok({
         ...mockPullRequest,
         title: request.title,
-        source: request.source,
-        destination: request.destination,
+        source: { ...mockPullRequest.source, branch: request.source.branch },
+        destination: { ...mockPullRequest.destination, branch: request.destination.branch },
+        draft: request.draft ?? false,
       });
     },
     async merge(workspace: string, repoSlug: string, id: number, request) {
@@ -92,16 +96,36 @@ function createMockPRRepository(
       }
       return Result.err({ code: 2002, message: "Not found" } as BBError);
     },
-    async update(workspace: string, repoSlug: string, id: number, request: { title?: string; description?: string }) {
+    async update(workspace: string, repoSlug: string, id: number, request: UpdatePullRequestRequest) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
         return Result.ok({
           ...pr,
           title: request.title ?? pr.title,
           description: request.description ?? pr.description,
+          draft: request.draft ?? pr.draft,
         });
       }
       return Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
+    async listComments() {
+      return Result.ok({
+        values: [] as BitbucketComment[],
+        pagelen: 0,
+        size: 0,
+      } as PaginatedResponse<BitbucketComment>);
+    },
+    async getComment() {
+      return Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
+    async createComment() {
+      return Result.err({ code: 2001, message: "Failed" } as BBError);
+    },
+    async updateComment() {
+      return Result.err({ code: 2001, message: "Failed" } as BBError);
+    },
+    async deleteComment() {
+      return Result.err({ code: 2001, message: "Failed" } as BBError);
     },
   };
 }
@@ -111,6 +135,12 @@ function createMockContextService(context?: {
   repoSlug?: string;
 }): IContextService {
   return {
+    parseRemoteUrl() {
+      return null;
+    },
+    async getRepoContextFromGit() {
+      return Result.ok(null);
+    },
     async getRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
@@ -254,6 +284,22 @@ describe("ListPRsCommand", () => {
 
     expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
   });
+
+  it("should label draft pull requests", async () => {
+    const prs = [{ ...mockPullRequest, id: 1, draft: true }];
+    const prRepository = createMockPRRepository(prs);
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ListPRsCommand(prRepository, contextService, output);
+    await command.execute({}, { globalOptions: {} });
+
+    expect(output.logs.some((log) => log.includes("table-rows:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("[DRAFT]"))).toBe(true);
+  });
 });
 
 describe("ViewPRCommand", () => {
@@ -284,7 +330,7 @@ describe("ViewPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new ViewPRCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });
@@ -315,6 +361,20 @@ describe("ViewPRCommand", () => {
     await command.execute({ id: "1" }, { globalOptions: { json: true } });
 
     expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+  });
+
+  it("should show draft indicator when PR is draft", async () => {
+    const prRepository = createMockPRRepository([{ ...mockPullRequest, draft: true }]);
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ViewPRCommand(prRepository, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
+
+    expect(output.logs.some((log) => log.includes("[DRAFT]"))).toBe(true);
   });
 });
 
@@ -490,6 +550,32 @@ describe("CreatePRCommand", () => {
 
     expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
   });
+
+  it("should create draft pull request when flag is set", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const gitService = createMockGitService({ currentBranch: "feature" });
+    const output = createMockOutputService();
+
+    const command = new CreatePRCommand(
+      prRepository,
+      contextService,
+      gitService,
+      output
+    );
+    const result = await command.execute(
+      { title: "Draft PR", draft: true },
+      { globalOptions: {} }
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.draft).toBe(true);
+    }
+  });
 });
 
 describe("MergePRCommand", () => {
@@ -520,7 +606,7 @@ describe("MergePRCommand", () => {
     const output = createMockOutputService();
 
     const command = new MergePRCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });
@@ -618,7 +704,7 @@ describe("DeclinePRCommand", () => {
     const output = createMockOutputService();
 
     const command = new DeclinePRCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });
@@ -632,6 +718,40 @@ describe("DeclinePRCommand", () => {
     const output = createMockOutputService();
 
     const command = new DeclinePRCommand(prRepository, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: { json: true } });
+
+    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+  });
+});
+
+describe("ReadyPRCommand", () => {
+  it("should mark pull request as ready", async () => {
+    const prRepository = createMockPRRepository([{ ...mockPullRequest, draft: true }]);
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ReadyPRCommand(prRepository, contextService, output);
+    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.draft).toBe(false);
+    }
+    expect(output.logs.some((log) => log.includes("ready for review"))).toBe(true);
+  });
+
+  it("should output JSON when flag is set", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ReadyPRCommand(prRepository, contextService, output);
     await command.execute({ id: "1" }, { globalOptions: { json: true } });
 
     expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
@@ -675,7 +795,7 @@ describe("CheckoutPRCommand", () => {
       gitService,
       output
     );
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });

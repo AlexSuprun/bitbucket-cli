@@ -109,6 +109,7 @@ Returns the created repository object (same schema as `bb repo view`).
     "title": "Add new feature",
     "description": "This PR adds...",
     "state": "OPEN",
+    "draft": false,
     "created_on": "2024-12-20T09:00:00.000000+00:00",
     "updated_on": "2024-12-28T14:30:00.000000+00:00",
     "author": {
@@ -162,6 +163,7 @@ Returns the created repository object (same schema as `bb repo view`).
 | `state` | string | `OPEN`, `MERGED`, `DECLINED`, `SUPERSEDED` |
 | `created_on` | string | ISO 8601 timestamp |
 | `updated_on` | string | ISO 8601 timestamp |
+| `draft` | boolean | Draft status (true = draft) |
 | `author` | object | PR author details |
 | `source.branch.name` | string | Source branch name |
 | `destination.branch.name` | string | Target branch name |
