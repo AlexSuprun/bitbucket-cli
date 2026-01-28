@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+### Patch Changes
+
+- [#58](https://github.com/0pilatos0/bitbucket-cli/pull/58) [`923089b`](https://github.com/0pilatos0/bitbucket-cli/commit/923089b92c6d30941449a3f593df8558f4efce1d) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Update dependencies for CLI and docs tooling.
+
 ## 1.3.0
 
 ### Minor Changes
