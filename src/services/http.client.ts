@@ -9,15 +9,29 @@ import { APIError, BBError, ErrorCode } from "../types/errors.js";
 export interface HttpClientConfig {
   baseUrl: string;
   timeout?: number;
+  debug?: boolean;
 }
 
 export class HttpClient implements IHttpClient {
   private readonly baseUrl: string;
   private readonly timeout: number;
+  private readonly debug: boolean;
 
   constructor(private readonly configService: IConfigService, config?: Partial<HttpClientConfig>) {
     this.baseUrl = config?.baseUrl ?? "https://api.bitbucket.org/2.0";
     this.timeout = config?.timeout ?? 30000;
+    this.debug = config?.debug ?? process.env.DEBUG === "true";
+  }
+
+  private logDebug(message: string, data?: unknown): void {
+    if (!this.debug) {
+      return;
+    }
+    if (data === undefined) {
+      console.log(`[debug] ${message}`);
+      return;
+    }
+    console.log(`[debug] ${message}`, data);
   }
 
   private async getAuthHeader(): Promise<Result<string, BBError>> {
@@ -44,15 +58,23 @@ export class HttpClient implements IHttpClient {
     };
 
     const url = `${this.baseUrl}${path}`;
+    const requestBody = body ? JSON.stringify(body) : undefined;
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
+      this.logDebug("Request", {
+        url,
+        method,
+        headers,
+        body: requestBody,
+      });
+
       const response = await fetch(url, {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
+        body: requestBody,
         signal: controller.signal,
       });
 
@@ -64,8 +86,26 @@ export class HttpClient implements IHttpClient {
 
       clearTimeout(timeoutId);
 
+      if (this.debug) {
+        const responseClone = response.clone();
+        const responseText = await responseClone.text();
+        this.logDebug("Response", {
+          url,
+          method,
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: responseText,
+        });
+      }
+
       return acceptText ? this.handleTextResponse<T>(response) : this.handleResponse<T>(response);
     } catch (error) {
+      this.logDebug("Request error", {
+        url,
+        method,
+        error: error instanceof Error ? error.message : error,
+      });
       if (error instanceof Error && error.name === "AbortError") {
         return Result.err(
           new BBError({
