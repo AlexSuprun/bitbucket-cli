@@ -72,6 +72,7 @@ export interface BitbucketPullRequest {
   title: string;
   description: string;
   state: PullRequestState;
+  draft?: boolean;
   author: BitbucketUser;
   source: {
     branch: { name: string };
@@ -240,6 +241,7 @@ export interface CreatePullRequestRequest {
   destination: {
     branch: { name: string };
   };
+  draft?: boolean;
   close_source_branch?: boolean;
   reviewers?: Array<{ uuid: string }>;
 }
@@ -253,6 +255,7 @@ export interface MergePullRequestRequest {
 export interface UpdatePullRequestRequest {
   title?: string;
   description?: string;
+  draft?: boolean;
   reviewers?: Array<{ uuid: string }>;
 }
 

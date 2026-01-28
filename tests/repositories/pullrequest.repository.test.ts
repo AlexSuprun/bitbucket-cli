@@ -380,6 +380,24 @@ describe("PullRequestRepository", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("should update draft status", async () => {
+      const updatedPR = { ...mockPullRequest, draft: false };
+      const responses = new Map([
+        ["PUT:/repositories/workspace/repo/pullrequests/1", Result.ok(updatedPR)],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.update("workspace", "repo", 1, {
+        draft: false,
+      });
+
+      expect(result.success).toBe(true);
+      expect(
+        httpClient.capturedBodies.get("PUT:/repositories/workspace/repo/pullrequests/1")
+      ).toEqual({ draft: false });
+    });
   });
 
   describe("merge", () => {

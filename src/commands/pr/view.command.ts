@@ -55,8 +55,9 @@ export class ViewPRCommand extends BaseCommand<
 
     this.handleResult(result, context, (pr) => {
       const stateColor = this.getStateColor(pr.state);
+      const draftLabel = pr.draft ? chalk.yellow("[DRAFT]") : "";
       this.output.text(
-        `${chalk.bold(`#${pr.id}`)} ${pr.title} ${stateColor(`[${pr.state}]`)}`
+        `${chalk.bold(`#${pr.id}`)} ${pr.title} ${stateColor(`[${pr.state}]`)}${draftLabel ? ` ${draftLabel}` : ""}`
       );
       this.output.text("");
 

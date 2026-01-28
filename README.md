@@ -83,7 +83,7 @@ bb pr list
 |----------|----------|
 | **Authentication** | `login`, `logout`, `status`, `token` |
 | **Repositories** | `clone`, `create`, `list`, `view`, `delete` |
-| **Pull Requests** | `create`, `list`, `view`, `edit`, `merge`, `approve`, `decline`, `checkout`, `diff`, `comment`, `comments` |
+| **Pull Requests** | `create`, `list`, `view`, `edit`, `merge`, `approve`, `decline`, `ready`, `checkout`, `diff`, `comment`, `comments` |
 | **Configuration** | `get`, `set`, `list` |
 | **Shell Completion** | `install`, `uninstall` |
 
@@ -141,6 +141,16 @@ bb pr view 42
 bb pr activity 42
 bb pr approve 42
 bb pr merge 42
+```
+
+### Draft Pull Requests
+
+```bash
+# Create a draft PR for early feedback
+bb pr create --title "WIP: Add new feature" --draft
+
+# Mark it ready for review when done
+bb pr ready 123
 ```
 
 ### Scripting with JSON

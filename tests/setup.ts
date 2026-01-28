@@ -136,6 +136,7 @@ export function createMockOutputService(): IOutputService & { logs: string[] } {
     },
     table(headers: string[], rows: string[][]) {
       logs.push(`table:${headers.join(",")}`);
+      logs.push(`table-rows:${JSON.stringify(rows)}`);
     },
     success(message: string) {
       logs.push(`success:${message}`);
@@ -242,6 +243,7 @@ export const mockPullRequest: BitbucketPullRequest = {
   title: "Test PR",
   description: "Test description",
   state: "OPEN",
+  draft: false,
   author: mockUser,
   source: {
     branch: { name: "feature-branch" },

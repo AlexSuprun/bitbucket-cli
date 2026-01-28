@@ -24,6 +24,7 @@ bb pr create [options]
 | `-w, --workspace <workspace>` | Workspace |
 | `-r, --repo <repo>` | Repository |
 | `--close-source-branch` | Close source branch after merge |
+| `--draft` | Create the pull request as draft |
 | `--json` | Output as JSON |
 
 ### Examples
@@ -37,6 +38,9 @@ bb pr create -t "Add login page" -b "Implements user login functionality" -d dev
 
 # Create a PR that will close the source branch after merging
 bb pr create -t "Hotfix: Critical bug" --close-source-branch
+
+# Create a draft PR
+bb pr create -t "WIP: Add feature" --draft
 ```
 
 ---
@@ -134,6 +138,10 @@ bb pr list --json
 # List more results
 bb pr list --limit 50
 ```
+
+### Notes
+
+- Draft PRs are shown with a `[DRAFT]` prefix in the title
 
 ---
 
@@ -320,6 +328,40 @@ bb pr decline 42
 
 # Decline PR in specific repository
 bb pr decline 42 -w myworkspace -r myrepo
+```
+
+---
+
+## `bb pr ready`
+
+Mark a draft pull request as ready for review.
+
+```bash
+bb pr ready <id> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# Mark draft PR as ready
+bb pr ready 42
+
+# Mark draft PR in specific repository
+bb pr ready 42 -w myworkspace -r myrepo
 ```
 
 ---
