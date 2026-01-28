@@ -31,6 +31,7 @@ import type { ApprovePRCommand } from "./commands/pr/approve.command.js";
 import type { DeclinePRCommand } from "./commands/pr/decline.command.js";
 import type { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
 import type { DiffPRCommand } from "./commands/pr/diff.command.js";
+import type { ActivityPRCommand } from "./commands/pr/activity.command.js";
 import type { CommentPRCommand } from "./commands/pr/comment.command.js";
 import type { ListCommentsPRCommand } from "./commands/pr/comments.list.command.js";
 import type { EditCommentPRCommand } from "./commands/pr/comments.edit.command.js";
@@ -65,7 +66,7 @@ if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
     } else if (env.prev === "repo") {
       completions.push("clone", "create", "list", "view", "delete");
     } else if (env.prev === "pr") {
-      completions.push("create", "list", "view", "edit", "merge", "approve", "decline", "checkout", "diff", "comments");
+      completions.push("create", "list", "view", "activity", "edit", "merge", "approve", "decline", "checkout", "diff", "comments");
     } else if (env.prev === "config") {
       completions.push("get", "set", "list");
     } else if (env.prev === "completion") {
@@ -273,6 +274,20 @@ prCmd
   .description("View pull request details")
   .action(async (id, options) => {
     const cmd = container.resolve<ViewPRCommand>(ServiceTokens.ViewPRCommand);
+    const context = createContext(cli);
+    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    if (!result.success) {
+      process.exit(1);
+    }
+  });
+
+prCmd
+  .command("activity <id>")
+  .description("Show pull request activity log")
+  .option("--limit <number>", "Maximum number of activity entries", "25")
+  .option("--type <types>", "Filter activity by type (comma-separated)")
+  .action(async (id, options) => {
+    const cmd = container.resolve<ActivityPRCommand>(ServiceTokens.ActivityPRCommand);
     const context = createContext(cli);
     const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
     if (!result.success) {

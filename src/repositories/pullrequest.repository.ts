@@ -9,6 +9,7 @@ import type {
   BitbucketPullRequest,
   BitbucketApproval,
   BitbucketComment,
+  BitbucketPullRequestActivity,
   PaginatedResponse,
   PullRequestState,
   CreatePullRequestRequest,
@@ -122,6 +123,18 @@ export class PullRequestRepository implements IPullRequestRepository {
   ): Promise<Result<DiffStat, BBError>> {
     return this.httpClient.get<DiffStat>(
       this.buildPath(workspace, repoSlug, `/${id}/diffstat`)
+    );
+  }
+
+  public async listActivity(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    limit: number = 25
+  ): Promise<Result<PaginatedResponse<BitbucketPullRequestActivity>, BBError>> {
+    const safeLimit = Math.min(limit, API_PAGELEN_LIMITS.PULL_REQUESTS);
+    return this.httpClient.get<PaginatedResponse<BitbucketPullRequestActivity>>(
+      `/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/pullrequests/${prId}/activity?pagelen=${safeLimit}`
     );
   }
 

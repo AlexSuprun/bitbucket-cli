@@ -137,6 +137,82 @@ export interface BitbucketComment {
   deleted?: boolean;
 }
 
+export interface BitbucketPullRequestSummary {
+  id: number;
+  title?: string;
+  links?: {
+    html?: LinkObject;
+    self?: LinkObject;
+  };
+}
+
+export interface BitbucketPullRequestActivityComment {
+  id: number;
+  content: {
+    raw: string;
+  };
+  user?: BitbucketUser;
+  author?: BitbucketUser;
+  created_on?: string;
+  updated_on?: string;
+  links?: {
+    self?: LinkObject;
+    html?: LinkObject;
+  };
+}
+
+export interface BitbucketPullRequestActivityApproval {
+  date?: string;
+  user?: BitbucketUser;
+  pullrequest?: BitbucketPullRequestSummary;
+}
+
+export interface BitbucketPullRequestActivityChangeRequest {
+  date?: string;
+  user?: BitbucketUser;
+  reason?: string;
+}
+
+export interface BitbucketPullRequestActivityUpdate {
+  date?: string;
+  state?: PullRequestState;
+  title?: string;
+  description?: string;
+  reason?: string;
+  author?: BitbucketUser;
+}
+
+export interface BitbucketPullRequestActivityCommit {
+  hash?: string;
+  date?: string;
+  message?: string;
+  author?: {
+    user?: BitbucketUser;
+    raw?: string;
+  };
+}
+
+export interface BitbucketPullRequestActivity {
+  type?: string;
+  comment?: BitbucketPullRequestActivityComment;
+  approval?: BitbucketPullRequestActivityApproval;
+  changes_requested?: BitbucketPullRequestActivityChangeRequest;
+  update?: BitbucketPullRequestActivityUpdate;
+  commit?: BitbucketPullRequestActivityCommit;
+  merge?: {
+    date?: string;
+    user?: BitbucketUser;
+    commit?: BitbucketPullRequestActivityCommit;
+  };
+  decline?: {
+    date?: string;
+    user?: BitbucketUser;
+  };
+  pull_request?: BitbucketPullRequestSummary;
+  pullrequest?: BitbucketPullRequestSummary;
+  user?: BitbucketUser;
+}
+
 export interface LinkObject {
   href: string;
 }
@@ -177,6 +253,7 @@ export interface MergePullRequestRequest {
 export interface UpdatePullRequestRequest {
   title?: string;
   description?: string;
+  reviewers?: Array<{ uuid: string }>;
 }
 
 export interface DiffStatFile {

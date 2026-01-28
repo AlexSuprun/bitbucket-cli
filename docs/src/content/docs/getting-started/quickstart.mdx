@@ -102,6 +102,7 @@ Here are the commands you'll use most often:
 |---------|-------------|
 | `bb pr list` | List open pull requests |
 | `bb pr view 42` | View PR #42 details |
+| `bb pr activity 42` | View PR #42 activity log |
 | `bb pr create -t "Title"` | Create a new PR |
 | `bb pr merge 42` | Merge PR #42 |
 | `bb pr checkout 42` | Checkout PR #42 locally |
@@ -138,7 +139,7 @@ bb completion install
 Restart your shell, then try:
 
 ```bash
-bb pr <Tab>      # Shows: approve, checkout, create, decline, diff, list, merge, view
+bb pr <Tab>      # Shows: activity, approve, checkout, create, decline, diff, list, merge, view
 bb pr create -<Tab>  # Shows available flags
 ```
 

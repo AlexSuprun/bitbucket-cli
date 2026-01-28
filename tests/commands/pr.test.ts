@@ -12,6 +12,7 @@ import { ApprovePRCommand } from "../../src/commands/pr/approve.command.js";
 import { DeclinePRCommand } from "../../src/commands/pr/decline.command.js";
 import { CheckoutPRCommand } from "../../src/commands/pr/checkout.command.js";
 import { DiffPRCommand } from "../../src/commands/pr/diff.command.js";
+import { ActivityPRCommand } from "../../src/commands/pr/activity.command.js";
 import { Result } from "../../src/types/result.js";
 import {
   createMockOutputService,
@@ -31,6 +32,8 @@ import type {
   PaginatedResponse,
   BitbucketPullRequest,
   BitbucketApproval,
+  BitbucketPullRequestActivity,
+  BitbucketComment,
   DiffStat,
 } from "../../src/types/api.js";
 
@@ -57,8 +60,14 @@ function createMockPRRepository(
       return Result.ok({
         ...mockPullRequest,
         title: request.title,
-        source: request.source,
-        destination: request.destination,
+        source: {
+          ...mockPullRequest.source,
+          branch: request.source.branch,
+        },
+        destination: {
+          ...mockPullRequest.destination,
+          branch: request.destination.branch,
+        },
       });
     },
     async merge(workspace: string, repoSlug: string, id: number, request) {
@@ -92,6 +101,21 @@ function createMockPRRepository(
       }
       return Result.err({ code: 2002, message: "Not found" } as BBError);
     },
+    async listActivity(workspace: string, repoSlug: string, prId: number, limit = 25) {
+      const activity: BitbucketPullRequestActivity = {
+        comment: {
+          id: 101,
+          content: { raw: "Looks good to me" },
+          user: mockPullRequest.author,
+          created_on: "2024-01-02T00:00:00.000Z",
+        },
+      };
+      return Result.ok({
+        values: [activity].slice(0, limit),
+        pagelen: limit,
+        size: 1,
+      });
+    },
     async update(workspace: string, repoSlug: string, id: number, request: { title?: string; description?: string }) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
@@ -103,6 +127,21 @@ function createMockPRRepository(
       }
       return Result.err({ code: 2002, message: "Not found" } as BBError);
     },
+    async listComments() {
+      return Result.ok({ values: [], pagelen: 0 } as PaginatedResponse<BitbucketComment>);
+    },
+    async getComment() {
+      return Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
+    async createComment() {
+      return Result.err({ code: 2001, message: "Not implemented" } as BBError);
+    },
+    async updateComment() {
+      return Result.err({ code: 2001, message: "Not implemented" } as BBError);
+    },
+    async deleteComment() {
+      return Result.err({ code: 2001, message: "Not implemented" } as BBError);
+    },
   };
 }
 
@@ -111,6 +150,12 @@ function createMockContextService(context?: {
   repoSlug?: string;
 }): IContextService {
   return {
+    parseRemoteUrl() {
+      return null;
+    },
+    async getRepoContextFromGit() {
+      return Result.ok(null);
+    },
     async getRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
@@ -284,7 +329,7 @@ describe("ViewPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new ViewPRCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });
@@ -315,6 +360,39 @@ describe("ViewPRCommand", () => {
     await command.execute({ id: "1" }, { globalOptions: { json: true } });
 
     expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+  });
+});
+
+describe("ActivityPRCommand", () => {
+  it("should list activity entries", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ActivityPRCommand(prRepository, contextService, output);
+    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+
+    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
+  });
+
+  it("should filter activity by type", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ActivityPRCommand(prRepository, contextService, output);
+    await command.execute({ id: "1", type: "approval" }, { globalOptions: {} });
+
+    expect(
+      output.logs.some((log) => log.includes("info:No activity entries matched"))
+    ).toBe(true);
   });
 });
 
@@ -520,7 +598,7 @@ describe("MergePRCommand", () => {
     const output = createMockOutputService();
 
     const command = new MergePRCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });
@@ -618,7 +696,7 @@ describe("DeclinePRCommand", () => {
     const output = createMockOutputService();
 
     const command = new DeclinePRCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });
@@ -675,7 +753,7 @@ describe("CheckoutPRCommand", () => {
       gitService,
       output
     );
-    const result = await command.execute({}, { globalOptions: {} });
+    const result = await command.execute({} as { id: string }, { globalOptions: {} });
 
     expect(result.success).toBe(false);
   });
