@@ -138,6 +138,7 @@ bb pr list
 
 # Review and merge
 bb pr view 42
+bb pr activity 42
 bb pr approve 42
 bb pr merge 42
 ```

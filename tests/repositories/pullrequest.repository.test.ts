@@ -11,6 +11,7 @@ import type {
   PaginatedResponse,
   BitbucketPullRequest,
   BitbucketApproval,
+  BitbucketPullRequestActivity,
 } from "../../src/types/api.js";
 
 describe("PullRequestRepository", () => {
@@ -225,6 +226,39 @@ describe("PullRequestRepository", () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.pagelen).toBe(25);
+      }
+    });
+  });
+
+  describe("listActivity", () => {
+    it("should return pull request activity entries", async () => {
+      const activityResponse: PaginatedResponse<BitbucketPullRequestActivity> = {
+        values: [
+          {
+            comment: {
+              id: 123,
+              content: { raw: "Looks good" },
+              created_on: "2024-01-03T00:00:00.000Z",
+            },
+          },
+        ],
+        pagelen: 25,
+        size: 1,
+      };
+      const responses = new Map([
+        [
+          "GET:/repositories/workspace/repo/pullrequests/1/activity?pagelen=25",
+          Result.ok(activityResponse),
+        ],
+      ]);
+      const httpClient = createMockHttpClient(responses);
+      const repository = new PullRequestRepository(httpClient);
+
+      const result = await repository.listActivity("workspace", "repo", 1, 25);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.values).toHaveLength(1);
       }
     });
   });

@@ -40,6 +40,7 @@ import { DeclinePRCommand } from "./commands/pr/decline.command.js";
 import { ReadyPRCommand } from "./commands/pr/ready.command.js";
 import { CheckoutPRCommand } from "./commands/pr/checkout.command.js";
 import { DiffPRCommand } from "./commands/pr/diff.command.js";
+import { ActivityPRCommand } from "./commands/pr/activity.command.js";
 import { CommentPRCommand } from "./commands/pr/comment.command.js";
 import { ListCommentsPRCommand } from "./commands/pr/comments.list.command.js";
 import { EditCommentPRCommand } from "./commands/pr/comments.edit.command.js";
@@ -228,6 +229,13 @@ export function bootstrap(): Container {
     const gitService = container.resolve<GitService>(ServiceTokens.GitService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new DiffPRCommand(prRepo, contextService, gitService, output);
+  });
+
+  container.register(ServiceTokens.ActivityPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new ActivityPRCommand(prRepo, contextService, output);
   });
 
   container.register(ServiceTokens.CommentPRCommand, () => {

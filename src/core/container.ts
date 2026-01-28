@@ -161,6 +161,7 @@ export const ServiceTokens = {
   ReadyPRCommand: "ReadyPRCommand",
   CheckoutPRCommand: "CheckoutPRCommand",
   DiffPRCommand: "DiffPRCommand",
+  ActivityPRCommand: "ActivityPRCommand",
   CommentPRCommand: "CommentPRCommand",
   ListCommentsPRCommand: "ListCommentsPRCommand",
   EditCommentPRCommand: "EditCommentPRCommand",

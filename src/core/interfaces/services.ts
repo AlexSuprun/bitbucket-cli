@@ -16,6 +16,7 @@ import type {
   BitbucketPullRequest,
   BitbucketApproval,
   BitbucketComment,
+  BitbucketPullRequestActivity,
   PaginatedResponse,
   PullRequestState,
   CreateRepositoryRequest,
@@ -128,6 +129,12 @@ export interface IPullRequestRepository {
     prId: number,
     limit?: number
   ): Promise<Result<PaginatedResponse<BitbucketComment>, BBError>>;
+  listActivity(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    limit?: number
+  ): Promise<Result<PaginatedResponse<BitbucketPullRequestActivity>, BBError>>;
   getComment(
     workspace: string,
     repoSlug: string,

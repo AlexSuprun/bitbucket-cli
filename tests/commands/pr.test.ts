@@ -13,6 +13,7 @@ import { DeclinePRCommand } from "../../src/commands/pr/decline.command.js";
 import { ReadyPRCommand } from "../../src/commands/pr/ready.command.js";
 import { CheckoutPRCommand } from "../../src/commands/pr/checkout.command.js";
 import { DiffPRCommand } from "../../src/commands/pr/diff.command.js";
+import { ActivityPRCommand } from "../../src/commands/pr/activity.command.js";
 import { Result } from "../../src/types/result.js";
 import {
   createMockOutputService,
@@ -32,9 +33,10 @@ import type {
   PaginatedResponse,
   BitbucketPullRequest,
   BitbucketApproval,
+  BitbucketPullRequestActivity,
+  BitbucketComment,
   DiffStat,
   UpdatePullRequestRequest,
-  BitbucketComment,
 } from "../../src/types/api.js";
 
 function createMockPRRepository(
@@ -95,6 +97,21 @@ function createMockPRRepository(
         return Result.ok(mockDiffStat);
       }
       return Result.err({ code: 2002, message: "Not found" } as BBError);
+    },
+    async listActivity(workspace: string, repoSlug: string, prId: number, limit = 25) {
+      const activity: BitbucketPullRequestActivity = {
+        comment: {
+          id: 101,
+          content: { raw: "Looks good to me" },
+          user: mockPullRequest.author,
+          created_on: "2024-01-02T00:00:00.000Z",
+        },
+      };
+      return Result.ok({
+        values: [activity].slice(0, limit),
+        pagelen: limit,
+        size: 1,
+      });
     },
     async update(workspace: string, repoSlug: string, id: number, request: UpdatePullRequestRequest) {
       const pr = prs.find((p) => p.id === id);
@@ -375,6 +392,39 @@ describe("ViewPRCommand", () => {
     await command.execute({ id: "1" }, { globalOptions: {} });
 
     expect(output.logs.some((log) => log.includes("[DRAFT]"))).toBe(true);
+  });
+});
+
+describe("ActivityPRCommand", () => {
+  it("should list activity entries", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ActivityPRCommand(prRepository, contextService, output);
+    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+
+    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
+  });
+
+  it("should filter activity by type", async () => {
+    const prRepository = createMockPRRepository();
+    const contextService = createMockContextService({
+      workspace: "workspace",
+      repoSlug: "repo",
+    });
+    const output = createMockOutputService();
+
+    const command = new ActivityPRCommand(prRepository, contextService, output);
+    await command.execute({ id: "1", type: "approval" }, { globalOptions: {} });
+
+    expect(
+      output.logs.some((log) => log.includes("info:No activity entries matched"))
+    ).toBe(true);
   });
 });
 
