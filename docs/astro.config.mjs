@@ -17,9 +17,13 @@ export default defineConfig({
           },
         },
       ],
-      social: {
-        github: "https://github.com/0pilatos0/bitbucket-cli",
-      },
+      social: [
+        {
+          icon: "github",
+          label: "GitHub",
+          href: "https://github.com/0pilatos0/bitbucket-cli",
+        },
+      ],
       sidebar: [
         {
           label: "Getting Started",
