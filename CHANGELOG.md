@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+### Minor Changes
+
+- [#56](https://github.com/0pilatos0/bitbucket-cli/pull/56) [`b3a9593`](https://github.com/0pilatos0/bitbucket-cli/commit/b3a95931cde1b682dd8cf0ae2343389be548dcb1) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add pull request activity command for history tracking.
+
+- [#54](https://github.com/0pilatos0/bitbucket-cli/pull/54) [`6399250`](https://github.com/0pilatos0/bitbucket-cli/commit/6399250339d00bd83d0ea09b10fbdb407f6ff8a5) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add draft pull request support, including a ready command and draft indicators.
+
 ## 1.2.0
 
 ### Minor Changes
