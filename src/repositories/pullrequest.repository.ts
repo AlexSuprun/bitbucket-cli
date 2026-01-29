@@ -4,12 +4,13 @@
 
 import type { IPullRequestRepository, IHttpClient } from "../core/interfaces/services.js";
 import type { Result } from "../types/result.js";
-import type { BBError } from "../types/errors.js";
+import { BBError, ErrorCode } from "../types/errors.js";
 import type {
   BitbucketPullRequest,
   BitbucketApproval,
   BitbucketComment,
   BitbucketPullRequestActivity,
+  BitbucketUser,
   PaginatedResponse,
   PullRequestState,
   CreatePullRequestRequest,
@@ -194,6 +195,130 @@ export class PullRequestRepository implements IPullRequestRepository {
   ): Promise<Result<void, BBError>> {
     return this.httpClient.delete<void>(
       `/repositories/${encodeURIComponent(workspace)}/${encodeURIComponent(repoSlug)}/pullrequests/${prId}/comments/${commentId}`
+    );
+  }
+
+  public async listReviewers(
+    workspace: string,
+    repoSlug: string,
+    prId: number
+  ): Promise<Result<BitbucketUser[], BBError>> {
+    const result = await this.httpClient.get<BitbucketPullRequest>(
+      this.buildPath(workspace, repoSlug, `/${prId}`)
+    );
+
+    if (!result.success) {
+      return result;
+    }
+
+    return { success: true, value: result.value.reviewers ?? [] };
+  }
+
+  public async addReviewer(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    username: string
+  ): Promise<Result<BitbucketPullRequest, BBError>> {
+    // First, look up the user by username to get their UUID
+    // The Bitbucket API requires UUID for reviewers
+    const userResult = await this.httpClient.get<BitbucketUser>(
+      `/users/${encodeURIComponent(username)}`
+    );
+
+    if (!userResult.success) {
+      // Provide clearer error message when user lookup fails
+      if (userResult.error.code === ErrorCode.API_NOT_FOUND) {
+        return {
+          success: false,
+          error: new BBError({
+            code: ErrorCode.API_NOT_FOUND,
+            message: `User '${username}' not found`,
+            context: { username },
+          }),
+        };
+      }
+      return userResult;
+    }
+
+    const user = userResult.value;
+
+    // Get the current PR to see existing reviewers
+    const prResult = await this.get(workspace, repoSlug, prId);
+    if (!prResult.success) {
+      return prResult;
+    }
+
+    const pr = prResult.value;
+
+    // Check if user is already a reviewer (compare by UUID)
+    if (pr.reviewers.some((r) => r.uuid === user.uuid)) {
+      return { success: true, value: pr };
+    }
+
+    // Add the new reviewer to the list
+    const updatedReviewers = [
+      ...pr.reviewers.map((r) => ({ uuid: r.uuid })),
+      { uuid: user.uuid },
+    ];
+
+    // Update the PR with the new reviewers list
+    return this.httpClient.put<BitbucketPullRequest>(
+      this.buildPath(workspace, repoSlug, `/${prId}`),
+      { reviewers: updatedReviewers }
+    );
+  }
+
+  public async removeReviewer(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    username: string
+  ): Promise<Result<BitbucketPullRequest, BBError>> {
+    // First, look up the user by username to get their UUID
+    const userResult = await this.httpClient.get<BitbucketUser>(
+      `/users/${encodeURIComponent(username)}`
+    );
+
+    if (!userResult.success) {
+      // Provide clearer error message when user lookup fails
+      if (userResult.error.code === ErrorCode.API_NOT_FOUND) {
+        return {
+          success: false,
+          error: new BBError({
+            code: ErrorCode.API_NOT_FOUND,
+            message: `User '${username}' not found`,
+            context: { username },
+          }),
+        };
+      }
+      return userResult;
+    }
+
+    const user = userResult.value;
+
+    // Get the current PR to see existing reviewers
+    const prResult = await this.get(workspace, repoSlug, prId);
+    if (!prResult.success) {
+      return prResult;
+    }
+
+    const pr = prResult.value;
+
+    // Check if user is actually a reviewer (compare by UUID)
+    if (!pr.reviewers.some((r) => r.uuid === user.uuid)) {
+      return { success: true, value: pr };
+    }
+
+    // Remove the reviewer from the list (filter by UUID)
+    const updatedReviewers = pr.reviewers
+      .filter((r) => r.uuid !== user.uuid)
+      .map((r) => ({ uuid: r.uuid }));
+
+    // Update the PR with the new reviewers list
+    return this.httpClient.put<BitbucketPullRequest>(
+      this.buildPath(workspace, repoSlug, `/${prId}`),
+      { reviewers: updatedReviewers }
     );
   }
 }

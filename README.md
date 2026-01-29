@@ -83,7 +83,7 @@ bb pr list
 |----------|----------|
 | **Authentication** | `login`, `logout`, `status`, `token` |
 | **Repositories** | `clone`, `create`, `list`, `view`, `delete` |
-| **Pull Requests** | `create`, `list`, `view`, `edit`, `merge`, `approve`, `decline`, `ready`, `checkout`, `diff`, `comment`, `comments` |
+| **Pull Requests** | `create`, `list`, `view`, `edit`, `merge`, `approve`, `decline`, `ready`, `checkout`, `diff`, `comment`, `comments`, `reviewers` |
 | **Configuration** | `get`, `set`, `list` |
 | **Shell Completion** | `install`, `uninstall` |
 
@@ -141,6 +141,10 @@ bb pr view 42
 bb pr activity 42
 bb pr approve 42
 bb pr merge 42
+
+# Manage reviewers
+bb pr reviewers list 42
+bb pr reviewers add 42 teammate
 ```
 
 ### Draft Pull Requests
@@ -151,6 +155,23 @@ bb pr create --title "WIP: Add new feature" --draft
 
 # Mark it ready for review when done
 bb pr ready 123
+```
+
+### Managing PR Reviewers
+
+```bash
+# List current reviewers on a PR
+bb pr reviewers list 42
+
+# Add reviewers to a PR
+bb pr reviewers add 42 johndoe
+bb pr reviewers add 42 janedoe
+
+# Remove a reviewer from a PR
+bb pr reviewers remove 42 johndoe
+
+# Get reviewers as JSON for scripting
+bb pr reviewers list 42 --json | jq '.[].display_name'
 ```
 
 ### Scripting with JSON
