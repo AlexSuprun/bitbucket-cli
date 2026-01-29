@@ -1,5 +1,83 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- [#61](https://github.com/0pilatos0/bitbucket-cli/pull/61) [`b17b3fe`](https://github.com/0pilatos0/bitbucket-cli/commit/b17b3fe77e592fdae7f5f43274cb619a2f625c2b) Thanks [@John](https://github.com/John)! - Enhance `bb pr view` command with additional PR metadata
+
+  The `bb pr view` command now displays more comprehensive pull request information:
+
+  - **Closer/Merger information**: Shows who closed or merged the PR (when not OPEN)
+  - **Merge commit hash**: Displays the merge commit for merged PRs
+  - **Close source branch indicator**: Shows whether the source branch will be closed on merge
+  - **Commit hashes**: Shows source and destination commit SHAs
+  - **Improved reviewer states**: Now distinguishes between "approved", "changes_requested", and "pending"
+  - **Visual improvements**: Added separators and colorized branch names for better readability
+
+  Example output:
+
+  ```
+  #42 Fix login authentication [OPEN]
+  ────────────────────────────────────────────────────────────
+  Branch:   feature/fix-auth → main
+  Commits:  a1b2c3d → e4f5g6h
+   Doe
+  Close Src: ✓ (close source branch on merge)
+  Activity: 5 comments · 2 tasks
+
+  Reviewers:
+    ✓ Alice Smith approved
+    ✗ Bob Johnson changes requested
+    ○ Carol White pending
+  ```
+
+- [#67](https://github.com/0pilatos0/bitbucket-cli/pull/67) [`03edd17`](https://github.com/0pilatos0/bitbucket-cli/commit/03edd17750d3abd4e15dea6ffaa9f30f903c609e) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add PR Reviewers Management commands
+
+  New commands for managing reviewers on pull requests to enable reviewer assignment and management from CLI:
+
+  - **`bb pr reviewers add <id> <username>`** - Add a reviewer to a pull request by username
+  - **`bb pr reviewers remove <id> <username>`** - Remove a reviewer from a pull request by username
+  - **`bb pr reviewers list <id>`** - List all reviewers on a pull request
+
+  Example usage:
+
+  ```bash
+  # Add a reviewer to PR #123
+  bb pr reviewers add 123 johndoe
+
+  # Remove a reviewer from PR #123
+  bb pr reviewers remove 123 johndoe
+
+  # List all reviewers on PR #123
+  bb pr reviewers list 123
+  ```
+
+  Features:
+
+  - Supports `--json` flag for programmatic consumption
+  - Automatically looks up user UUID from username via `/users/{username}` endpoint
+  - Uses UUID for all reviewer comparisons (not deprecated username field)
+  - Displays reviewers in a formatted table (display name and account ID)
+  - Shows helpful message when no reviewers are assigned
+
+  Note: Due to Bitbucket Cloud GDPR changes, the `username` field is deprecated. The commands use UUID for identification and display `account_id` in list output.
+
+### Patch Changes
+
+- [#63](https://github.com/0pilatos0/bitbucket-cli/pull/63) [`a5c96e8`](https://github.com/0pilatos0/bitbucket-cli/commit/a5c96e8e85839ace0544b23844df456b931dafaa) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add Bun runtime check and update documentation
+
+  - Added runtime check in `src/index.ts` to provide clear error message when CLI is run with Node.js instead of Bun
+  - Updated `package.json` engines field from `node: ">=20"` to `bun: ">=1.0"`
+  - Updated all documentation to clarify that Bun runtime is required to execute the CLI
+  - Updated CI/CD examples to use Bun images and installation steps
+  - Updated troubleshooting guide to check `bun --version` instead of `node --version`
+
+- [#65](https://github.com/0pilatos0/bitbucket-cli/pull/65) [`6e54f6b`](https://github.com/0pilatos0/bitbucket-cli/commit/6e54f6b544793aeadd945a29b21a34f21d5cb526) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix PR comments list showing "Unknown" author and empty content for deleted comments
+
+  - Fixed author field mapping: API returns user data under `user` field (not `author`), and uses `nickname` instead of `username`
+  - Deleted comments now display "[deleted]" instead of blank content
+
 ## 1.3.1
 
 ### Patch Changes
