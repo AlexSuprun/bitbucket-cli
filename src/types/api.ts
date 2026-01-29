@@ -15,6 +15,7 @@ export interface BitbucketUser {
   uuid: string;
   username: string;
   display_name: string;
+  nickname: string;
   account_id: string;
   links: {
     html: LinkObject;
