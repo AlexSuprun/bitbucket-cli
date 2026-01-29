@@ -160,6 +160,27 @@ export interface IPullRequestRepository {
     prId: number,
     commentId: number
   ): Promise<Result<void, BBError>>;
+
+  // Reviewer management
+  listReviewers(
+    workspace: string,
+    repoSlug: string,
+    prId: number
+  ): Promise<Result<BitbucketUser[], BBError>>;
+
+  addReviewer(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    username: string
+  ): Promise<Result<BitbucketPullRequest, BBError>>;
+
+  removeReviewer(
+    workspace: string,
+    repoSlug: string,
+    prId: number,
+    username: string
+  ): Promise<Result<BitbucketPullRequest, BBError>>;
 }
 
 /**

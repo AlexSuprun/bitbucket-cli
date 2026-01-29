@@ -37,6 +37,9 @@ import type { CommentPRCommand } from "./commands/pr/comment.command.js";
 import type { ListCommentsPRCommand } from "./commands/pr/comments.list.command.js";
 import type { EditCommentPRCommand } from "./commands/pr/comments.edit.command.js";
 import type { DeleteCommentPRCommand } from "./commands/pr/comments.delete.command.js";
+import type { AddReviewerPRCommand } from "./commands/pr/reviewers.add.command.js";
+import type { RemoveReviewerPRCommand } from "./commands/pr/reviewers.remove.command.js";
+import type { ListReviewersPRCommand } from "./commands/pr/reviewers.list.command.js";
 import type { GetConfigCommand } from "./commands/config/get.command.js";
 import type { SetConfigCommand } from "./commands/config/set.command.js";
 import type { ListConfigCommand } from "./commands/config/list.command.js";
@@ -76,11 +79,14 @@ if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
         "merge",
         "approve",
         "decline",
-        "ready",
-        "checkout",
-        "diff",
-        "comments"
-      );
+      "ready",
+      "checkout",
+      "diff",
+      "comments",
+      "reviewers"
+    );
+    } else if (env.prev === "reviewers") {
+      completions.push("list", "add", "remove");
     } else if (env.prev === "config") {
       completions.push("get", "set", "list");
     } else if (env.prev === "completion") {
@@ -455,8 +461,47 @@ prCmd
       }
     });
 
+  const prReviewersCmd = new Command("reviewers").description("Manage pull request reviewers");
+
+  prReviewersCmd
+    .command("list <id>")
+    .description("List reviewers on a pull request")
+    .action(async (id, options) => {
+      const cmd = container.resolve<ListReviewersPRCommand>(ServiceTokens.ListReviewersPRCommand);
+      const context = createContext(cli);
+      const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+      if (!result.success) {
+        process.exit(1);
+      }
+    });
+
+  prReviewersCmd
+    .command("add <id> <username>")
+    .description("Add a reviewer to a pull request")
+    .action(async (id, username, options) => {
+      const cmd = container.resolve<AddReviewerPRCommand>(ServiceTokens.AddReviewerPRCommand);
+      const context = createContext(cli);
+      const result = await cmd.execute(withGlobalOptions({ id, username, ...options }, context), context);
+      if (!result.success) {
+        process.exit(1);
+      }
+    });
+
+  prReviewersCmd
+    .command("remove <id> <username>")
+    .description("Remove a reviewer from a pull request")
+    .action(async (id, username, options) => {
+      const cmd = container.resolve<RemoveReviewerPRCommand>(ServiceTokens.RemoveReviewerPRCommand);
+      const context = createContext(cli);
+      const result = await cmd.execute(withGlobalOptions({ id, username, ...options }, context), context);
+      if (!result.success) {
+        process.exit(1);
+      }
+    });
+
   cli.addCommand(prCmd);
   prCmd.addCommand(prCommentsCmd);
+  prCmd.addCommand(prReviewersCmd);
 
 // Config commands
 const configCmd = new Command("config").description("Manage configuration");

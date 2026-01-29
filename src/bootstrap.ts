@@ -45,6 +45,9 @@ import { CommentPRCommand } from "./commands/pr/comment.command.js";
 import { ListCommentsPRCommand } from "./commands/pr/comments.list.command.js";
 import { EditCommentPRCommand } from "./commands/pr/comments.edit.command.js";
 import { DeleteCommentPRCommand } from "./commands/pr/comments.delete.command.js";
+import { AddReviewerPRCommand } from "./commands/pr/reviewers.add.command.js";
+import { RemoveReviewerPRCommand } from "./commands/pr/reviewers.remove.command.js";
+import { ListReviewersPRCommand } from "./commands/pr/reviewers.list.command.js";
 
 // Config commands
 import { GetConfigCommand } from "./commands/config/get.command.js";
@@ -264,6 +267,27 @@ export function bootstrap(): Container {
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new DeleteCommentPRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.AddReviewerPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new AddReviewerPRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.RemoveReviewerPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new RemoveReviewerPRCommand(prRepo, contextService, output);
+  });
+
+  container.register(ServiceTokens.ListReviewersPRCommand, () => {
+    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+    return new ListReviewersPRCommand(prRepo, contextService, output);
   });
 
   // Register config commands

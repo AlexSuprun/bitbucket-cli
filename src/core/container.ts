@@ -166,6 +166,9 @@ export const ServiceTokens = {
   ListCommentsPRCommand: "ListCommentsPRCommand",
   EditCommentPRCommand: "EditCommentPRCommand",
   DeleteCommentPRCommand: "DeleteCommentPRCommand",
+  AddReviewerPRCommand: "AddReviewerPRCommand",
+  RemoveReviewerPRCommand: "RemoveReviewerPRCommand",
+  ListReviewersPRCommand: "ListReviewersPRCommand",
 
   // Commands - Config
   GetConfigCommand: "GetConfigCommand",
