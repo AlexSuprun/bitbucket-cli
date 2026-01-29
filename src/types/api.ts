@@ -127,7 +127,7 @@ export interface BitbucketComment {
   content: {
     raw: string;
   };
-  author?: BitbucketUser;
+  user?: BitbucketUser;
   created_on: string;
   updated_on: string;
   links: {
