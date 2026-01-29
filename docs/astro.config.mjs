@@ -6,7 +6,10 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Bitbucket CLI",
-      description: "A command-line interface for Bitbucket Cloud",
+      description: "A powerful command-line interface for Bitbucket Cloud. Clone repos, manage PRs, and automate workflows — all from your terminal.",
+      components: {
+        Head: './src/components/Head.astro',
+      },
       head: [
         {
           tag: "script",

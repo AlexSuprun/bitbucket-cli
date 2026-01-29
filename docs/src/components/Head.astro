@@ -1,0 +1,111 @@
+---
+import type { Props } from '@astrojs/starlight/props';
+import Default from '@astrojs/starlight/components/Head.astro';
+
+const { title, description, id, lastUpdated, entry } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = new URL('/og-image.png', Astro.site);
+
+// Build page-specific title - check multiple sources for title
+const pageTitle = title || (entry?.data?.title) || 'Bitbucket CLI';
+const siteTitle = 'Bitbucket CLI';
+const fullTitle = pageTitle === siteTitle ? siteTitle : `${pageTitle} | ${siteTitle}`;
+
+// Ensure we have a description
+const metaDescription = description || (entry?.data?.description) || 'A powerful command-line interface for Bitbucket Cloud. Clone repos, manage PRs, and automate workflows — all from your terminal.';
+---
+
+<!-- Default Starlight Head -->
+<Default {...Astro.props}><slot /></Default>
+
+<!-- Canonical URL -->
+<link rel="canonical" href={canonicalURL} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={metaDescription} />
+<meta property="og:image" content={ogImageURL} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:site_name" content="Bitbucket CLI" />
+<meta property="og:locale" content="en_US" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content={canonicalURL} />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={metaDescription} />
+<meta name="twitter:image" content={ogImageURL} />
+<meta name="twitter:creator" content="@0pilatos0" />
+
+<!-- Additional SEO Meta Tags -->
+<meta name="robots" content="index, follow" />
+<meta name="googlebot" content="index, follow" />
+<meta name="author" content="Bitbucket CLI Contributors" />
+<meta name="keywords" content="bitbucket, cli, command line, git, pull requests, repository, automation, devtools" />
+
+<!-- Article metadata for guides/docs -->
+{id !== 'index' && (
+  <>
+    <meta property="article:author" content="Bitbucket CLI Contributors" />
+    {lastUpdated && <meta property="article:modified_time" content={lastUpdated.toISOString()} />}
+  </>
+)}
+
+<!-- Favicon -->
+<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="manifest" href="/site.webmanifest" />
+
+<!-- Theme Color -->
+<meta name="theme-color" content="#0052CC" />
+<meta name="msapplication-TileColor" content="#0052CC" />
+
+<!-- Structured Data - SoftwareApplication -->
+<script type="application/ld+json"
+  set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Bitbucket CLI",
+    "description": "A powerful command-line interface for Bitbucket Cloud",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Linux, Windows",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "Bitbucket CLI Contributors",
+      "url": "https://github.com/0pilatos0/bitbucket-cli"
+    },
+    "softwareVersion": "1.4.0",
+    "downloadUrl": "https://www.npmjs.com/package/@pilatos/bitbucket-cli",
+    "codeRepository": "https://github.com/0pilatos0/bitbucket-cli",
+    "license": "https://github.com/0pilatos0/bitbucket-cli/blob/main/LICENSE",
+    "programmingLanguage": "TypeScript"
+  })}
+/>
+
+<!-- Structured Data - WebSite -->
+<script type="application/ld+json"
+  set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Bitbucket CLI Documentation",
+    "url": "https://bitbucket-cli.paulvanderlei.com",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://bitbucket-cli.paulvanderlei.com/?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  })}
+/>
