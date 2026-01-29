@@ -51,7 +51,7 @@ Verify installation:
 bb --version
 ```
 
-> **Requirements:** Node.js 20 or higher
+> **Requirements:** [Bun](https://bun.sh) runtime 1.0 or higher (Node.js is not supported)
 
 ---
 

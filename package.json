@@ -23,7 +23,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=20"
+    "bun": ">=1.0"
   },
   "scripts": {
     "dev": "bun run src/index.ts",
