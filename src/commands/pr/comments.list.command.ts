@@ -66,8 +66,11 @@ export class ListCommentsPRCommand extends BaseCommand<
 
       const rows = data.values.map((comment: BitbucketComment) => [
         comment.id.toString(),
-        comment.author?.username ?? comment.author?.display_name ?? "Unknown",
-        comment.content.raw.slice(0, 60) + (comment.content.raw.length > 60 ? "..." : ""),
+        comment.user?.nickname ?? comment.user?.display_name ?? "Unknown",
+        comment.deleted
+          ? "[deleted]"
+          : comment.content.raw.slice(0, 60) +
+            (comment.content.raw.length > 60 ? "..." : ""),
         this.output.formatDate(comment.created_on),
       ]);
 

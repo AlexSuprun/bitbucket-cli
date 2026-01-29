@@ -15,6 +15,7 @@ export interface BitbucketUser {
   uuid: string;
   username: string;
   display_name: string;
+  nickname: string;
   account_id: string;
   links: {
     html: LinkObject;
@@ -127,7 +128,7 @@ export interface BitbucketComment {
   content: {
     raw: string;
   };
-  author?: BitbucketUser;
+  user?: BitbucketUser;
   created_on: string;
   updated_on: string;
   links: {
