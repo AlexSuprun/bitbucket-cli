@@ -15,8 +15,11 @@ The Bitbucket CLI can automate pull request workflows, add comments, and manage 
    - `BB_USERNAME` - Your Bitbucket username
    - `BB_API_TOKEN` - Your Bitbucket API token
 
-2. **Install the CLI** in your pipeline
+2. **Install Bun and the CLI** in your pipeline
    ```bash
+   # Install Bun (required runtime)
+   curl -fsSL https://bun.sh/install | bash
+   # Install the CLI (can use npm/pnpm/bun)
    npm install -g @pilatos/bitbucket-cli
    ```
 
@@ -53,10 +56,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: '20'
+          bun-version: latest
 
       - name: Install Bitbucket CLI
         run: npm install -g @pilatos/bitbucket-cli
@@ -92,6 +95,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
 
       - name: Setup
         run: npm install -g @pilatos/bitbucket-cli
@@ -132,7 +140,7 @@ variables:
 
 check-prs:
   stage: check
-  image: node:20
+  image: oven/bun:latest
 
   before_script:
     - npm install -g @pilatos/bitbucket-cli
@@ -154,7 +162,7 @@ check-prs:
 Using the CLI within Bitbucket Pipelines itself:
 
 ```yaml
-image: node:20
+image: oven/bun:latest
 
 pipelines:
   default:
@@ -177,7 +185,7 @@ pipelines:
 
 definitions:
   caches:
-    npm: ~/.npm
+    bun: ~/.bun
 ```
 
 <Aside type="tip">
@@ -202,14 +210,17 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh 'npm install -g @pilatos/bitbucket-cli'
-                sh 'bb auth login'
+                // Install Bun first (required runtime)
+                sh 'curl -fsSL https://bun.sh/install | bash'
+                sh 'export PATH="$HOME/.bun/bin:$PATH" && npm install -g @pilatos/bitbucket-cli'
+                sh 'export PATH="$HOME/.bun/bin:$PATH" && bb auth login'
             }
         }
 
         stage('Check PRs') {
             steps {
                 sh '''
+                    export PATH="$HOME/.bun/bin:$PATH"
                     bb pr list -w myworkspace -r myrepo --json > prs.json
                     PR_COUNT=$(jq length prs.json)
                     echo "Found $PR_COUNT open PRs"
@@ -223,6 +234,7 @@ pipeline {
             }
             steps {
                 sh '''
+                    export PATH="$HOME/.bun/bin:$PATH"
                     APPROVED_PRS=$(bb pr list -w myworkspace -r myrepo --json | \
                         jq -r '.[] | select(.participants | any(.approved == true)) | .id')
 
@@ -252,9 +264,10 @@ variables:
   - group: bitbucket-credentials  # Variable group with BB_USERNAME, BB_API_TOKEN
 
 steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '20.x'
+  - script: |
+      curl -fsSL https://bun.sh/install | bash
+      echo "##vso[task.prependpath]$HOME/.bun/bin"
+    displayName: 'Install Bun'
 
   - script: npm install -g @pilatos/bitbucket-cli
     displayName: 'Install Bitbucket CLI'
@@ -290,9 +303,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
       - name: Update dependencies
         run: |
-          npm update
+          bun update
           git config user.name "Bot"
           git config user.email "bot@example.com"
           git checkout -b deps/weekly-update
@@ -438,10 +456,14 @@ done
 
 ### Command Not Found
 
-Ensure the CLI is installed and in PATH:
+Ensure Bun and the CLI are installed:
 
 ```bash
+# Install Bun (required runtime)
+curl -fsSL https://bun.sh/install | bash
+export PATH="$HOME/.bun/bin:$PATH"
+
+# Install CLI
 npm install -g @pilatos/bitbucket-cli
-export PATH="$(npm bin -g):$PATH"
 bb --version
 ```

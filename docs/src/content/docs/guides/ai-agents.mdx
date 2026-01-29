@@ -48,11 +48,12 @@ Choose your AI agent:
          bb pr create -t "..." # Create PR from current branch
          ```
 
-         ## Requirements
+          ## Requirements
 
-         - `npm install -g @pilatos/bitbucket-cli`
-         - Authenticated via `bb auth login` or env vars
-         - Run from git repo with Bitbucket remote
+          - Bun runtime 1.0+ installed (https://bun.sh)
+          - `npm install -g @pilatos/bitbucket-cli` (or bun/pnpm)
+          - Authenticated via `bb auth login` or env vars
+          - Run from git repo with Bitbucket remote
 
          ## Commands
 
@@ -114,12 +115,13 @@ Choose your AI agent:
 
          Use `bb` (@pilatos/bitbucket-cli) for Bitbucket operations.
 
-         ### Installation
+          ### Installation
 
-         ```bash
-         npm install -g @pilatos/bitbucket-cli
-         bb auth login
-         ```
+          ```bash
+          # Requires Bun runtime (https://bun.sh)
+          npm install -g @pilatos/bitbucket-cli
+          bb auth login
+          ```
 
          ### Common Commands
 
@@ -142,11 +144,12 @@ Choose your AI agent:
          - `bb config set workspace myworkspace`
          - `bb config set repo myrepo`
 
-         ### Tips
+          ### Tips
 
-         1. Auto-detection works when in a git repo with Bitbucket remote
-         2. Use `--json` for machine-readable output
-         3. Squash merge: `bb pr merge <id> --strategy squash`
+          1. Requires Bun runtime 1.0+ to execute
+          2. Auto-detection works when in a git repo with Bitbucket remote
+          3. Use `--json` for machine-readable output
+          4. Squash merge: `bb pr merge <id> --strategy squash`
          4. Delete source branch: `--close-source-branch`
 
          ### Workflows
