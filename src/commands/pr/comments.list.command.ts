@@ -16,6 +16,7 @@ import type { GlobalOptions } from "../../types/config.js";
 
 export interface ListCommentsPROptions extends GlobalOptions {
   limit?: string;
+  truncate?: boolean; // Commander.js sets this to false when --no-truncate is used
 }
 
 export class ListCommentsPRCommand extends BaseCommand<
@@ -69,8 +70,10 @@ export class ListCommentsPRCommand extends BaseCommand<
         comment.user?.nickname ?? comment.user?.display_name ?? "Unknown",
         comment.deleted
           ? "[deleted]"
-          : comment.content.raw.slice(0, 60) +
-            (comment.content.raw.length > 60 ? "..." : ""),
+          : options.truncate === false
+            ? comment.content.raw
+            : comment.content.raw.slice(0, 60) +
+              (comment.content.raw.length > 60 ? "..." : ""),
         this.output.formatDate(comment.created_on),
       ]);
 
