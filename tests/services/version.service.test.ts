@@ -6,7 +6,6 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { VersionService } from "../../src/services/version.service.js";
 import { createMockConfigService } from "../setup.js";
 import type { BBConfig } from "../../src/types/config.js";
-import { Result } from "../../src/types/result.js";
 
 describe("VersionService", () => {
   let service: VersionService;
@@ -33,10 +32,7 @@ describe("VersionService", () => {
 
       const result = await service.checkForUpdate();
 
-      expect(result.success).toBe(true);
-      if (Result.isOk(result)) {
-        expect(result.value).toBeNull();
-      }
+      expect(result).toBeNull();
     });
 
     it("should return null in CI environment", async () => {
@@ -44,10 +40,7 @@ describe("VersionService", () => {
 
       const result = await service.checkForUpdate();
 
-      expect(result.success).toBe(true);
-      if (Result.isOk(result)) {
-        expect(result.value).toBeNull();
-      }
+      expect(result).toBeNull();
     });
 
     it("should return null when check was performed recently", async () => {
@@ -56,10 +49,7 @@ describe("VersionService", () => {
 
       const result = await service.checkForUpdate();
 
-      expect(result.success).toBe(true);
-      if (Result.isOk(result)) {
-        expect(result.value).toBeNull();
-      }
+      expect(result).toBeNull();
     });
 
     it("should respect custom versionCheckInterval", async () => {
@@ -72,10 +62,7 @@ describe("VersionService", () => {
       const result = await service.checkForUpdate();
 
       // Should not check because 3 days < 7 days
-      expect(result.success).toBe(true);
-      if (Result.isOk(result)) {
-        expect(result.value).toBeNull();
-      }
+      expect(result).toBeNull();
     });
   });
 
@@ -108,10 +95,7 @@ describe("VersionService", () => {
 
         const result = await service.checkForUpdate();
 
-        expect(result.success).toBe(true);
-        if (Result.isOk(result)) {
-          expect(result.value).toBeNull();
-        }
+        expect(result).toBeNull();
 
         delete process.env[envVar];
       });

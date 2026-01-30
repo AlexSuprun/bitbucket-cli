@@ -14,7 +14,6 @@ import { ReadyPRCommand } from "../../src/commands/pr/ready.command.js";
 import { CheckoutPRCommand } from "../../src/commands/pr/checkout.command.js";
 import { DiffPRCommand } from "../../src/commands/pr/diff.command.js";
 import { ActivityPRCommand } from "../../src/commands/pr/activity.command.js";
-import { Result } from "../../src/types/result.js";
 import {
   createMockOutputService,
   createMockGitService,
@@ -35,7 +34,6 @@ import type {
   BitbucketApproval,
   BitbucketPullRequestActivity,
   BitbucketComment,
-  DiffStat,
   UpdatePullRequestRequest,
 } from "../../src/types/api.js";
 
@@ -46,57 +44,57 @@ function createMockPRRepository(
     async get(workspace: string, repoSlug: string, id: number) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
-        return Result.ok(pr);
+        return pr;
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async list(workspace: string, repoSlug: string, state = "OPEN", limit = 25) {
       const filtered = prs.filter((p) => p.state === state);
-      return Result.ok({
+      return {
         values: filtered.slice(0, limit),
         pagelen: limit,
         size: filtered.length,
-      } as PaginatedResponse<BitbucketPullRequest>);
+      } as PaginatedResponse<BitbucketPullRequest>;
     },
     async create(workspace: string, repoSlug: string, request) {
-      return Result.ok({
+      return {
         ...mockPullRequest,
         title: request.title,
         source: { ...mockPullRequest.source, branch: request.source.branch },
         destination: { ...mockPullRequest.destination, branch: request.destination.branch },
         draft: request.draft ?? false,
-      });
+      };
     },
     async merge(workspace: string, repoSlug: string, id: number, request) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
-        return Result.ok({ ...pr, state: "MERGED" as const });
+        return { ...pr, state: "MERGED" as const };
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async approve(workspace: string, repoSlug: string, id: number) {
-      return Result.ok(mockApproval);
+      return mockApproval;
     },
     async decline(workspace: string, repoSlug: string, id: number) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
-        return Result.ok({ ...pr, state: "DECLINED" as const });
+        return { ...pr, state: "DECLINED" as const };
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async getDiff(workspace: string, repoSlug: string, id: number) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
-        return Result.ok(mockDiff);
+        return mockDiff;
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async getDiffstat(workspace: string, repoSlug: string, id: number) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
-        return Result.ok(mockDiffStat);
+        return mockDiffStat;
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async listActivity(workspace: string, repoSlug: string, prId: number, limit = 25) {
       const activity: BitbucketPullRequestActivity = {
@@ -107,42 +105,42 @@ function createMockPRRepository(
           created_on: "2024-01-02T00:00:00.000Z",
         },
       };
-      return Result.ok({
+      return {
         values: [activity].slice(0, limit),
         pagelen: limit,
         size: 1,
-      });
+      };
     },
     async update(workspace: string, repoSlug: string, id: number, request: UpdatePullRequestRequest) {
       const pr = prs.find((p) => p.id === id);
       if (pr) {
-        return Result.ok({
+        return {
           ...pr,
           title: request.title ?? pr.title,
           description: request.description ?? pr.description,
           draft: request.draft ?? pr.draft,
-        });
+        };
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async listComments() {
-      return Result.ok({
+      return {
         values: [] as BitbucketComment[],
         pagelen: 0,
         size: 0,
-      } as PaginatedResponse<BitbucketComment>);
+      } as PaginatedResponse<BitbucketComment>;
     },
     async getComment() {
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async createComment() {
-      return Result.err({ code: 2001, message: "Failed" } as BBError);
+      throw { code: 2001, message: "Failed" } as BBError;
     },
     async updateComment() {
-      return Result.err({ code: 2001, message: "Failed" } as BBError);
+      throw { code: 2001, message: "Failed" } as BBError;
     },
     async deleteComment() {
-      return Result.err({ code: 2001, message: "Failed" } as BBError);
+      throw { code: 2001, message: "Failed" } as BBError;
     },
   };
 }
@@ -156,39 +154,39 @@ function createMockContextService(context?: {
       return null;
     },
     async getRepoContextFromGit() {
-      return Result.ok(null);
+      return null;
     },
     async getRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.ok(null);
+      return null;
     },
     async requireRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.err({ code: 6001, message: "No repo context" } as BBError);
+      throw { code: 6001, message: "No repo context" } as BBError;
     },
   };
 }
@@ -205,10 +203,7 @@ describe("ListPRsCommand", () => {
     const command = new ListPRsCommand(prRepository, contextService, output);
     const result = await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values).toHaveLength(1);
-    }
+    expect(result.values).toHaveLength(1);
     expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
@@ -230,10 +225,7 @@ describe("ListPRsCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values.every((pr) => pr.state === "MERGED")).toBe(true);
-    }
+    expect(result.values.every((pr) => pr.state === "MERGED")).toBe(true);
   });
 
   it("should fail when no repo context", async () => {
@@ -242,9 +234,8 @@ describe("ListPRsCommand", () => {
     const output = createMockOutputService();
 
     const command = new ListPRsCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should show message when no PRs found", async () => {
@@ -282,10 +273,7 @@ describe("ListPRsCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values.length).toBeLessThanOrEqual(2);
-    }
+    expect(result.values.length).toBeLessThanOrEqual(2);
   });
 
   it("should output JSON when flag is set", async () => {
@@ -331,11 +319,8 @@ describe("ViewPRCommand", () => {
     const command = new ViewPRCommand(prRepository, contextService, output);
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.id).toBe(1);
-      expect(result.value.title).toBe("Test PR");
-    }
+    expect(result.id).toBe(1);
+    expect(result.title).toBe("Test PR");
   });
 
   it("should fail when ID not provided", async () => {
@@ -347,9 +332,8 @@ describe("ViewPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new ViewPRCommand(prRepository, contextService, output);
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({} as { id: string }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should fail for non-existent PR", async () => {
@@ -361,9 +345,8 @@ describe("ViewPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new ViewPRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "999" }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should output JSON when flag is set", async () => {
@@ -407,7 +390,7 @@ describe("ActivityPRCommand", () => {
     const command = new ActivityPRCommand(prRepository, contextService, output);
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
     expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
@@ -449,7 +432,7 @@ describe("CreatePRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -468,9 +451,8 @@ describe("CreatePRCommand", () => {
       gitService,
       output
     );
-    const result = await command.execute({}, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
     expect(output.logs.some((log) => log.includes("title"))).toBe(true);
   });
 
@@ -494,10 +476,7 @@ describe("CreatePRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.source.branch.name).toBe("my-feature");
-    }
+    expect(result.source.branch.name).toBe("my-feature");
   });
 
   it("should use explicit source branch", async () => {
@@ -520,10 +499,7 @@ describe("CreatePRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.source.branch.name).toBe("explicit-branch");
-    }
+    expect(result.source.branch.name).toBe("explicit-branch");
   });
 
   it("should use main as default destination", async () => {
@@ -546,10 +522,7 @@ describe("CreatePRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.destination.branch.name).toBe("main");
-    }
+    expect(result.destination.branch.name).toBe("main");
   });
 
   it("should use explicit destination branch", async () => {
@@ -572,10 +545,7 @@ describe("CreatePRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.destination.branch.name).toBe("develop");
-    }
+    expect(result.destination.branch.name).toBe("develop");
   });
 
   it("should output JSON when flag is set", async () => {
@@ -621,10 +591,7 @@ describe("CreatePRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.draft).toBe(true);
-    }
+    expect(result.draft).toBe(true);
   });
 });
 
@@ -640,10 +607,7 @@ describe("MergePRCommand", () => {
     const command = new MergePRCommand(prRepository, contextService, output);
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.state).toBe("MERGED");
-    }
+    expect(result.state).toBe("MERGED");
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -656,9 +620,8 @@ describe("MergePRCommand", () => {
     const output = createMockOutputService();
 
     const command = new MergePRCommand(prRepository, contextService, output);
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({} as { id: string }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should output JSON when flag is set", async () => {
@@ -688,10 +651,7 @@ describe("ApprovePRCommand", () => {
     const command = new ApprovePRCommand(prRepository, contextService, output);
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.approved).toBe(true);
-    }
+    expect(result.approved).toBe(true);
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -708,7 +668,7 @@ describe("ApprovePRCommand", () => {
     const result = await command.execute({ id: undefined as unknown as string }, { globalOptions: {} });
 
     // The approve call happens with NaN, which the mock handles
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 
   it("should output JSON when flag is set", async () => {
@@ -738,10 +698,7 @@ describe("DeclinePRCommand", () => {
     const command = new DeclinePRCommand(prRepository, contextService, output);
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.state).toBe("DECLINED");
-    }
+    expect(result.state).toBe("DECLINED");
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -754,9 +711,8 @@ describe("DeclinePRCommand", () => {
     const output = createMockOutputService();
 
     const command = new DeclinePRCommand(prRepository, contextService, output);
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({} as { id: string }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should output JSON when flag is set", async () => {
@@ -786,10 +742,7 @@ describe("ReadyPRCommand", () => {
     const command = new ReadyPRCommand(prRepository, contextService, output);
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.draft).toBe(false);
-    }
+    expect(result.draft).toBe(false);
     expect(output.logs.some((log) => log.includes("ready for review"))).toBe(true);
   });
 
@@ -826,7 +779,7 @@ describe("CheckoutPRCommand", () => {
     );
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -845,9 +798,8 @@ describe("CheckoutPRCommand", () => {
       gitService,
       output
     );
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({} as { id: string }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should fail for non-existent PR", async () => {
@@ -865,9 +817,8 @@ describe("CheckoutPRCommand", () => {
       gitService,
       output
     );
-    const result = await command.execute({ id: "999" }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 });
 
@@ -884,10 +835,7 @@ describe("DiffPRCommand", () => {
     const command = new DiffPRCommand(prRepository, contextService, gitService, output);
     const result = await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.diff).toContain("diff --git");
-    }
+    expect(result.diff).toContain("diff --git");
     expect(output.logs.some((log) => log.includes("text:diff --git"))).toBe(true);
   });
 
@@ -903,10 +851,7 @@ describe("DiffPRCommand", () => {
     const command = new DiffPRCommand(prRepository, contextService, gitService, output);
     const result = await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.diff).toContain("diff --git");
-    }
+    expect(result.diff).toContain("diff --git");
   });
 
   it("should fail when no ID provided and branch not found", async () => {
@@ -919,9 +864,8 @@ describe("DiffPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({}, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should display diffstat when --stat flag is set", async () => {
@@ -936,13 +880,10 @@ describe("DiffPRCommand", () => {
     const command = new DiffPRCommand(prRepository, contextService, gitService, output);
     const result = await command.execute({ id: "1", stat: true }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.stat).toBeDefined();
-      expect(result.value.stat!.filesChanged).toBe(2);
-      expect(result.value.stat!.insertions).toBe(30);
-      expect(result.value.stat!.deletions).toBe(5);
-    }
+    expect(result.stat).toBeDefined();
+    expect(result.stat!.filesChanged).toBe(2);
+    expect(result.stat!.insertions).toBe(30);
+    expect(result.stat!.deletions).toBe(5);
     expect(output.logs.some((log) => log.includes("2 files changed"))).toBe(true);
   });
 
@@ -958,11 +899,8 @@ describe("DiffPRCommand", () => {
     const command = new DiffPRCommand(prRepository, contextService, gitService, output);
     const result = await command.execute({ id: "1", nameOnly: true }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.diff).toContain("src/file.ts");
-      expect(result.value.diff).toContain("src/newfile.ts");
-    }
+    expect(result.diff).toContain("src/file.ts");
+    expect(result.diff).toContain("src/newfile.ts");
     expect(output.logs.some((log) => log.includes("text:src/file.ts"))).toBe(true);
   });
 
@@ -991,9 +929,8 @@ describe("DiffPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({ id: "999" }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 });
 
@@ -1013,10 +950,7 @@ describe("EditPRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.title).toBe("New Title");
-    }
+    expect(result.title).toBe("New Title");
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -1035,10 +969,7 @@ describe("EditPRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.description).toBe("New description");
-    }
+    expect(result.description).toBe("New description");
   });
 
   it("should update both title and body", async () => {
@@ -1056,11 +987,8 @@ describe("EditPRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.title).toBe("New Title");
-      expect(result.value.description).toBe("New description");
-    }
+    expect(result.title).toBe("New Title");
+    expect(result.description).toBe("New description");
   });
 
   it("should auto-detect PR from current branch", async () => {
@@ -1078,10 +1006,7 @@ describe("EditPRCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.title).toBe("Updated via auto-detect");
-    }
+    expect(result.title).toBe("Updated via auto-detect");
   });
 
   it("should fail when no changes provided", async () => {
@@ -1094,9 +1019,8 @@ describe("EditPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({ id: "1" }, { globalOptions: {} })).rejects.toThrow();
     expect(output.logs.some((log) => log.includes("At least one of"))).toBe(true);
   });
 
@@ -1110,12 +1034,11 @@ describe("EditPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
+    
+    await expect(command.execute(
       { id: "999", title: "New Title" },
       { globalOptions: {} }
-    );
-
-    expect(result.success).toBe(false);
+    )).rejects.toThrow();
   });
 
   it("should fail when no repo context", async () => {
@@ -1125,12 +1048,11 @@ describe("EditPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
+    
+    await expect(command.execute(
       { id: "1", title: "New Title" },
       { globalOptions: {} }
-    );
-
-    expect(result.success).toBe(false);
+    )).rejects.toThrow();
   });
 
   it("should fail when auto-detect finds no matching PR", async () => {
@@ -1143,12 +1065,11 @@ describe("EditPRCommand", () => {
     const output = createMockOutputService();
 
     const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
+    
+    await expect(command.execute(
       { title: "New Title" },
       { globalOptions: {} }
-    );
-
-    expect(result.success).toBe(false);
+    )).rejects.toThrow();
     expect(output.logs.some((log) => log.includes("No open pull request found"))).toBe(true);
   });
 

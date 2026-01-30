@@ -8,7 +8,6 @@ import { ViewRepoCommand } from "../../src/commands/repo/view.command.js";
 import { CreateRepoCommand } from "../../src/commands/repo/create.command.js";
 import { DeleteRepoCommand } from "../../src/commands/repo/delete.command.js";
 import { CloneCommand } from "../../src/commands/repo/clone.command.js";
-import { Result } from "../../src/types/result.js";
 import {
   createMockConfigService,
   createMockOutputService,
@@ -29,23 +28,23 @@ function createMockRepoRepository(
         (r) => r.full_name === `${workspace}/${repoSlug}` || r.slug === repoSlug
       );
       if (repo) {
-        return Result.ok(repo);
+        return repo;
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      throw { code: 2002, message: "Not found" } as BBError;
     },
     async list(workspace: string, limit: number = 25) {
       const filtered = repos.filter((r) => r.full_name.startsWith(`${workspace}/`));
-      return Result.ok({
+      return {
         values: filtered.slice(0, limit),
         pagelen: limit,
         size: filtered.length,
-      } as PaginatedResponse<BitbucketRepository>);
+      } as PaginatedResponse<BitbucketRepository>;
     },
     async create(workspace: string, request) {
-      return Result.ok(mockRepository);
+      return mockRepository;
     },
     async delete(workspace: string, repoSlug: string) {
-      return Result.ok(undefined);
+      return undefined;
     },
   };
 }
@@ -58,34 +57,34 @@ function createMockContextService(context?: {
     async getRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.ok(null);
+      return null;
     },
     async requireRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.err({ code: 6001, message: "No repo context" } as BBError);
+      throw { code: 6001, message: "No repo context" } as BBError;
     },
   };
 }
@@ -102,10 +101,7 @@ describe("ListReposCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values).toHaveLength(1);
-    }
+    expect(result.values).toHaveLength(1);
     expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
@@ -117,7 +113,7 @@ describe("ListReposCommand", () => {
     const command = new ListReposCommand(repoRepository, configService, output);
     const result = await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 
   it("should fail when no workspace specified and no default", async () => {
@@ -126,12 +122,8 @@ describe("ListReposCommand", () => {
     const output = createMockOutputService();
 
     const command = new ListReposCommand(repoRepository, configService, output);
-    const result = await command.execute({}, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe(6002); // CONTEXT_WORKSPACE_NOT_FOUND
-    }
+    
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should respect limit option", async () => {
@@ -150,10 +142,7 @@ describe("ListReposCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values.length).toBeLessThanOrEqual(2);
-    }
+    expect(result.values.length).toBeLessThanOrEqual(2);
   });
 
   it("should show message when no repositories found", async () => {
@@ -194,10 +183,7 @@ describe("ViewRepoCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.full_name).toBe("workspace/repo");
-    }
+    expect(result.full_name).toBe("workspace/repo");
   });
 
   it("should use context when no repository specified", async () => {
@@ -211,7 +197,7 @@ describe("ViewRepoCommand", () => {
     const command = new ViewRepoCommand(repoRepository, contextService, output);
     const result = await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 
   it("should fail when no context available", async () => {
@@ -220,9 +206,8 @@ describe("ViewRepoCommand", () => {
     const output = createMockOutputService();
 
     const command = new ViewRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should output JSON when flag is set", async () => {
@@ -266,7 +251,7 @@ describe("CreateRepoCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -283,7 +268,7 @@ describe("CreateRepoCommand", () => {
     );
 
     // The mock will still succeed - actual API would fail
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 
   it("should fail when no workspace available", async () => {
@@ -292,12 +277,11 @@ describe("CreateRepoCommand", () => {
     const output = createMockOutputService();
 
     const command = new CreateRepoCommand(repoRepository, configService, output);
-    const result = await command.execute(
+    
+    await expect(command.execute(
       { name: "new-repo" },
       { globalOptions: {} }
-    );
-
-    expect(result.success).toBe(false);
+    )).rejects.toThrow();
   });
 
   it("should use explicit workspace option", async () => {
@@ -311,7 +295,7 @@ describe("CreateRepoCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 
   it("should respect isPrivate option", async () => {
@@ -325,7 +309,7 @@ describe("CreateRepoCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 
   it("should output JSON when flag is set", async () => {
@@ -358,7 +342,7 @@ describe("DeleteRepoCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -371,12 +355,12 @@ describe("DeleteRepoCommand", () => {
     const output = createMockOutputService();
 
     const command = new DeleteRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute(
+    
+    await expect(command.execute(
       { repository: "workspace/repo" },
       { globalOptions: {} }
-    );
+    )).rejects.toThrow();
 
-    expect(result.success).toBe(false);
     expect(output.logs.some((log) => log.includes("--yes"))).toBe(true);
   });
 
@@ -394,7 +378,7 @@ describe("DeleteRepoCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 });
 
@@ -414,7 +398,7 @@ describe("CloneCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -433,10 +417,7 @@ describe("CloneCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.url).toContain("git@bitbucket.org");
-    }
+    expect(result.url).toContain("git@bitbucket.org");
   });
 
   it("should support custom destination", async () => {
@@ -454,7 +435,7 @@ describe("CloneCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(result).toBeDefined();
   });
 
   it("should use default workspace when only repo name provided", async () => {
@@ -472,10 +453,7 @@ describe("CloneCommand", () => {
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.url).toContain("myworkspace/myrepo");
-    }
+    expect(result.url).toContain("myworkspace/myrepo");
   });
 
   it("should fail when no workspace available for single repo name", async () => {
@@ -488,11 +466,10 @@ describe("CloneCommand", () => {
       configService,
       output
     );
-    const result = await command.execute(
+    
+    await expect(command.execute(
       { repository: "myrepo" },
       { globalOptions: {} }
-    );
-
-    expect(result.success).toBe(false);
+    )).rejects.toThrow();
   });
 });
