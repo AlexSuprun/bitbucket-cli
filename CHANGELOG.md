@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- [#70](https://github.com/0pilatos0/bitbucket-cli/pull/70) [`4690ea8`](https://github.com/0pilatos0/bitbucket-cli/commit/4690ea81c95ea0bf0a6ac039a3d95be445fb0bd0) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add --no-truncate option to `bb pr comments list` command to show full comment content without truncation
+
+- [#73](https://github.com/0pilatos0/bitbucket-cli/pull/73) [`f06609b`](https://github.com/0pilatos0/bitbucket-cli/commit/f06609b1e174c45c6010d2d46ae0bc119ebb6f76) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add automatic update notifications that check npm registry for new versions when running the bare `bb` command. Includes configurable options to disable notifications or change check frequency.
+
+### Patch Changes
+
+- [#74](https://github.com/0pilatos0/bitbucket-cli/pull/74) [`ad919f0`](https://github.com/0pilatos0/bitbucket-cli/commit/ad919f03396397daa1be8bc513d4b281f85432fe) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix Starlight social config format in documentation site. Changed from array format to object format to match newer Starlight version requirements.
+
 ## 1.4.0
 
 ### Minor Changes
