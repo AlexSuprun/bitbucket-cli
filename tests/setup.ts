@@ -225,3 +225,24 @@ export const mockPullRequest: Pullrequest = {
   participants: [],
   reviewers: [],
 };
+
+export const mockApproval = {
+  approved: true,
+  user: mockUser,
+  date: "2024-01-01T00:00:00.000Z",
+};
+
+export const mockDiff = `diff --git a/README.md b/README.md
+index 123456..789abc 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-Old content
++New content`;
+
+export const mockDiffStat = {
+  old: { path: "README.md", type: "commit_file" },
+  new: { path: "README.md", type: "commit_file" },
+  lines_added: 1,
+  lines_removed: 1,
+};
