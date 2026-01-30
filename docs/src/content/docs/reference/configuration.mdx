@@ -34,6 +34,8 @@ The Bitbucket CLI stores configuration in a JSON file. This page documents the f
 | `apiToken` | string | Your API token (stored securely) | `bb auth login` |
 | `workspace` | string | Default workspace | `bb config set` |
 | `repo` | string | Default repository | `bb config set` |
+| `skipVersionCheck` | boolean | Disable update notifications | `bb config set` |
+| `versionCheckInterval` | number | Days between update checks (default: 1) | `bb config set` |
 
 ### Example Configuration
 
@@ -42,7 +44,9 @@ The Bitbucket CLI stores configuration in a JSON file. This page documents the f
   "username": "myuser",
   "apiToken": "ATBB_xxxxxxxxxxxxxxxxxxxx",
   "workspace": "myworkspace",
-  "repo": "myrepo"
+  "repo": "myrepo",
+  "skipVersionCheck": false,
+  "versionCheckInterval": 7
 }
 ```
 
@@ -83,6 +87,8 @@ bb config get workspace
 ```bash
 bb config set workspace myworkspace
 bb config set repo myrepo
+bb config set skipVersionCheck true
+bb config set versionCheckInterval 7
 ```
 
 ### Protected Keys
@@ -93,6 +99,48 @@ Some configuration keys cannot be set directly:
 |-----|--------|------------|
 | `username` | Tied to authentication | Use `bb auth login` |
 | `apiToken` | Security-sensitive | Use `bb auth login` |
+
+---
+
+## Update Notifications
+
+The CLI automatically checks for updates when you run the bare `bb` command (without any subcommands). This helps you stay current with the latest features and bug fixes.
+
+### How It Works
+
+- Checks npm registry for the latest version
+- Compares with your installed version
+- Shows a notification if an update is available
+- Caches the check result for 24 hours (configurable)
+- Skips checks in CI environments automatically
+
+### Example Notification
+
+```
+⚠ A new version is available: 1.5.0 (you have 1.4.0)
+  Run 'bun install -g @pilatos/bitbucket-cli' to update
+  Or disable with 'bb config set skipVersionCheck true'
+```
+
+### Disable Notifications
+
+To permanently disable update notifications:
+
+```bash
+bb config set skipVersionCheck true
+```
+
+### Change Check Frequency
+
+To check less frequently (e.g., once per week):
+
+```bash
+bb config set versionCheckInterval 7
+```
+
+<Aside type="tip">
+The `versionCheckInterval` value is in days. Set it to a higher number if you prefer fewer interruptions.
+</Aside>
 
 ---
 

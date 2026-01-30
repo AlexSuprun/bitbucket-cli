@@ -270,3 +270,45 @@ We welcome contributions! See [CONTRIBUTING.md](https://github.com/0pilatos0/bit
 - Clear description of the feature
 - Use case / why it's needed
 - Examples of how it would work
+
+---
+
+## Update Notifications
+
+### How do I disable update notifications?
+
+The CLI automatically checks for updates when you run `bb` without any subcommands. To disable this:
+
+```bash
+bb config set skipVersionCheck true
+```
+
+### How often does the CLI check for updates?
+
+By default, the CLI checks once per day (24 hours). You can change this interval:
+
+```bash
+# Check weekly
+bb config set versionCheckInterval 7
+
+# Check every 3 days
+bb config set versionCheckInterval 3
+```
+
+The value is in days.
+
+### Will update checks slow down the CLI?
+
+No. The check is:
+- Performed asynchronously after displaying help
+- Cached for 24 hours (or your configured interval)
+- Skipped entirely in CI environments
+- Silently fails if npm registry is unreachable
+
+### Does the CLI auto-update?
+
+No. The CLI only notifies you that an update is available. You must manually update:
+
+```bash
+bun install -g @pilatos/bitbucket-cli
+```

@@ -131,6 +131,7 @@ export const ServiceTokens = {
   ContextService: "ContextService",
   OutputService: "OutputService",
   HttpClient: "HttpClient",
+  VersionService: "VersionService",
 
   // Repositories
   UserRepository: "UserRepository",

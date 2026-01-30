@@ -8,6 +8,8 @@ import { bootstrap } from "./bootstrap.js";
 import { Container, ServiceTokens } from "./core/container.js";
 import type { CommandContext } from "./core/interfaces/commands.js";
 import type { GlobalOptions } from "./types/config.js";
+import type { VersionService } from "./services/version.service.js";
+import type { OutputService } from "./services/output.service.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
@@ -131,7 +133,26 @@ cli
   .version(pkg.version)
   .option("--json", "Output as JSON")
   .option("-w, --workspace <workspace>", "Specify workspace")
-  .option("-r, --repo <repo>", "Specify repository");
+  .option("-r, --repo <repo>", "Specify repository")
+  .action(async () => {
+    // Show help when no subcommand is provided
+    cli.outputHelp();
+    
+    // Check for updates after showing help
+    const versionService = container.resolve<VersionService>(ServiceTokens.VersionService);
+    const output = container.resolve<OutputService>(ServiceTokens.OutputService);
+
+    const result = await versionService.checkForUpdate();
+
+    if (result.success && result.value?.updateAvailable) {
+      console.log("");
+      console.log("─".repeat(50));
+      console.log(`⚠ A new version is available: ${result.value.latestVersion} (you have ${result.value.currentVersion})`);
+      console.log(`  Run '${versionService.getInstallCommand()}' to update`);
+      console.log(`  Or disable with 'bb config set skipVersionCheck true'`);
+      console.log("─".repeat(50));
+    }
+  });
 
 // Auth commands
 const authCmd = new Command("auth").description("Authenticate with Bitbucket");

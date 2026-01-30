@@ -22,6 +22,8 @@ The configuration file stores your CLI settings and authentication credentials.
 | `apiToken` | Bitbucket API token (set during `auth login`, masked in output) |
 | `workspace` | Default workspace for commands |
 | `repo` | Default repository for commands |
+| `skipVersionCheck` | Disable update notifications (default: false) |
+| `versionCheckInterval` | Days between update checks (default: 1) |
 
 ### Configuration File Format
 
@@ -32,7 +34,9 @@ The config file is stored as JSON:
   "username": "myuser",
   "apiToken": "***",
   "workspace": "myworkspace",
-  "repo": "myrepo"
+  "repo": "myrepo",
+  "skipVersionCheck": false,
+  "versionCheckInterval": 1
 }
 ```
 
@@ -89,10 +93,16 @@ bb config set workspace myworkspace
 
 # Set default repository
 bb config set repo myrepo
+
+# Disable update notifications
+bb config set skipVersionCheck true
+
+# Check for updates weekly instead of daily
+bb config set versionCheckInterval 7
 ```
 
 :::caution
-Use `bb auth login` to set credentials instead of manually setting `username` and `appPassword`.
+Use `bb auth login` to set credentials instead of manually setting `username` and `apiToken`.
 :::
 
 ---
