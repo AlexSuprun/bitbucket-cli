@@ -7,26 +7,27 @@ import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
 import type {
   IConfigService,
-  IUserRepository,
   IOutputService,
 } from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import type { BitbucketUser } from "../../types/api.js";
+import type { UsersApi } from "../../generated/api.js";
 
 export interface AuthStatus {
   authenticated: boolean;
-  user?: BitbucketUser;
+  user?: {
+    username: string;
+    display_name: string;
+    account_id: string;
+  };
   defaultWorkspace?: string;
 }
 
-export class StatusCommand extends BaseCommand<void, AuthStatus> {
+export class StatusCommand extends BaseCommand<void, void> {
   public readonly name = "status";
   public readonly description = "Show authentication status";
 
   constructor(
     private readonly configService: IConfigService,
-    private readonly userRepository: IUserRepository,
+    private readonly usersApi: UsersApi,
     output: IOutputService
   ) {
     super(output);
@@ -35,48 +36,21 @@ export class StatusCommand extends BaseCommand<void, AuthStatus> {
   public async execute(
     _options: void,
     context: CommandContext
-  ): Promise<Result<AuthStatus, BBError>> {
-    const configResult = await this.configService.getConfig();
-    if (!configResult.success) {
-      return configResult;
-    }
-
-    const config = configResult.value;
+  ): Promise<void> {
+    const config = await this.configService.getConfig();
 
     // Check if credentials exist
     if (!config.username || !config.apiToken) {
-      const status: AuthStatus = { authenticated: false };
-
-      this.handleResult(Result.ok(status), context, () => {
-        this.output.info("Not logged in");
-        this.output.text(`Run ${chalk.cyan("bb auth login")} to authenticate.`);
-      });
-
-      return Result.ok(status);
+      this.output.info("Not logged in");
+      this.output.text(`Run ${chalk.cyan("bb auth login")} to authenticate.`);
+      return;
     }
 
     // Verify credentials by fetching user info
-    const userResult = await this.userRepository.getCurrentUser();
+    try {
+      const response = await this.usersApi.userGet();
+      const user = response.data;
 
-    if (!userResult.success) {
-      const status: AuthStatus = { authenticated: false };
-
-      this.handleResult(Result.ok(status), context, () => {
-        this.output.error("Authentication is invalid or expired");
-        this.output.text(`Run ${chalk.cyan("bb auth login")} to re-authenticate.`);
-      });
-
-      return Result.ok(status);
-    }
-
-    const user = userResult.value;
-    const status: AuthStatus = {
-      authenticated: true,
-      user,
-      defaultWorkspace: config.defaultWorkspace,
-    };
-
-    this.handleResult(Result.ok(status), context, () => {
       this.output.success("Logged in to Bitbucket");
       this.output.text(`  Username: ${chalk.cyan(user.username)}`);
       this.output.text(`  Display name: ${user.display_name}`);
@@ -85,8 +59,10 @@ export class StatusCommand extends BaseCommand<void, AuthStatus> {
       if (config.defaultWorkspace) {
         this.output.text(`  Default workspace: ${chalk.cyan(config.defaultWorkspace)}`);
       }
-    });
-
-    return Result.ok(status);
+    } catch (error) {
+      this.output.error("Authentication is invalid or expired");
+      this.output.text(`Run ${chalk.cyan("bb auth login")} to re-authenticate.`);
+      throw error;
+    }
   }
 }

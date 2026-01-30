@@ -2,41 +2,25 @@
  * Service interfaces for dependency injection
  */
 
-import type { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
+import type { BBError } from '../../types/errors.js';
 import type {
   BBConfig,
   AuthCredentials,
   RepoContext,
   GlobalOptions,
-} from "../../types/config.js";
-import type {
-  BitbucketUser,
-  BitbucketRepository,
-  BitbucketPullRequest,
-  BitbucketApproval,
-  BitbucketComment,
-  BitbucketPullRequestActivity,
-  PaginatedResponse,
-  PullRequestState,
-  CreateRepositoryRequest,
-  CreatePullRequestRequest,
-  MergePullRequestRequest,
-  UpdatePullRequestRequest,
-  DiffStat,
-} from "../../types/api.js";
+} from '../../types/config.js';
 
 /**
  * Configuration service interface
  */
 export interface IConfigService {
-  getConfig(): Promise<Result<BBConfig, BBError>>;
-  setConfig(config: BBConfig): Promise<Result<void, BBError>>;
-  getCredentials(): Promise<Result<AuthCredentials, BBError>>;
-  setCredentials(credentials: AuthCredentials): Promise<Result<void, BBError>>;
-  clearConfig(): Promise<Result<void, BBError>>;
-  getValue<K extends keyof BBConfig>(key: K): Promise<Result<BBConfig[K] | undefined, BBError>>;
-  setValue<K extends keyof BBConfig>(key: K, value: BBConfig[K]): Promise<Result<void, BBError>>;
+  getConfig(): Promise<BBConfig>;
+  setConfig(config: BBConfig): Promise<void>;
+  getCredentials(): Promise<AuthCredentials>;
+  setCredentials(credentials: AuthCredentials): Promise<void>;
+  clearConfig(): Promise<void>;
+  getValue<K extends keyof BBConfig>(key: K): Promise<BBConfig[K] | undefined>;
+  setValue<K extends keyof BBConfig>(key: K, value: BBConfig[K]): Promise<void>;
   getConfigPath(): string;
 }
 
@@ -45,12 +29,12 @@ export interface IConfigService {
  */
 export interface IGitService {
   isRepository(): Promise<boolean>;
-  clone(url: string, destination?: string): Promise<Result<void, BBError>>;
-  fetch(remote?: string): Promise<Result<void, BBError>>;
-  checkout(branch: string): Promise<Result<void, BBError>>;
-  checkoutNewBranch(branch: string, startPoint?: string): Promise<Result<void, BBError>>;
-  getCurrentBranch(): Promise<Result<string, BBError>>;
-  getRemoteUrl(remote?: string): Promise<Result<string, BBError>>;
+  clone(url: string, destination?: string): Promise<void>;
+  fetch(remote?: string): Promise<void>;
+  checkout(branch: string): Promise<void>;
+  checkoutNewBranch(branch: string, startPoint?: string): Promise<void>;
+  getCurrentBranch(): Promise<string>;
+  getRemoteUrl(remote?: string): Promise<string>;
 }
 
 /**
@@ -58,129 +42,9 @@ export interface IGitService {
  */
 export interface IContextService {
   parseRemoteUrl(url: string): RepoContext | null;
-  getRepoContextFromGit(): Promise<Result<RepoContext | null, BBError>>;
-  getRepoContext(options: GlobalOptions): Promise<Result<RepoContext | null, BBError>>;
-  requireRepoContext(options: GlobalOptions): Promise<Result<RepoContext, BBError>>;
-}
-
-/**
- * HTTP client interface for API calls
- */
-export interface IHttpClient {
-  get<T>(path: string): Promise<Result<T, BBError>>;
-  post<T>(path: string, body?: unknown): Promise<Result<T, BBError>>;
-  put<T>(path: string, body?: unknown): Promise<Result<T, BBError>>;
-  delete<T>(path: string): Promise<Result<T, BBError>>;
-  getText(path: string): Promise<Result<string, BBError>>;
-}
-
-/**
- * User repository interface
- */
-export interface IUserRepository {
-  getCurrentUser(): Promise<Result<BitbucketUser, BBError>>;
-}
-
-/**
- * Repository repository interface (repos management)
- */
-export interface IRepoRepository {
-  get(workspace: string, repoSlug: string): Promise<Result<BitbucketRepository, BBError>>;
-  list(workspace: string, limit?: number): Promise<Result<PaginatedResponse<BitbucketRepository>, BBError>>;
-  create(workspace: string, request: CreateRepositoryRequest): Promise<Result<BitbucketRepository, BBError>>;
-  delete(workspace: string, repoSlug: string): Promise<Result<void, BBError>>;
-}
-
-/**
- * Pull request repository interface
- */
-export interface IPullRequestRepository {
-  get(workspace: string, repoSlug: string, id: number): Promise<Result<BitbucketPullRequest, BBError>>;
-  list(
-    workspace: string,
-    repoSlug: string,
-    state?: PullRequestState,
-    limit?: number
-  ): Promise<Result<PaginatedResponse<BitbucketPullRequest>, BBError>>;
-  create(
-    workspace: string,
-    repoSlug: string,
-    request: CreatePullRequestRequest
-  ): Promise<Result<BitbucketPullRequest, BBError>>;
-  update(
-    workspace: string,
-    repoSlug: string,
-    id: number,
-    request: UpdatePullRequestRequest
-  ): Promise<Result<BitbucketPullRequest, BBError>>;
-  merge(
-    workspace: string,
-    repoSlug: string,
-    id: number,
-    request?: MergePullRequestRequest
-  ): Promise<Result<BitbucketPullRequest, BBError>>;
-  approve(workspace: string, repoSlug: string, id: number): Promise<Result<BitbucketApproval, BBError>>;
-  decline(workspace: string, repoSlug: string, id: number): Promise<Result<BitbucketPullRequest, BBError>>;
-  getDiff(workspace: string, repoSlug: string, id: number): Promise<Result<string, BBError>>;
-  getDiffstat(workspace: string, repoSlug: string, id: number): Promise<Result<DiffStat, BBError>>;
-  listComments(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    limit?: number
-  ): Promise<Result<PaginatedResponse<BitbucketComment>, BBError>>;
-  listActivity(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    limit?: number
-  ): Promise<Result<PaginatedResponse<BitbucketPullRequestActivity>, BBError>>;
-  getComment(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    commentId: number
-  ): Promise<Result<BitbucketComment, BBError>>;
-  createComment(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    content: string
-  ): Promise<Result<BitbucketComment, BBError>>;
-  updateComment(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    commentId: number,
-    content: string
-  ): Promise<Result<BitbucketComment, BBError>>;
-  deleteComment(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    commentId: number
-  ): Promise<Result<void, BBError>>;
-
-  // Reviewer management
-  listReviewers(
-    workspace: string,
-    repoSlug: string,
-    prId: number
-  ): Promise<Result<BitbucketUser[], BBError>>;
-
-  addReviewer(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    username: string
-  ): Promise<Result<BitbucketPullRequest, BBError>>;
-
-  removeReviewer(
-    workspace: string,
-    repoSlug: string,
-    prId: number,
-    username: string
-  ): Promise<Result<BitbucketPullRequest, BBError>>;
+  getRepoContextFromGit(): Promise<RepoContext | null>;
+  getRepoContext(options: GlobalOptions): Promise<RepoContext | null>;
+  requireRepoContext(options: GlobalOptions): Promise<RepoContext>;
 }
 
 /**

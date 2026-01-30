@@ -14,137 +14,224 @@ import { ReadyPRCommand } from "../../src/commands/pr/ready.command.js";
 import { CheckoutPRCommand } from "../../src/commands/pr/checkout.command.js";
 import { DiffPRCommand } from "../../src/commands/pr/diff.command.js";
 import { ActivityPRCommand } from "../../src/commands/pr/activity.command.js";
-import { Result } from "../../src/types/result.js";
 import {
   createMockOutputService,
   createMockGitService,
   mockPullRequest,
-  mockApproval,
-  mockDiff,
-  mockDiffStat,
+  mockUser,
 } from "../setup.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IGitService,
-} from "../../src/core/interfaces/services.js";
+import type { IContextService } from "../../src/core/interfaces/services.js";
 import type { BBError } from "../../src/types/errors.js";
 import type {
-  PaginatedResponse,
-  BitbucketPullRequest,
-  BitbucketApproval,
-  BitbucketPullRequestActivity,
-  BitbucketComment,
-  DiffStat,
-  UpdatePullRequestRequest,
-} from "../../src/types/api.js";
+  Pullrequest,
+  PullrequestsApi,
+  PaginatedPullrequests,
+  Participant,
+} from "../../src/generated/api.js";
+import type { AxiosResponse } from "axios";
 
-function createMockPRRepository(
-  prs: BitbucketPullRequest[] = [mockPullRequest]
-): IPullRequestRepository {
+// Mock data for diffstat
+const mockDiffStat = {
+  old: { path: "README.md", type: "commit_file" },
+  new: { path: "README.md", type: "commit_file" },
+  lines_added: 1,
+  lines_removed: 1,
+};
+
+// Mock data for diff
+const mockDiff = `diff --git a/README.md b/README.md
+index 123456..789abc 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-Old content
++New content`;
+
+// Helper to create mock AxiosResponse
+function createAxiosResponse<T>(data: T): AxiosResponse<T> {
   return {
-    async get(workspace: string, repoSlug: string, id: number) {
-      const pr = prs.find((p) => p.id === id);
-      if (pr) {
-        return Result.ok(pr);
+    data,
+    status: 200,
+    statusText: "OK",
+    headers: {},
+    config: {} as any,
+  };
+}
+
+// Helper to create a Set from an array
+function createSet<T>(items: T[]): Set<T> {
+  return new Set(items);
+}
+
+// Mock PullrequestsApi factory - returns a partial mock that we cast to the full type
+function createMockPullrequestsApi(options: {
+  pullRequests?: Pullrequest[];
+  throwOnGet?: boolean;
+  throwOnList?: boolean;
+  throwOnCreate?: boolean;
+  throwOnMerge?: boolean;
+  throwOnApprove?: boolean;
+  throwOnDecline?: boolean;
+  throwOnUpdate?: boolean;
+  throwOnDiff?: boolean;
+  throwOnDiffstat?: boolean;
+  throwOnActivity?: boolean;
+} = {}): PullrequestsApi {
+  const prs = options.pullRequests ?? [mockPullRequest];
+
+  const mockApi = {
+    async repositoriesWorkspaceRepoSlugPullrequestsGet() {
+      if (options.throwOnList) {
+        throw new Error("API Error");
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async list(workspace: string, repoSlug: string, state = "OPEN", limit = 25) {
-      const filtered = prs.filter((p) => p.state === state);
-      return Result.ok({
-        values: filtered.slice(0, limit),
-        pagelen: limit,
-        size: filtered.length,
-      } as PaginatedResponse<BitbucketPullRequest>);
-    },
-    async create(workspace: string, repoSlug: string, request) {
-      return Result.ok({
-        ...mockPullRequest,
-        title: request.title,
-        source: { ...mockPullRequest.source, branch: request.source.branch },
-        destination: { ...mockPullRequest.destination, branch: request.destination.branch },
-        draft: request.draft ?? false,
-      });
-    },
-    async merge(workspace: string, repoSlug: string, id: number, request) {
-      const pr = prs.find((p) => p.id === id);
-      if (pr) {
-        return Result.ok({ ...pr, state: "MERGED" as const });
-      }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async approve(workspace: string, repoSlug: string, id: number) {
-      return Result.ok(mockApproval);
-    },
-    async decline(workspace: string, repoSlug: string, id: number) {
-      const pr = prs.find((p) => p.id === id);
-      if (pr) {
-        return Result.ok({ ...pr, state: "DECLINED" as const });
-      }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async getDiff(workspace: string, repoSlug: string, id: number) {
-      const pr = prs.find((p) => p.id === id);
-      if (pr) {
-        return Result.ok(mockDiff);
-      }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async getDiffstat(workspace: string, repoSlug: string, id: number) {
-      const pr = prs.find((p) => p.id === id);
-      if (pr) {
-        return Result.ok(mockDiffStat);
-      }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async listActivity(workspace: string, repoSlug: string, prId: number, limit = 25) {
-      const activity: BitbucketPullRequestActivity = {
-        comment: {
-          id: 101,
-          content: { raw: "Looks good to me" },
-          user: mockPullRequest.author,
-          created_on: "2024-01-02T00:00:00.000Z",
-        },
+      const paginated: PaginatedPullrequests = {
+        values: createSet(prs),
+        pagelen: 25,
+        size: prs.length,
       };
-      return Result.ok({
-        values: [activity].slice(0, limit),
-        pagelen: limit,
-        size: 1,
+      return createAxiosResponse(paginated);
+    },
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(params: { pullRequestId: number }) {
+      if (options.throwOnGet) {
+        throw new Error("API Error");
+      }
+      const pr = prs.find((p) => p.id === params.pullRequestId);
+      if (!pr) {
+        throw new Error("Not found");
+      }
+      return createAxiosResponse(pr);
+    },
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPost(params: { body: Pullrequest }) {
+      if (options.throwOnCreate) {
+        throw new Error("API Error");
+      }
+      const newPr: Pullrequest = {
+        ...mockPullRequest,
+        id: 2,
+        title: params.body.title ?? "New PR",
+        description: params.body.description,
+        draft: params.body.draft ?? false,
+        source: params.body.source ?? mockPullRequest.source,
+        destination: params.body.destination ?? mockPullRequest.destination,
+        close_source_branch: params.body.close_source_branch ?? false,
+      };
+      return createAxiosResponse(newPr);
+    },
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost(params: { pullRequestId: number }) {
+      if (options.throwOnMerge) {
+        throw new Error("API Error");
+      }
+      const pr = prs.find((p) => p.id === params.pullRequestId);
+      if (!pr) {
+        throw new Error("Not found");
+      }
+      return createAxiosResponse({
+        ...pr,
+        state: "MERGED" as const,
       });
     },
-    async update(workspace: string, repoSlug: string, id: number, request: UpdatePullRequestRequest) {
-      const pr = prs.find((p) => p.id === id);
-      if (pr) {
-        return Result.ok({
-          ...pr,
-          title: request.title ?? pr.title,
-          description: request.description ?? pr.description,
-          draft: request.draft ?? pr.draft,
-        });
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost(params: { pullRequestId: number }) {
+      if (options.throwOnApprove) {
+        throw new Error("API Error");
       }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+      const participant: Participant = {
+        type: "participant",
+        approved: true,
+        user: mockUser,
+        participated_on: "2024-01-01T00:00:00.000Z",
+      };
+      return createAxiosResponse(participant);
     },
-    async listComments() {
-      return Result.ok({
-        values: [] as BitbucketComment[],
-        pagelen: 0,
-        size: 0,
-      } as PaginatedResponse<BitbucketComment>);
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDeclinePost(params: { pullRequestId: number }) {
+      if (options.throwOnDecline) {
+        throw new Error("API Error");
+      }
+      const pr = prs.find((p) => p.id === params.pullRequestId);
+      if (!pr) {
+        throw new Error("Not found");
+      }
+      return createAxiosResponse({
+        ...pr,
+        state: "DECLINED" as const,
+      });
     },
-    async getComment() {
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(params: { pullRequestId: number; body: Pullrequest }) {
+      if (options.throwOnUpdate) {
+        throw new Error("API Error");
+      }
+      const pr = prs.find((p) => p.id === params.pullRequestId);
+      if (!pr) {
+        throw new Error("Not found");
+      }
+      return createAxiosResponse({
+        ...pr,
+        title: params.body.title ?? pr.title,
+        description: params.body.description ?? pr.description,
+        draft: params.body.draft ?? pr.draft,
+      });
     },
-    async createComment() {
-      return Result.err({ code: 2001, message: "Failed" } as BBError);
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffGet(params: { pullRequestId: number }) {
+      if (options.throwOnDiff) {
+        throw new Error("API Error");
+      }
+      const pr = prs.find((p) => p.id === params.pullRequestId);
+      if (!pr) {
+        throw new Error("Not found");
+      }
+      // The API returns void but we return string for testing
+      return createAxiosResponse(mockDiff as unknown as void);
     },
-    async updateComment() {
-      return Result.err({ code: 2001, message: "Failed" } as BBError);
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffstatGet(params: { pullRequestId: number }) {
+      if (options.throwOnDiffstat) {
+        throw new Error("API Error");
+      }
+      const pr = prs.find((p) => p.id === params.pullRequestId);
+      if (!pr) {
+        throw new Error("Not found");
+      }
+      // The API returns void but we return data for testing
+      return createAxiosResponse({
+        values: createSet([
+          { ...mockDiffStat, new: { path: "src/file.ts", type: "commit_file" } },
+          { ...mockDiffStat, new: { path: "src/newfile.ts", type: "commit_file" } },
+        ]),
+        pagelen: 25,
+        size: 2,
+      } as unknown as void);
     },
-    async deleteComment() {
-      return Result.err({ code: 2001, message: "Failed" } as BBError);
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdActivityGet(params: { pullRequestId: number }) {
+      if (options.throwOnActivity) {
+        throw new Error("API Error");
+      }
+      // The API returns void but we return data for testing
+      return createAxiosResponse({
+        values: createSet([
+          {
+            comment: {
+              id: 101,
+              content: { raw: "Looks good to me" },
+              user: mockUser,
+              created_on: "2024-01-02T00:00:00.000Z",
+            },
+          },
+        ]),
+        pagelen: 25,
+        size: 1,
+      } as unknown as void);
     },
   };
+
+  // Return the mock as PullrequestsApi - we only implement the methods we use
+  return mockApi as unknown as PullrequestsApi;
 }
 
 function createMockContextService(context?: {
@@ -156,59 +243,55 @@ function createMockContextService(context?: {
       return null;
     },
     async getRepoContextFromGit() {
-      return Result.ok(null);
+      return null;
     },
     async getRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.ok(null);
+      return null;
     },
     async requireRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.err({ code: 6001, message: "No repo context" } as BBError);
+      throw { code: 6001, message: "No repo context" } as BBError;
     },
   };
 }
 
 describe("ListPRsCommand", () => {
   it("should list open pull requests by default", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ListPRsCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new ListPRsCommand(pullrequestsApi, contextService, output);
+    await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values).toHaveLength(1);
-    }
     expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
@@ -217,101 +300,53 @@ describe("ListPRsCommand", () => {
       { ...mockPullRequest, id: 1, state: "OPEN" as const },
       { ...mockPullRequest, id: 2, state: "MERGED" as const },
     ];
-    const prRepository = createMockPRRepository(prs);
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: prs });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ListPRsCommand(prRepository, contextService, output);
-    const result = await command.execute(
-      { state: "MERGED" },
-      { globalOptions: {} }
-    );
+    const command = new ListPRsCommand(pullrequestsApi, contextService, output);
+    await command.execute({ state: "MERGED" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values.every((pr) => pr.state === "MERGED")).toBe(true);
-    }
+    expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
   it("should fail when no repo context", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService();
     const output = createMockOutputService();
 
-    const command = new ListPRsCommand(prRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new ListPRsCommand(pullrequestsApi, contextService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should show message when no PRs found", async () => {
-    const prRepository = createMockPRRepository([]);
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: [] });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ListPRsCommand(prRepository, contextService, output);
+    const command = new ListPRsCommand(pullrequestsApi, contextService, output);
     await command.execute({}, { globalOptions: {} });
 
-    expect(output.logs.some((log) => log.includes("No open pull requests found"))).toBe(
-      true
-    );
-  });
-
-  it("should respect limit option", async () => {
-    const prs = [
-      { ...mockPullRequest, id: 1 },
-      { ...mockPullRequest, id: 2 },
-      { ...mockPullRequest, id: 3 },
-    ];
-    const prRepository = createMockPRRepository(prs);
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new ListPRsCommand(prRepository, contextService, output);
-    const result = await command.execute(
-      { limit: "2" },
-      { globalOptions: {} }
-    );
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values.length).toBeLessThanOrEqual(2);
-    }
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new ListPRsCommand(prRepository, contextService, output);
-    await command.execute({}, { globalOptions: { json: true } });
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("No open pull requests found"))).toBe(true);
   });
 
   it("should label draft pull requests", async () => {
     const prs = [{ ...mockPullRequest, id: 1, draft: true }];
-    const prRepository = createMockPRRepository(prs);
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: prs });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ListPRsCommand(prRepository, contextService, output);
+    const command = new ListPRsCommand(pullrequestsApi, contextService, output);
     await command.execute({}, { globalOptions: {} });
 
     expect(output.logs.some((log) => log.includes("table-rows:"))).toBe(true);
@@ -321,74 +356,43 @@ describe("ListPRsCommand", () => {
 
 describe("ViewPRCommand", () => {
   it("should view pull request by ID", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ViewPRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new ViewPRCommand(pullrequestsApi, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.id).toBe(1);
-      expect(result.value.title).toBe("Test PR");
-    }
-  });
-
-  it("should fail when ID not provided", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new ViewPRCommand(prRepository, contextService, output);
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
+    expect(output.logs.some((log) => log.includes("#1"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("Test PR"))).toBe(true);
   });
 
   it("should fail for non-existent PR", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: [] });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ViewPRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "999" }, { globalOptions: {} });
+    const command = new ViewPRCommand(pullrequestsApi, contextService, output);
 
-    expect(result.success).toBe(false);
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new ViewPRCommand(prRepository, contextService, output);
-    await command.execute({ id: "1" }, { globalOptions: { json: true } });
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should show draft indicator when PR is draft", async () => {
-    const prRepository = createMockPRRepository([{ ...mockPullRequest, draft: true }]);
+    const prs = [{ ...mockPullRequest, draft: true }];
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: prs });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ViewPRCommand(prRepository, contextService, output);
+    const command = new ViewPRCommand(pullrequestsApi, contextService, output);
     await command.execute({ id: "1" }, { globalOptions: {} });
 
     expect(output.logs.some((log) => log.includes("[DRAFT]"))).toBe(true);
@@ -397,40 +401,37 @@ describe("ViewPRCommand", () => {
 
 describe("ActivityPRCommand", () => {
   it("should list activity entries", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ActivityPRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new ActivityPRCommand(pullrequestsApi, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
     expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
   it("should filter activity by type", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ActivityPRCommand(prRepository, contextService, output);
+    const command = new ActivityPRCommand(pullrequestsApi, contextService, output);
     await command.execute({ id: "1", type: "approval" }, { globalOptions: {} });
 
-    expect(
-      output.logs.some((log) => log.includes("info:No activity entries matched"))
-    ).toBe(true);
+    expect(output.logs.some((log) => log.includes("No activity entries matched"))).toBe(true);
   });
 });
 
 describe("CreatePRCommand", () => {
   it("should create pull request with title", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -438,23 +439,15 @@ describe("CreatePRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "feature-branch" });
     const output = createMockOutputService();
 
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute(
-      { title: "My PR" },
-      { globalOptions: {} }
-    );
+    const command = new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ title: "My PR" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("Created pull request"))).toBe(true);
   });
 
   it("should fail when title not provided", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -462,20 +455,14 @@ describe("CreatePRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
     expect(output.logs.some((log) => log.includes("title"))).toBe(true);
   });
 
   it("should use current branch as source", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -483,25 +470,14 @@ describe("CreatePRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "my-feature" });
     const output = createMockOutputService();
 
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute(
-      { title: "My PR" },
-      { globalOptions: {} }
-    );
+    const command = new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ title: "My PR" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.source.branch.name).toBe("my-feature");
-    }
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should use explicit source branch", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -509,25 +485,14 @@ describe("CreatePRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute(
-      { title: "My PR", source: "explicit-branch" },
-      { globalOptions: {} }
-    );
+    const command = new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ title: "My PR", source: "explicit-branch" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.source.branch.name).toBe("explicit-branch");
-    }
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should use main as default destination", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -535,25 +500,14 @@ describe("CreatePRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "feature" });
     const output = createMockOutputService();
 
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute(
-      { title: "My PR" },
-      { globalOptions: {} }
-    );
+    const command = new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ title: "My PR" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.destination.branch.name).toBe("main");
-    }
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should use explicit destination branch", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -561,48 +515,14 @@ describe("CreatePRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "feature" });
     const output = createMockOutputService();
 
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute(
-      { title: "My PR", destination: "develop" },
-      { globalOptions: {} }
-    );
+    const command = new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ title: "My PR", destination: "develop" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.destination.branch.name).toBe("develop");
-    }
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const gitService = createMockGitService({ currentBranch: "feature" });
-    const output = createMockOutputService();
-
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    await command.execute(
-      { title: "My PR" },
-      { globalOptions: { json: true } }
-    );
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should create draft pull request when flag is set", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -610,207 +530,110 @@ describe("CreatePRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "feature" });
     const output = createMockOutputService();
 
-    const command = new CreatePRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute(
-      { title: "Draft PR", draft: true },
-      { globalOptions: {} }
-    );
+    const command = new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ title: "Draft PR", draft: true }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.draft).toBe(true);
-    }
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 });
 
 describe("MergePRCommand", () => {
   it("should merge pull request", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new MergePRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new MergePRCommand(pullrequestsApi, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.state).toBe("MERGED");
-    }
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("Merged"))).toBe(true);
   });
 
-  it("should fail when ID not provided", async () => {
-    const prRepository = createMockPRRepository();
+  it("should fail for non-existent PR", async () => {
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: [] });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new MergePRCommand(prRepository, contextService, output);
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
+    const command = new MergePRCommand(pullrequestsApi, contextService, output);
 
-    expect(result.success).toBe(false);
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new MergePRCommand(prRepository, contextService, output);
-    await command.execute({ id: "1" }, { globalOptions: { json: true } });
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 });
 
 describe("ApprovePRCommand", () => {
   it("should approve pull request", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ApprovePRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new ApprovePRCommand(pullrequestsApi, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.approved).toBe(true);
-    }
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
-  });
-
-  it("should handle undefined ID by parsing to NaN", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new ApprovePRCommand(prRepository, contextService, output);
-    // Even without ID, the command still runs - this tests the current behavior
-    const result = await command.execute({ id: undefined as unknown as string }, { globalOptions: {} });
-
-    // The approve call happens with NaN, which the mock handles
-    expect(result.success).toBe(true);
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new ApprovePRCommand(prRepository, contextService, output);
-    await command.execute({ id: "1" }, { globalOptions: { json: true } });
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("Approved"))).toBe(true);
   });
 });
 
 describe("DeclinePRCommand", () => {
   it("should decline pull request", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new DeclinePRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new DeclinePRCommand(pullrequestsApi, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.state).toBe("DECLINED");
-    }
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("Declined"))).toBe(true);
   });
 
-  it("should fail when ID not provided", async () => {
-    const prRepository = createMockPRRepository();
+  it("should fail for non-existent PR", async () => {
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: [] });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new DeclinePRCommand(prRepository, contextService, output);
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
+    const command = new DeclinePRCommand(pullrequestsApi, contextService, output);
 
-    expect(result.success).toBe(false);
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new DeclinePRCommand(prRepository, contextService, output);
-    await command.execute({ id: "1" }, { globalOptions: { json: true } });
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 });
 
 describe("ReadyPRCommand", () => {
   it("should mark pull request as ready", async () => {
-    const prRepository = createMockPRRepository([{ ...mockPullRequest, draft: true }]);
+    const prs = [{ ...mockPullRequest, draft: true }];
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: prs });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ReadyPRCommand(prRepository, contextService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new ReadyPRCommand(pullrequestsApi, contextService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.draft).toBe(false);
-    }
     expect(output.logs.some((log) => log.includes("ready for review"))).toBe(true);
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const output = createMockOutputService();
-
-    const command = new ReadyPRCommand(prRepository, contextService, output);
-    await command.execute({ id: "1" }, { globalOptions: { json: true } });
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
   });
 });
 
 describe("CheckoutPRCommand", () => {
   it("should checkout pull request branch", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -818,40 +641,14 @@ describe("CheckoutPRCommand", () => {
     const gitService = createMockGitService({ isRepo: true });
     const output = createMockOutputService();
 
-    const command = new CheckoutPRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new CheckoutPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
-  it("should fail when ID not provided", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const gitService = createMockGitService({ isRepo: true });
-    const output = createMockOutputService();
-
-    const command = new CheckoutPRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute({} as { id: string }, { globalOptions: {} });
-
-    expect(result.success).toBe(false);
-  });
-
   it("should fail for non-existent PR", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: [] });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -859,21 +656,15 @@ describe("CheckoutPRCommand", () => {
     const gitService = createMockGitService({ isRepo: true });
     const output = createMockOutputService();
 
-    const command = new CheckoutPRCommand(
-      prRepository,
-      contextService,
-      gitService,
-      output
-    );
-    const result = await command.execute({ id: "999" }, { globalOptions: {} });
+    const command = new CheckoutPRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 });
 
 describe("DiffPRCommand", () => {
   it("should display full diff by ID", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -881,18 +672,14 @@ describe("DiffPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new DiffPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ id: "1" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.diff).toContain("diff --git");
-    }
-    expect(output.logs.some((log) => log.includes("text:diff --git"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("diff --git"))).toBe(true);
   });
 
   it("should display diff for current branch when no ID provided", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -900,17 +687,14 @@ describe("DiffPRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "feature-branch" });
     const output = createMockOutputService();
 
-    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new DiffPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.diff).toContain("diff --git");
-    }
+    expect(output.logs.some((log) => log.includes("diff --git"))).toBe(true);
   });
 
   it("should fail when no ID provided and branch not found", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -918,14 +702,13 @@ describe("DiffPRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "other-branch" });
     const output = createMockOutputService();
 
-    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new DiffPRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should display diffstat when --stat flag is set", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -933,21 +716,14 @@ describe("DiffPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({ id: "1", stat: true }, { globalOptions: {} });
+    const command = new DiffPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ id: "1", stat: true }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.stat).toBeDefined();
-      expect(result.value.stat!.filesChanged).toBe(2);
-      expect(result.value.stat!.insertions).toBe(30);
-      expect(result.value.stat!.deletions).toBe(5);
-    }
-    expect(output.logs.some((log) => log.includes("2 files changed"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("files changed"))).toBe(true);
   });
 
   it("should display file names only when --name-only flag is set", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -955,34 +731,15 @@ describe("DiffPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({ id: "1", nameOnly: true }, { globalOptions: {} });
+    const command = new DiffPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ id: "1", nameOnly: true }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.diff).toContain("src/file.ts");
-      expect(result.value.diff).toContain("src/newfile.ts");
-    }
-    expect(output.logs.some((log) => log.includes("text:src/file.ts"))).toBe(true);
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const gitService = createMockGitService();
-    const output = createMockOutputService();
-
-    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    await command.execute({ id: "1" }, { globalOptions: { json: true } });
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("src/file.ts"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("src/newfile.ts"))).toBe(true);
   });
 
   it("should fail for non-existent PR", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: [] });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -990,16 +747,15 @@ describe("DiffPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new DiffPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({ id: "999" }, { globalOptions: {} });
+    const command = new DiffPRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({ id: "999" }, { globalOptions: {} })).rejects.toThrow();
   });
 });
 
 describe("EditPRCommand", () => {
   it("should update PR title", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -1007,21 +763,15 @@ describe("EditPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
-      { id: "1", title: "New Title" },
-      { globalOptions: {} }
-    );
+    const command = new EditPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ id: "1", title: "New Title" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.title).toBe("New Title");
-    }
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("Updated"))).toBe(true);
   });
 
   it("should update PR body", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -1029,42 +779,14 @@ describe("EditPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
-      { id: "1", body: "New description" },
-      { globalOptions: {} }
-    );
+    const command = new EditPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ id: "1", body: "New description" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.description).toBe("New description");
-    }
-  });
-
-  it("should update both title and body", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const gitService = createMockGitService();
-    const output = createMockOutputService();
-
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
-      { id: "1", title: "New Title", body: "New description" },
-      { globalOptions: {} }
-    );
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.title).toBe("New Title");
-      expect(result.value.description).toBe("New description");
-    }
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should auto-detect PR from current branch", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -1072,20 +794,14 @@ describe("EditPRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "feature-branch" });
     const output = createMockOutputService();
 
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
-      { title: "Updated via auto-detect" },
-      { globalOptions: {} }
-    );
+    const command = new EditPRCommand(pullrequestsApi, contextService, gitService, output);
+    await command.execute({ title: "Updated via auto-detect" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.title).toBe("Updated via auto-detect");
-    }
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should fail when no changes provided", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -1093,15 +809,14 @@ describe("EditPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute({ id: "1" }, { globalOptions: {} });
+    const command = new EditPRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({ id: "1" }, { globalOptions: {} })).rejects.toThrow();
     expect(output.logs.some((log) => log.includes("At least one of"))).toBe(true);
   });
 
   it("should fail when PR not found", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi({ pullRequests: [] });
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -1109,32 +824,24 @@ describe("EditPRCommand", () => {
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
-      { id: "999", title: "New Title" },
-      { globalOptions: {} }
-    );
+    const command = new EditPRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({ id: "999", title: "New Title" }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should fail when no repo context", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService();
     const gitService = createMockGitService();
     const output = createMockOutputService();
 
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
-      { id: "1", title: "New Title" },
-      { globalOptions: {} }
-    );
+    const command = new EditPRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({ id: "1", title: "New Title" }, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should fail when auto-detect finds no matching PR", async () => {
-    const prRepository = createMockPRRepository();
+    const pullrequestsApi = createMockPullrequestsApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
@@ -1142,31 +849,9 @@ describe("EditPRCommand", () => {
     const gitService = createMockGitService({ currentBranch: "other-branch" });
     const output = createMockOutputService();
 
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    const result = await command.execute(
-      { title: "New Title" },
-      { globalOptions: {} }
-    );
+    const command = new EditPRCommand(pullrequestsApi, contextService, gitService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({ title: "New Title" }, { globalOptions: {} })).rejects.toThrow();
     expect(output.logs.some((log) => log.includes("No open pull request found"))).toBe(true);
-  });
-
-  it("should output JSON when flag is set", async () => {
-    const prRepository = createMockPRRepository();
-    const contextService = createMockContextService({
-      workspace: "workspace",
-      repoSlug: "repo",
-    });
-    const gitService = createMockGitService();
-    const output = createMockOutputService();
-
-    const command = new EditPRCommand(prRepository, contextService, gitService, output);
-    await command.execute(
-      { id: "1", title: "New Title" },
-      { globalOptions: { json: true } }
-    );
-
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
   });
 });

@@ -5,8 +5,6 @@
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
 import type { IOutputService } from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
 import tabtab from "tabtab";
 
 export class UninstallCompletionCommand extends BaseCommand<void, void> {
@@ -20,16 +18,15 @@ export class UninstallCompletionCommand extends BaseCommand<void, void> {
   public async execute(
     _options: void,
     _context: CommandContext
-  ): Promise<Result<void, BBError>> {
+  ): Promise<void> {
     try {
       await tabtab.uninstall({
         name: "bb",
       });
       this.output.success("Shell completions uninstalled successfully!");
-      return Result.ok(undefined);
     } catch (error) {
       this.output.error(`Failed to uninstall completions: ${error}`);
-      return Result.ok(undefined);
+      throw error;
     }
   }
 }

@@ -53,36 +53,26 @@ describe("GitService", () => {
       await Bun.spawn(["git", "add", "."], { cwd: testDir }).exited;
       await Bun.spawn(["git", "commit", "-m", "Initial"], { cwd: testDir }).exited;
 
-      const result = await gitService.getCurrentBranch();
+      const branch = await gitService.getCurrentBranch();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        // Could be 'main' or 'master' depending on git config
-        expect(["main", "master"]).toContain(result.value);
-      }
+      // Could be 'main' or 'master' depending on git config
+      expect(["main", "master"]).toContain(branch);
     });
 
-    it("should return error for non-git directory", async () => {
-      const result = await gitService.getCurrentBranch();
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.GIT_COMMAND_FAILED);
-      }
+    it("should throw error for non-git directory", async () => {
+      await expect(gitService.getCurrentBranch()).rejects.toMatchObject({
+        code: ErrorCode.GIT_COMMAND_FAILED,
+      });
     });
   });
 
   describe("getRemoteUrl", () => {
-    it("should return error when no remote exists", async () => {
+    it("should throw error when no remote exists", async () => {
       await Bun.spawn(["git", "init"], { cwd: testDir }).exited;
 
-      const result = await gitService.getRemoteUrl("origin");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.GIT_REMOTE_NOT_FOUND);
-        expect(result.error.message).toContain("origin");
-      }
+      await expect(gitService.getRemoteUrl("origin")).rejects.toMatchObject({
+        code: ErrorCode.GIT_REMOTE_NOT_FOUND,
+      });
     });
 
     it("should return remote URL when exists", async () => {
@@ -92,12 +82,9 @@ describe("GitService", () => {
         { cwd: testDir }
       ).exited;
 
-      const result = await gitService.getRemoteUrl("origin");
+      const url = await gitService.getRemoteUrl("origin");
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBe("git@bitbucket.org:workspace/repo.git");
-      }
+      expect(url).toBe("git@bitbucket.org:workspace/repo.git");
     });
 
     it("should support different remote names", async () => {
@@ -107,12 +94,9 @@ describe("GitService", () => {
         { cwd: testDir }
       ).exited;
 
-      const result = await gitService.getRemoteUrl("upstream");
+      const url = await gitService.getRemoteUrl("upstream");
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBe("https://bitbucket.org/other/repo.git");
-      }
+      expect(url).toBe("https://bitbucket.org/other/repo.git");
     });
   });
 
@@ -126,15 +110,13 @@ describe("GitService", () => {
       await Bun.spawn(["git", "commit", "-m", "Initial"], { cwd: testDir }).exited;
       await Bun.spawn(["git", "branch", "feature"], { cwd: testDir }).exited;
 
-      const result = await gitService.checkout("feature");
+      await gitService.checkout("feature");
 
-      expect(result.success).toBe(true);
-
-      const branchResult = await gitService.getCurrentBranch();
-      expect(branchResult.success && branchResult.value).toBe("feature");
+      const branch = await gitService.getCurrentBranch();
+      expect(branch).toBe("feature");
     });
 
-    it("should return error for non-existent branch", async () => {
+    it("should throw error for non-existent branch", async () => {
       await Bun.spawn(["git", "init"], { cwd: testDir }).exited;
       await Bun.spawn(["git", "config", "user.email", "test@test.com"], { cwd: testDir }).exited;
       await Bun.spawn(["git", "config", "user.name", "Test"], { cwd: testDir }).exited;
@@ -142,9 +124,7 @@ describe("GitService", () => {
       await Bun.spawn(["git", "add", "."], { cwd: testDir }).exited;
       await Bun.spawn(["git", "commit", "-m", "Initial"], { cwd: testDir }).exited;
 
-      const result = await gitService.checkout("nonexistent");
-
-      expect(result.success).toBe(false);
+      await expect(gitService.checkout("nonexistent")).rejects.toBeDefined();
     });
   });
 
@@ -157,12 +137,10 @@ describe("GitService", () => {
       await Bun.spawn(["git", "add", "."], { cwd: testDir }).exited;
       await Bun.spawn(["git", "commit", "-m", "Initial"], { cwd: testDir }).exited;
 
-      const result = await gitService.checkoutNewBranch("new-feature");
+      await gitService.checkoutNewBranch("new-feature");
 
-      expect(result.success).toBe(true);
-
-      const branchResult = await gitService.getCurrentBranch();
-      expect(branchResult.success && branchResult.value).toBe("new-feature");
+      const branch = await gitService.getCurrentBranch();
+      expect(branch).toBe("new-feature");
     });
 
     it("should create branch from specific start point", async () => {
@@ -177,9 +155,10 @@ describe("GitService", () => {
       const proc = Bun.spawn(["git", "rev-parse", "HEAD"], { cwd: testDir, stdout: "pipe" });
       const commitHash = (await new Response(proc.stdout).text()).trim();
 
-      const result = await gitService.checkoutNewBranch("from-commit", commitHash);
+      await gitService.checkoutNewBranch("from-commit", commitHash);
 
-      expect(result.success).toBe(true);
+      const branch = await gitService.getCurrentBranch();
+      expect(branch).toBe("from-commit");
     });
 
     it("should fail if branch already exists", async () => {
@@ -191,19 +170,15 @@ describe("GitService", () => {
       await Bun.spawn(["git", "commit", "-m", "Initial"], { cwd: testDir }).exited;
       await Bun.spawn(["git", "branch", "existing"], { cwd: testDir }).exited;
 
-      const result = await gitService.checkoutNewBranch("existing");
-
-      expect(result.success).toBe(false);
+      await expect(gitService.checkoutNewBranch("existing")).rejects.toBeDefined();
     });
   });
 
   describe("fetch", () => {
-    it("should return error when no remote exists", async () => {
+    it("should throw error when no remote exists", async () => {
       await Bun.spawn(["git", "init"], { cwd: testDir }).exited;
 
-      const result = await gitService.fetch("origin");
-
-      expect(result.success).toBe(false);
+      await expect(gitService.fetch("origin")).rejects.toBeDefined();
     });
   });
 
@@ -214,9 +189,12 @@ describe("GitService", () => {
       await Bun.spawn(["git", "init", "--bare", bareDir]).exited;
 
       const cloneDir = join(testDir, "cloned");
-      const result = await gitService.clone(bareDir, cloneDir);
+      await gitService.clone(bareDir, cloneDir);
 
-      expect(result.success).toBe(true);
+      // Verify the clone worked by checking if it's a git repo
+      const clonedGitService = new GitService(cloneDir);
+      const isRepo = await clonedGitService.isRepository();
+      expect(isRepo).toBe(true);
     });
 
     it("should handle clone with destination directory", async () => {
@@ -224,9 +202,12 @@ describe("GitService", () => {
       await Bun.spawn(["git", "init", "--bare", bareDir]).exited;
 
       const cloneDir = join(testDir, "cloned-with-dest");
-      const result = await gitService.clone(bareDir, cloneDir);
+      await gitService.clone(bareDir, cloneDir);
 
-      expect(result.success).toBe(true);
+      // Verify the clone worked
+      const clonedGitService = new GitService(cloneDir);
+      const isRepo = await clonedGitService.isRepository();
+      expect(isRepo).toBe(true);
     });
   });
 

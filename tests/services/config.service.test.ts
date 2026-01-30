@@ -26,12 +26,9 @@ describe("ConfigService", () => {
 
   describe("getConfig", () => {
     it("should return empty config when file does not exist", async () => {
-      const result = await configService.getConfig();
+      const config = await configService.getConfig();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toEqual({});
-      }
+      expect(config).toEqual({});
     });
 
     it("should return config from file", async () => {
@@ -42,13 +39,10 @@ describe("ConfigService", () => {
       );
 
       configService.clearCache();
-      const result = await configService.getConfig();
+      const config = await configService.getConfig();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.username).toBe("testuser");
-        expect(result.value.defaultWorkspace).toBe("workspace");
-      }
+      expect(config.username).toBe("testuser");
+      expect(config.defaultWorkspace).toBe("workspace");
     });
 
     it("should cache config after first read", async () => {
@@ -68,36 +62,29 @@ describe("ConfigService", () => {
       );
 
       // Second read should return cached value
-      const result = await configService.getConfig();
+      const config = await configService.getConfig();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.username).toBe("original");
-      }
+      expect(config.username).toBe("original");
     });
 
-    it("should return error for invalid JSON", async () => {
+    it("should throw error for invalid JSON", async () => {
       await mkdir(testConfigDir, { recursive: true });
       await writeFile(join(testConfigDir, "config.json"), "invalid json {");
 
       configService.clearCache();
-      const result = await configService.getConfig();
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.CONFIG_READ_FAILED);
-      }
+      await expect(configService.getConfig()).rejects.toMatchObject({
+        code: ErrorCode.CONFIG_READ_FAILED,
+      });
     });
   });
 
   describe("setConfig", () => {
     it("should create config file with correct permissions", async () => {
-      const result = await configService.setConfig({
+      await configService.setConfig({
         username: "testuser",
         apiToken: "secret",
       });
-
-      expect(result.success).toBe(true);
 
       const content = await readFile(join(testConfigDir, "config.json"), "utf-8");
       const parsed = JSON.parse(content);
@@ -108,18 +95,13 @@ describe("ConfigService", () => {
     it("should update cached config", async () => {
       await configService.setConfig({ username: "user1" });
 
-      const result = await configService.getConfig();
+      const config = await configService.getConfig();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.username).toBe("user1");
-      }
+      expect(config.username).toBe("user1");
     });
 
     it("should create directory if it does not exist", async () => {
-      const result = await configService.setConfig({ username: "testuser" });
-
-      expect(result.success).toBe(true);
+      await configService.setConfig({ username: "testuser" });
 
       const content = await readFile(join(testConfigDir, "config.json"), "utf-8");
       expect(content).toContain("testuser");
@@ -141,45 +123,33 @@ describe("ConfigService", () => {
         apiToken: "testpass",
       });
 
-      const result = await configService.getCredentials();
+      const credentials = await configService.getCredentials();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.username).toBe("testuser");
-        expect(result.value.apiToken).toBe("testpass");
-      }
+      expect(credentials.username).toBe("testuser");
+      expect(credentials.apiToken).toBe("testpass");
     });
 
-    it("should return error when username is missing", async () => {
+    it("should throw error when username is missing", async () => {
       await configService.setConfig({ apiToken: "testpass" });
 
-      const result = await configService.getCredentials();
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.AUTH_REQUIRED);
-      }
+      await expect(configService.getCredentials()).rejects.toMatchObject({
+        code: ErrorCode.AUTH_REQUIRED,
+      });
     });
 
-    it("should return error when apiToken is missing", async () => {
+    it("should throw error when apiToken is missing", async () => {
       await configService.setConfig({ username: "testuser" });
 
-      const result = await configService.getCredentials();
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.AUTH_REQUIRED);
-      }
+      await expect(configService.getCredentials()).rejects.toMatchObject({
+        code: ErrorCode.AUTH_REQUIRED,
+      });
     });
 
-    it("should return error when config is empty", async () => {
-      const result = await configService.getCredentials();
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.AUTH_REQUIRED);
-        expect(result.error.message).toContain("bb auth login");
-      }
+    it("should throw error when config is empty", async () => {
+      await expect(configService.getCredentials()).rejects.toMatchObject({
+        code: ErrorCode.AUTH_REQUIRED,
+        message: expect.stringContaining("bb auth login"),
+      });
     });
   });
 
@@ -190,19 +160,15 @@ describe("ConfigService", () => {
         apiToken: "newpass",
       });
 
-      const result = await configService.getCredentials();
+      const credentials = await configService.getCredentials();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.username).toBe("newuser");
-        expect(result.value.apiToken).toBe("newpass");
-      }
+      expect(credentials.username).toBe("newuser");
+      expect(credentials.apiToken).toBe("newpass");
     });
 
     it("should preserve other config values", async () => {
       await configService.setConfig({
         defaultWorkspace: "myworkspace",
-        defaultRepo: "myrepo",
       });
 
       await configService.setCredentials({
@@ -210,14 +176,10 @@ describe("ConfigService", () => {
         apiToken: "pass",
       });
 
-      const result = await configService.getConfig();
+      const config = await configService.getConfig();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.defaultWorkspace).toBe("myworkspace");
-        expect(result.value.defaultRepo).toBe("myrepo");
-        expect(result.value.username).toBe("user");
-      }
+      expect(config.defaultWorkspace).toBe("myworkspace");
+      expect(config.username).toBe("user");
     });
   });
 
@@ -231,12 +193,9 @@ describe("ConfigService", () => {
 
       await configService.clearConfig();
 
-      const result = await configService.getConfig();
+      const config = await configService.getConfig();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toEqual({});
-      }
+      expect(config).toEqual({});
     });
   });
 
@@ -247,23 +206,17 @@ describe("ConfigService", () => {
         defaultWorkspace: "myworkspace",
       });
 
-      const result = await configService.getValue("defaultWorkspace");
+      const value = await configService.getValue("defaultWorkspace");
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBe("myworkspace");
-      }
+      expect(value).toBe("myworkspace");
     });
 
     it("should return undefined for missing value", async () => {
       await configService.setConfig({ username: "testuser" });
 
-      const result = await configService.getValue("defaultWorkspace");
+      const value = await configService.getValue("defaultWorkspace");
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBeUndefined();
-      }
+      expect(value).toBeUndefined();
     });
   });
 
@@ -271,25 +224,19 @@ describe("ConfigService", () => {
     it("should set specific config value", async () => {
       await configService.setValue("defaultWorkspace", "newworkspace");
 
-      const result = await configService.getValue("defaultWorkspace");
+      const value = await configService.getValue("defaultWorkspace");
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBe("newworkspace");
-      }
+      expect(value).toBe("newworkspace");
     });
 
     it("should preserve other values", async () => {
       await configService.setConfig({ username: "user" });
       await configService.setValue("defaultWorkspace", "workspace");
 
-      const result = await configService.getConfig();
+      const config = await configService.getConfig();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.username).toBe("user");
-        expect(result.value.defaultWorkspace).toBe("workspace");
-      }
+      expect(config.username).toBe("user");
+      expect(config.defaultWorkspace).toBe("workspace");
     });
   });
 
@@ -306,8 +253,8 @@ describe("ConfigService", () => {
       await configService.setConfig({ username: "original" });
 
       // Verify cached
-      let result = await configService.getConfig();
-      expect(result.success && result.value.username).toBe("original");
+      let config = await configService.getConfig();
+      expect(config.username).toBe("original");
 
       // Modify file directly
       await writeFile(
@@ -316,15 +263,15 @@ describe("ConfigService", () => {
       );
 
       // Still cached
-      result = await configService.getConfig();
-      expect(result.success && result.value.username).toBe("original");
+      config = await configService.getConfig();
+      expect(config.username).toBe("original");
 
       // Clear cache
       configService.clearCache();
 
       // Now reads from file
-      result = await configService.getConfig();
-      expect(result.success && result.value.username).toBe("modified");
+      config = await configService.getConfig();
+      expect(config.username).toBe("modified");
     });
   });
 });

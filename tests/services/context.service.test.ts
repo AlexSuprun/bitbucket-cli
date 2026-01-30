@@ -5,6 +5,7 @@
 import { describe, it, expect } from "bun:test";
 import { ContextService } from "../../src/services/context.service.js";
 import { createMockGitService, createMockConfigService } from "../setup.js";
+import { ErrorCode } from "../../src/types/errors.js";
 
 describe("ContextService", () => {
   describe("parseRemoteUrl", () => {
@@ -88,10 +89,7 @@ describe("ContextService", () => {
 
       const result = await service.getRepoContextFromGit();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBeNull();
-      }
+      expect(result).toBeNull();
     });
 
     it("should return context from git remote", async () => {
@@ -104,13 +102,10 @@ describe("ContextService", () => {
 
       const result = await service.getRepoContextFromGit();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toEqual({
-          workspace: "myworkspace",
-          repoSlug: "myrepo",
-        });
-      }
+      expect(result).toEqual({
+        workspace: "myworkspace",
+        repoSlug: "myrepo",
+      });
     });
 
     it("should return null when remote URL is not Bitbucket", async () => {
@@ -123,10 +118,7 @@ describe("ContextService", () => {
 
       const result = await service.getRepoContextFromGit();
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBeNull();
-      }
+      expect(result).toBeNull();
     });
   });
 
@@ -144,13 +136,10 @@ describe("ContextService", () => {
         repo: "explicit-repo",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toEqual({
-          workspace: "explicit-workspace",
-          repoSlug: "explicit-repo",
-        });
-      }
+      expect(result).toEqual({
+        workspace: "explicit-workspace",
+        repoSlug: "explicit-repo",
+      });
     });
 
     it("should use git context when no options provided", async () => {
@@ -163,13 +152,10 @@ describe("ContextService", () => {
 
       const result = await service.getRepoContext({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toEqual({
-          workspace: "myworkspace",
-          repoSlug: "myrepo",
-        });
-      }
+      expect(result).toEqual({
+        workspace: "myworkspace",
+        repoSlug: "myrepo",
+      });
     });
 
     it("should use default workspace from config", async () => {
@@ -181,13 +167,10 @@ describe("ContextService", () => {
 
       const result = await service.getRepoContext({ repo: "my-repo" });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toEqual({
-          workspace: "config-workspace",
-          repoSlug: "my-repo",
-        });
-      }
+      expect(result).toEqual({
+        workspace: "config-workspace",
+        repoSlug: "my-repo",
+      });
     });
   });
 
@@ -202,24 +185,18 @@ describe("ContextService", () => {
 
       const result = await service.requireRepoContext({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.workspace).toBe("workspace");
-        expect(result.value.repoSlug).toBe("repo");
-      }
+      expect(result.workspace).toBe("workspace");
+      expect(result.repoSlug).toBe("repo");
     });
 
-    it("should return error when context not available", async () => {
+    it("should throw error when context not available", async () => {
       const gitService = createMockGitService({ isRepo: false });
       const configService = createMockConfigService();
       const service = new ContextService(gitService, configService);
 
-      const result = await service.requireRepoContext({});
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(6001); // CONTEXT_REPO_NOT_FOUND
-      }
+      await expect(service.requireRepoContext({})).rejects.toMatchObject({
+        code: ErrorCode.CONTEXT_REPO_NOT_FOUND,
+      });
     });
   });
 });

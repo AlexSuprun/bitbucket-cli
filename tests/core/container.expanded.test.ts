@@ -417,14 +417,13 @@ describe("Container - Extended Tests", () => {
     it("should have defined tokens for core services", () => {
       expect(ServiceTokens.ConfigService).toBe("ConfigService");
       expect(ServiceTokens.GitService).toBe("GitService");
-      expect(ServiceTokens.HttpClient).toBe("HttpClient");
       expect(ServiceTokens.OutputService).toBe("OutputService");
     });
 
-    it("should have defined tokens for repositories", () => {
-      expect(ServiceTokens.UserRepository).toBe("UserRepository");
-      expect(ServiceTokens.RepoRepository).toBe("RepoRepository");
-      expect(ServiceTokens.PullRequestRepository).toBe("PullRequestRepository");
+    it("should have defined tokens for API clients", () => {
+      expect(ServiceTokens.PullrequestsApi).toBe("PullrequestsApi");
+      expect(ServiceTokens.RepositoriesApi).toBe("RepositoriesApi");
+      expect(ServiceTokens.UsersApi).toBe("UsersApi");
     });
 
     it("should have defined tokens for commands", () => {

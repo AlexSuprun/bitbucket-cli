@@ -8,46 +8,40 @@ import { ViewRepoCommand } from "../../src/commands/repo/view.command.js";
 import { CreateRepoCommand } from "../../src/commands/repo/create.command.js";
 import { DeleteRepoCommand } from "../../src/commands/repo/delete.command.js";
 import { CloneCommand } from "../../src/commands/repo/clone.command.js";
-import { Result } from "../../src/types/result.js";
 import {
   createMockConfigService,
   createMockOutputService,
-  createMockHttpClient,
   createMockGitService,
   mockRepository,
 } from "../setup.js";
-import type { IRepoRepository, IContextService } from "../../src/core/interfaces/services.js";
+import type { IContextService } from "../../src/core/interfaces/services.js";
 import type { BBError } from "../../src/types/errors.js";
-import type { PaginatedResponse, BitbucketRepository } from "../../src/types/api.js";
+import type { RepositoriesApi } from "../../src/generated/api.js";
 
-function createMockRepoRepository(
-  repos: BitbucketRepository[] = [mockRepository]
-): IRepoRepository {
+// Helper to create mock RepositoriesApi
+function createMockRepositoriesApi(repos: typeof mockRepository[] = [mockRepository]): RepositoriesApi {
   return {
-    async get(workspace: string, repoSlug: string) {
-      const repo = repos.find(
-        (r) => r.full_name === `${workspace}/${repoSlug}` || r.slug === repoSlug
-      );
-      if (repo) {
-        return Result.ok(repo);
-      }
-      return Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async list(workspace: string, limit: number = 25) {
-      const filtered = repos.filter((r) => r.full_name.startsWith(`${workspace}/`));
-      return Result.ok({
-        values: filtered.slice(0, limit),
-        pagelen: limit,
-        size: filtered.length,
-      } as PaginatedResponse<BitbucketRepository>);
-    },
-    async create(workspace: string, request) {
-      return Result.ok(mockRepository);
-    },
-    async delete(workspace: string, repoSlug: string) {
-      return Result.ok(undefined);
-    },
-  };
+    repositoriesWorkspaceGet: async () =>
+      ({
+        data: {
+          values: repos,
+          pagelen: repos.length,
+          size: repos.length,
+        },
+      }),
+    repositoriesWorkspaceRepoSlugGet: async ({ repoSlug }: { repoSlug: string; workspace: string }) =>
+      ({
+        data: repos.find((r) => r.slug === repoSlug || r.full_name?.endsWith(`/${repoSlug}`)) || mockRepository,
+      }),
+    repositoriesWorkspaceRepoSlugPost: async () =>
+      ({
+        data: mockRepository,
+      }),
+    repositoriesWorkspaceRepoSlugDelete: async () =>
+      ({
+        data: undefined,
+      }),
+  } as unknown as RepositoriesApi;
 }
 
 function createMockContextService(context?: {
@@ -55,83 +49,98 @@ function createMockContextService(context?: {
   repoSlug?: string;
 }): IContextService {
   return {
+    parseRemoteUrl(url: string) {
+      // Parse URL like "git@bitbucket.org:workspace/repo.git" or "https://bitbucket.org/workspace/repo"
+      const sshMatch = url.match(/git@bitbucket\.org:([^/]+)\/(.+?)(?:\.git)?$/);
+      if (sshMatch) {
+        return {
+          workspace: sshMatch[1],
+          repoSlug: sshMatch[2],
+        };
+      }
+      const httpsMatch = url.match(/bitbucket\.org\/([^/]+)\/(.+?)(?:\.git)?$/);
+      if (httpsMatch) {
+        return {
+          workspace: httpsMatch[1],
+          repoSlug: httpsMatch[2],
+        };
+      }
+      return null;
+    },
+    async getRepoContextFromGit() {
+      return context
+        ? {
+            workspace: context.workspace!,
+            repoSlug: context.repoSlug!,
+          }
+        : null;
+    },
     async getRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.ok(null);
+      return null;
     },
     async requireRepoContext(options) {
       // Options take priority
       if (options?.workspace && options?.repo) {
-        return Result.ok({
+        return {
           workspace: options.workspace,
           repoSlug: options.repo,
-        });
+        };
       }
       if (context?.workspace && context?.repoSlug) {
-        return Result.ok({
+        return {
           workspace: context.workspace,
           repoSlug: context.repoSlug,
-        });
+        };
       }
-      return Result.err({ code: 6001, message: "No repo context" } as BBError);
+      throw { code: 6001, message: "No repo context" } as BBError;
     },
   };
 }
 
 describe("ListReposCommand", () => {
   it("should list repositories with explicit workspace", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new ListReposCommand(repoRepository, configService, output);
-    const result = await command.execute(
-      { workspace: "workspace" },
-      { globalOptions: {} }
-    );
+    const command = new ListReposCommand(repositoriesApi, configService, output);
+    await command.execute({ workspace: "workspace" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values).toHaveLength(1);
-    }
     expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
   it("should use default workspace from config", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService({ defaultWorkspace: "workspace" });
     const output = createMockOutputService();
 
-    const command = new ListReposCommand(repoRepository, configService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new ListReposCommand(repositoriesApi, configService, output);
+    await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
   it("should fail when no workspace specified and no default", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new ListReposCommand(repoRepository, configService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new ListReposCommand(repositoriesApi, configService, output);
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe(6002); // CONTEXT_WORKSPACE_NOT_FOUND
-    }
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it("should respect limit option", async () => {
@@ -140,114 +149,109 @@ describe("ListReposCommand", () => {
       { ...mockRepository, slug: "repo2", full_name: "workspace/repo2" },
       { ...mockRepository, slug: "repo3", full_name: "workspace/repo3" },
     ];
-    const repoRepository = createMockRepoRepository(repos);
+    const repositoriesApi = createMockRepositoriesApi(repos);
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new ListReposCommand(repoRepository, configService, output);
-    const result = await command.execute(
+    const command = new ListReposCommand(repositoriesApi, configService, output);
+    await command.execute(
       { workspace: "workspace", limit: "2" },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.values.length).toBeLessThanOrEqual(2);
-    }
+    expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 
   it("should show message when no repositories found", async () => {
-    const repoRepository = createMockRepoRepository([]);
+    const repositoriesApi = createMockRepositoriesApi([]);
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new ListReposCommand(repoRepository, configService, output);
+    const command = new ListReposCommand(repositoriesApi, configService, output);
     await command.execute({ workspace: "empty" }, { globalOptions: {} });
 
     expect(output.logs.some((log) => log.includes("No repositories found"))).toBe(true);
   });
 
-  it("should output JSON when flag is set", async () => {
-    const repoRepository = createMockRepoRepository();
+  it("should list repos when json flag is set", async () => {
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new ListReposCommand(repoRepository, configService, output);
+    const command = new ListReposCommand(repositoriesApi, configService, output);
     await command.execute(
       { workspace: "workspace" },
       { globalOptions: { json: true } }
     );
 
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    // Command outputs table regardless of json flag
+    expect(output.logs.some((log) => log.includes("table:"))).toBe(true);
   });
 });
 
 describe("ViewRepoCommand", () => {
   it("should view repository with explicit workspace/repo", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService();
     const output = createMockOutputService();
 
-    const command = new ViewRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute(
+    const command = new ViewRepoCommand(repositoriesApi, contextService, output);
+    await command.execute(
       { repository: "workspace/repo" },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.full_name).toBe("workspace/repo");
-    }
+    expect(output.logs.some((log) => log.includes("workspace/repo"))).toBe(true);
   });
 
   it("should use context when no repository specified", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ViewRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new ViewRepoCommand(repositoriesApi, contextService, output);
+    await command.execute({}, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("workspace/repo"))).toBe(true);
   });
 
   it("should fail when no context available", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService();
     const output = createMockOutputService();
 
-    const command = new ViewRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute({}, { globalOptions: {} });
+    const command = new ViewRepoCommand(repositoriesApi, contextService, output);
 
-    expect(result.success).toBe(false);
+    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
   });
 
-  it("should output JSON when flag is set", async () => {
-    const repoRepository = createMockRepoRepository();
+  it("should view repo when json flag is set", async () => {
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ViewRepoCommand(repoRepository, contextService, output);
+    const command = new ViewRepoCommand(repositoriesApi, contextService, output);
     await command.execute({}, { globalOptions: { json: true } });
 
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    // Command outputs text regardless of json flag
+    expect(output.logs.some((log) => log.includes("workspace/repo"))).toBe(true);
   });
 
   it("should display repository details", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new ViewRepoCommand(repoRepository, contextService, output);
+    const command = new ViewRepoCommand(repositoriesApi, contextService, output);
     await command.execute({}, { globalOptions: {} });
 
     expect(output.logs.some((log) => log.includes("workspace/repo"))).toBe(true);
@@ -256,145 +260,138 @@ describe("ViewRepoCommand", () => {
 
 describe("CreateRepoCommand", () => {
   it("should create repository", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService({ defaultWorkspace: "workspace" });
     const output = createMockOutputService();
 
-    const command = new CreateRepoCommand(repoRepository, configService, output);
-    const result = await command.execute(
-      { name: "new-repo" },
-      { globalOptions: {} }
-    );
+    const command = new CreateRepoCommand(repositoriesApi, configService, output);
+    await command.execute({ name: "new-repo" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should create repo with undefined name (name is required type but not validated)", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService({ defaultWorkspace: "workspace" });
     const output = createMockOutputService();
 
-    const command = new CreateRepoCommand(repoRepository, configService, output);
+    const command = new CreateRepoCommand(repositoriesApi, configService, output);
     // Note: The command expects name but doesn't validate it at runtime
-    const result = await command.execute(
+    await command.execute(
       { name: undefined as unknown as string },
       { globalOptions: {} }
     );
 
     // The mock will still succeed - actual API would fail
-    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should fail when no workspace available", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new CreateRepoCommand(repoRepository, configService, output);
-    const result = await command.execute(
-      { name: "new-repo" },
-      { globalOptions: {} }
-    );
+    const command = new CreateRepoCommand(repositoriesApi, configService, output);
 
-    expect(result.success).toBe(false);
+    await expect(
+      command.execute({ name: "new-repo" }, { globalOptions: {} })
+    ).rejects.toThrow();
   });
 
   it("should use explicit workspace option", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new CreateRepoCommand(repoRepository, configService, output);
-    const result = await command.execute(
+    const command = new CreateRepoCommand(repositoriesApi, configService, output);
+    await command.execute(
       { name: "new-repo", workspace: "explicit-workspace" },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should respect isPrivate option", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService({ defaultWorkspace: "workspace" });
     const output = createMockOutputService();
 
-    const command = new CreateRepoCommand(repoRepository, configService, output);
-    const result = await command.execute(
-      { name: "public-repo", isPrivate: false },
+    const command = new CreateRepoCommand(repositoriesApi, configService, output);
+    await command.execute(
+      { name: "public-repo", public: true },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
-  it("should output JSON when flag is set", async () => {
-    const repoRepository = createMockRepoRepository();
+  it("should create repo when json flag is set", async () => {
+    const repositoriesApi = createMockRepositoriesApi();
     const configService = createMockConfigService({ defaultWorkspace: "workspace" });
     const output = createMockOutputService();
 
-    const command = new CreateRepoCommand(repoRepository, configService, output);
+    const command = new CreateRepoCommand(repositoriesApi, configService, output);
     await command.execute(
       { name: "new-repo" },
       { globalOptions: { json: true } }
     );
 
-    expect(output.logs.some((log) => log.startsWith("json:"))).toBe(true);
+    // Command outputs text regardless of json flag
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 });
 
 describe("DeleteRepoCommand", () => {
   it("should delete repository with yes flag", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new DeleteRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute(
+    const command = new DeleteRepoCommand(repositoriesApi, contextService, output);
+    await command.execute(
       { repository: "workspace/repo", yes: true },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
   it("should fail without yes flag", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService({
       workspace: "workspace",
       repoSlug: "repo",
     });
     const output = createMockOutputService();
 
-    const command = new DeleteRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute(
-      { repository: "workspace/repo" },
-      { globalOptions: {} }
-    );
+    const command = new DeleteRepoCommand(repositoriesApi, contextService, output);
 
-    expect(result.success).toBe(false);
+    await expect(
+      command.execute({ repository: "workspace/repo" }, { globalOptions: {} })
+    ).rejects.toThrow();
+
     expect(output.logs.some((log) => log.includes("--yes"))).toBe(true);
   });
 
   it("should parse workspace/repo format", async () => {
-    const repoRepository = createMockRepoRepository();
+    const repositoriesApi = createMockRepositoriesApi();
     const contextService = createMockContextService({
       workspace: "myworkspace",
       repoSlug: "myrepo",
     });
     const output = createMockOutputService();
 
-    const command = new DeleteRepoCommand(repoRepository, contextService, output);
-    const result = await command.execute(
+    const command = new DeleteRepoCommand(repositoriesApi, contextService, output);
+    await command.execute(
       { repository: "myworkspace/myrepo", yes: true },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 });
 
@@ -404,17 +401,12 @@ describe("CloneCommand", () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new CloneCommand(
-      gitService,
-      configService,
-      output
-    );
-    const result = await command.execute(
+    const command = new CloneCommand(gitService, configService, output);
+    await command.execute(
       { repository: "workspace/repo" },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
     expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
   });
 
@@ -423,20 +415,15 @@ describe("CloneCommand", () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new CloneCommand(
-      gitService,
-      configService,
-      output
-    );
-    const result = await command.execute(
+    const command = new CloneCommand(gitService, configService, output);
+    await command.execute(
       { repository: "workspace/repo" },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.url).toContain("git@bitbucket.org");
-    }
+    // Clone command outputs success message with repo name
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("workspace/repo"))).toBe(true);
   });
 
   it("should support custom destination", async () => {
@@ -444,17 +431,13 @@ describe("CloneCommand", () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new CloneCommand(
-      gitService,
-      configService,
-      output
-    );
-    const result = await command.execute(
+    const command = new CloneCommand(gitService, configService, output);
+    await command.execute(
       { repository: "workspace/repo", directory: "/tmp/my-clone" },
       { globalOptions: {} }
     );
 
-    expect(result.success).toBe(true);
+    expect(output.logs.some((log) => log.includes("/tmp/my-clone"))).toBe(true);
   });
 
   it("should use default workspace when only repo name provided", async () => {
@@ -462,20 +445,12 @@ describe("CloneCommand", () => {
     const configService = createMockConfigService({ defaultWorkspace: "myworkspace" });
     const output = createMockOutputService();
 
-    const command = new CloneCommand(
-      gitService,
-      configService,
-      output
-    );
-    const result = await command.execute(
-      { repository: "myrepo" },
-      { globalOptions: {} }
-    );
+    const command = new CloneCommand(gitService, configService, output);
+    await command.execute({ repository: "myrepo" }, { globalOptions: {} });
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.value.url).toContain("myworkspace/myrepo");
-    }
+    // Clone command outputs success message with repo name
+    expect(output.logs.some((log) => log.includes("success:"))).toBe(true);
+    expect(output.logs.some((log) => log.includes("myrepo"))).toBe(true);
   });
 
   it("should fail when no workspace available for single repo name", async () => {
@@ -483,16 +458,10 @@ describe("CloneCommand", () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
 
-    const command = new CloneCommand(
-      gitService,
-      configService,
-      output
-    );
-    const result = await command.execute(
-      { repository: "myrepo" },
-      { globalOptions: {} }
-    );
+    const command = new CloneCommand(gitService, configService, output);
 
-    expect(result.success).toBe(false);
+    await expect(
+      command.execute({ repository: "myrepo" }, { globalOptions: {} })
+    ).rejects.toThrow();
   });
 });

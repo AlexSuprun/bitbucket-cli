@@ -8,18 +8,20 @@ import {
   GitService,
   ContextService,
   OutputService,
-  HttpClient,
   VersionService,
+  createApiClient,
 } from "./services/index.js";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
+
+// Import generated API classes
 import {
-  UserRepository,
-  RepoRepository,
-  PullRequestRepository,
-} from "./repositories/index.js";
+  PullrequestsApi,
+  RepositoriesApi,
+  UsersApi,
+} from "./generated/api.js";
 
 // Auth commands
 import { LoginCommand } from "./commands/auth/login.command.js";
@@ -71,9 +73,23 @@ export function bootstrap(): Container {
   container.register(ServiceTokens.GitService, () => new GitService());
   container.register(ServiceTokens.OutputService, () => new OutputService());
 
-  container.register(ServiceTokens.HttpClient, () => {
+  // Register API clients with axios instance
+  container.register(ServiceTokens.PullrequestsApi, () => {
     const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
-    return new HttpClient(configService);
+    const axiosInstance = createApiClient(configService);
+    return new PullrequestsApi(undefined, undefined, axiosInstance);
+  });
+
+  container.register(ServiceTokens.RepositoriesApi, () => {
+    const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
+    const axiosInstance = createApiClient(configService);
+    return new RepositoriesApi(undefined, undefined, axiosInstance);
+  });
+
+  container.register(ServiceTokens.UsersApi, () => {
+    const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
+    const axiosInstance = createApiClient(configService);
+    return new UsersApi(undefined, undefined, axiosInstance);
   });
 
   container.register(ServiceTokens.ContextService, () => {
@@ -82,31 +98,12 @@ export function bootstrap(): Container {
     return new ContextService(gitService, configService);
   });
 
-  // Register repositories
-  container.register(ServiceTokens.UserRepository, () => {
-    const httpClient = container.resolve<HttpClient>(ServiceTokens.HttpClient);
-    return new UserRepository(httpClient);
-  });
-
-  container.register(ServiceTokens.RepoRepository, () => {
-    const httpClient = container.resolve<HttpClient>(ServiceTokens.HttpClient);
-    return new RepoRepository(httpClient);
-  });
-
-  container.register(ServiceTokens.PullRequestRepository, () => {
-    const httpClient = container.resolve<HttpClient>(ServiceTokens.HttpClient);
-    return new PullRequestRepository(httpClient);
-  });
-
   // Register auth commands
   container.register(ServiceTokens.LoginCommand, () => {
     const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
+    const usersApi = container.resolve<UsersApi>(ServiceTokens.UsersApi);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new LoginCommand(
-      configService,
-      (cs) => new UserRepository(new HttpClient(cs)),
-      output
-    );
+    return new LoginCommand(configService, usersApi, output);
   });
 
   container.register(ServiceTokens.LogoutCommand, () => {
@@ -117,9 +114,9 @@ export function bootstrap(): Container {
 
   container.register(ServiceTokens.StatusCommand, () => {
     const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
-    const userRepo = container.resolve<UserRepository>(ServiceTokens.UserRepository);
+    const usersApi = container.resolve<UsersApi>(ServiceTokens.UsersApi);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new StatusCommand(configService, userRepo, output);
+    return new StatusCommand(configService, usersApi, output);
   });
 
   container.register(ServiceTokens.TokenCommand, () => {
@@ -137,162 +134,164 @@ export function bootstrap(): Container {
   });
 
   container.register(ServiceTokens.CreateRepoCommand, () => {
-    const repoRepo = container.resolve<RepoRepository>(ServiceTokens.RepoRepository);
+    const repositoriesApi = container.resolve<RepositoriesApi>(ServiceTokens.RepositoriesApi);
     const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new CreateRepoCommand(repoRepo, configService, output);
+    return new CreateRepoCommand(repositoriesApi, configService, output);
   });
 
   container.register(ServiceTokens.ListReposCommand, () => {
-    const repoRepo = container.resolve<RepoRepository>(ServiceTokens.RepoRepository);
+    const repositoriesApi = container.resolve<RepositoriesApi>(ServiceTokens.RepositoriesApi);
     const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ListReposCommand(repoRepo, configService, output);
+    return new ListReposCommand(repositoriesApi, configService, output);
   });
 
   container.register(ServiceTokens.ViewRepoCommand, () => {
-    const repoRepo = container.resolve<RepoRepository>(ServiceTokens.RepoRepository);
+    const repositoriesApi = container.resolve<RepositoriesApi>(ServiceTokens.RepositoriesApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ViewRepoCommand(repoRepo, contextService, output);
+    return new ViewRepoCommand(repositoriesApi, contextService, output);
   });
 
   container.register(ServiceTokens.DeleteRepoCommand, () => {
-    const repoRepo = container.resolve<RepoRepository>(ServiceTokens.RepoRepository);
+    const repositoriesApi = container.resolve<RepositoriesApi>(ServiceTokens.RepositoriesApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new DeleteRepoCommand(repoRepo, contextService, output);
+    return new DeleteRepoCommand(repositoriesApi, contextService, output);
   });
 
   // Register PR commands
   container.register(ServiceTokens.CreatePRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const gitService = container.resolve<GitService>(ServiceTokens.GitService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new CreatePRCommand(prRepo, contextService, gitService, output);
+    return new CreatePRCommand(pullrequestsApi, contextService, gitService, output);
   });
 
   container.register(ServiceTokens.ListPRsCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ListPRsCommand(prRepo, contextService, output);
+    return new ListPRsCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.ViewPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ViewPRCommand(prRepo, contextService, output);
+    return new ViewPRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.EditPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const gitService = container.resolve<GitService>(ServiceTokens.GitService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new EditPRCommand(prRepo, contextService, gitService, output);
+    return new EditPRCommand(pullrequestsApi, contextService, gitService, output);
   });
 
   container.register(ServiceTokens.MergePRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new MergePRCommand(prRepo, contextService, output);
+    return new MergePRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.ApprovePRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ApprovePRCommand(prRepo, contextService, output);
+    return new ApprovePRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.DeclinePRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new DeclinePRCommand(prRepo, contextService, output);
+    return new DeclinePRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.ReadyPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ReadyPRCommand(prRepo, contextService, output);
+    return new ReadyPRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.CheckoutPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const gitService = container.resolve<GitService>(ServiceTokens.GitService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new CheckoutPRCommand(prRepo, contextService, gitService, output);
+    return new CheckoutPRCommand(pullrequestsApi, contextService, gitService, output);
   });
 
   container.register(ServiceTokens.DiffPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const gitService = container.resolve<GitService>(ServiceTokens.GitService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new DiffPRCommand(prRepo, contextService, gitService, output);
+    return new DiffPRCommand(pullrequestsApi, contextService, gitService, output);
   });
 
   container.register(ServiceTokens.ActivityPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ActivityPRCommand(prRepo, contextService, output);
+    return new ActivityPRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.CommentPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new CommentPRCommand(prRepo, contextService, output);
+    return new CommentPRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.ListCommentsPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ListCommentsPRCommand(prRepo, contextService, output);
+    return new ListCommentsPRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.EditCommentPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new EditCommentPRCommand(prRepo, contextService, output);
+    return new EditCommentPRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.DeleteCommentPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new DeleteCommentPRCommand(prRepo, contextService, output);
+    return new DeleteCommentPRCommand(pullrequestsApi, contextService, output);
   });
 
   container.register(ServiceTokens.AddReviewerPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
+    const usersApi = container.resolve<UsersApi>(ServiceTokens.UsersApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new AddReviewerPRCommand(prRepo, contextService, output);
+    return new AddReviewerPRCommand(pullrequestsApi, usersApi, contextService, output);
   });
 
   container.register(ServiceTokens.RemoveReviewerPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
+    const usersApi = container.resolve<UsersApi>(ServiceTokens.UsersApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new RemoveReviewerPRCommand(prRepo, contextService, output);
+    return new RemoveReviewerPRCommand(pullrequestsApi, usersApi, contextService, output);
   });
 
   container.register(ServiceTokens.ListReviewersPRCommand, () => {
-    const prRepo = container.resolve<PullRequestRepository>(ServiceTokens.PullRequestRepository);
+    const pullrequestsApi = container.resolve<PullrequestsApi>(ServiceTokens.PullrequestsApi);
     const contextService = container.resolve<ContextService>(ServiceTokens.ContextService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
-    return new ListReviewersPRCommand(prRepo, contextService, output);
+    return new ListReviewersPRCommand(pullrequestsApi, contextService, output);
   });
 
   // Register config commands

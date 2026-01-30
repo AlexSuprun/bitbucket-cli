@@ -4,34 +4,21 @@
 
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import type { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import type {
-  BitbucketPullRequestActivity,
-  PaginatedResponse,
-} from "../../types/api.js";
+import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
-import { DEFAULT_PAGELEN } from "../../constants.js";
 
 export interface ActivityPROptions extends GlobalOptions {
   limit?: string;
   type?: string;
 }
 
-export class ActivityPRCommand extends BaseCommand<
-  { id: string } & ActivityPROptions,
-  PaginatedResponse<BitbucketPullRequestActivity>
-> {
+export class ActivityPRCommand extends BaseCommand<{ id: string } & ActivityPROptions, void> {
   public readonly name = "activity";
   public readonly description = "Show pull request activity history";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     output: IOutputService
   ) {
@@ -41,30 +28,32 @@ export class ActivityPRCommand extends BaseCommand<
   public async execute(
     options: { id: string } & ActivityPROptions,
     context: CommandContext
-  ): Promise<Result<PaginatedResponse<BitbucketPullRequestActivity>, BBError>> {
-    const repoContextResult = await this.contextService.requireRepoContext({
+  ): Promise<void> {
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
-
-    const { workspace, repoSlug } = repoContextResult.value;
     const prId = parseInt(options.id, 10);
-    const limit = options.limit
-      ? parseInt(options.limit, 10)
-      : DEFAULT_PAGELEN.PULL_REQUESTS;
+    const limit = options.limit ? parseInt(options.limit, 10) : 25;
 
-    const result = await this.prRepository.listActivity(workspace, repoSlug, prId, limit);
+    try {
+      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdActivityGet({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+      });
 
-    this.handleResult(result, context, (data) => {
+      // The generated API types say this returns void, but it actually returns paginated activity
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = response.data as any;
+      const values = data?.values ? Array.from(data.values) : [];
+
       const filterTypes = this.parseTypeFilter(options.type);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const activities = filterTypes.length > 0
-        ? data.values.filter((activity) => filterTypes.includes(this.getActivityType(activity)))
-        : data.values;
+        ? values.filter((activity: any) => filterTypes.includes(this.getActivityType(activity)))
+        : values;
 
       if (activities.length === 0) {
         if (filterTypes.length > 0) {
@@ -86,9 +75,10 @@ export class ActivityPRCommand extends BaseCommand<
       });
 
       this.output.table(["TYPE", "ACTOR", "DATE", "DETAILS"], rows);
-    });
-
-    return result;
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 
   private parseTypeFilter(typeOption?: string): string[] {
@@ -102,7 +92,8 @@ export class ActivityPRCommand extends BaseCommand<
       .filter((type) => type.length > 0);
   }
 
-  private getActivityType(activity: BitbucketPullRequestActivity): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getActivityType(activity: any): string {
     if (activity.comment) {
       return "comment";
     }
@@ -134,7 +125,8 @@ export class ActivityPRCommand extends BaseCommand<
     return activity.type ? activity.type.toLowerCase() : "activity";
   }
 
-  private getActorName(activity: BitbucketPullRequestActivity): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getActorName(activity: any): string {
     const user =
       activity.comment?.user ??
       activity.comment?.author ??
@@ -153,7 +145,8 @@ export class ActivityPRCommand extends BaseCommand<
     return user.display_name || user.username || "Unknown";
   }
 
-  private formatActivityDate(activity: BitbucketPullRequestActivity): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private formatActivityDate(activity: any): string {
     const date =
       activity.comment?.created_on ??
       activity.approval?.date ??
@@ -170,7 +163,8 @@ export class ActivityPRCommand extends BaseCommand<
     return this.output.formatDate(date);
   }
 
-  private buildActivityDetails(activity: BitbucketPullRequestActivity, type: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildActivityDetails(activity: any, type: string): string {
     switch (type) {
       case "comment": {
         const content = activity.comment?.content?.raw ?? "";

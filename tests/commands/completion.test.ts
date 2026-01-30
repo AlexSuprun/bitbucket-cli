@@ -10,8 +10,8 @@ import type { CommandContext } from "../../src/core/interfaces/commands.js";
 
 describe("Completion Commands", () => {
   let output: ReturnType<typeof createMockOutputService>;
-  let mockTabtabInstall: ReturnType<typeof mock.fn>;
-  let mockTabtabUninstall: ReturnType<typeof mock.fn>;
+  let mockTabtabInstall: ReturnType<typeof mock>;
+  let mockTabtabUninstall: ReturnType<typeof mock>;
 
   beforeEach(() => {
     output = createMockOutputService();
@@ -28,7 +28,7 @@ describe("Completion Commands", () => {
   });
 
   afterEach(() => {
-    mock.restore("tabtab");
+    mock.restore();
   });
 
   describe("InstallCompletionCommand", () => {
@@ -81,13 +81,12 @@ describe("Completion Commands", () => {
       const command = new InstallCompletionCommand(output);
       const context: CommandContext = { globalOptions: {} };
 
-      const result = await command.execute(undefined, context);
+      await expect(command.execute(undefined, context)).rejects.toBeDefined();
 
-      expect(result.success).toBe(true);
       expect(output.logs).toContainEqual("error:Failed to install completions: Error: Permission denied");
     });
 
-    it("should return ok result even on error", async () => {
+    it("should throw error on install failure", async () => {
       const mockInstallFail = mock(() => Promise.reject(new Error("Some error")));
       mock.module("tabtab", () => ({
         default: {
@@ -99,9 +98,7 @@ describe("Completion Commands", () => {
       const command = new InstallCompletionCommand(output);
       const context: CommandContext = { globalOptions: {} };
 
-      const result = await command.execute(undefined, context);
-
-      expect(result.success).toBe(true);
+      await expect(command.execute(undefined, context)).rejects.toBeDefined();
     });
   });
 
@@ -153,13 +150,12 @@ describe("Completion Commands", () => {
       const command = new UninstallCompletionCommand(output);
       const context: CommandContext = { globalOptions: {} };
 
-      const result = await command.execute(undefined, context);
+      await expect(command.execute(undefined, context)).rejects.toBeDefined();
 
-      expect(result.success).toBe(true);
       expect(output.logs).toContainEqual("error:Failed to uninstall completions: Error: File not found");
     });
 
-    it("should return ok result even on error", async () => {
+    it("should throw error on uninstall failure", async () => {
       const mockUninstallFail = mock(() => Promise.reject(new Error("Some error")));
       mock.module("tabtab", () => ({
         default: {
@@ -171,9 +167,7 @@ describe("Completion Commands", () => {
       const command = new UninstallCompletionCommand(output);
       const context: CommandContext = { globalOptions: {} };
 
-      const result = await command.execute(undefined, context);
-
-      expect(result.success).toBe(true);
+      await expect(command.execute(undefined, context)).rejects.toBeDefined();
     });
   });
 });

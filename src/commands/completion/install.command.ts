@@ -5,8 +5,6 @@
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
 import type { IOutputService } from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
 import tabtab from "tabtab";
 
 export class InstallCompletionCommand extends BaseCommand<void, void> {
@@ -20,7 +18,7 @@ export class InstallCompletionCommand extends BaseCommand<void, void> {
   public async execute(
     _options: void,
     _context: CommandContext
-  ): Promise<Result<void, BBError>> {
+  ): Promise<void> {
     try {
       await tabtab.install({
         name: "bb",
@@ -28,10 +26,9 @@ export class InstallCompletionCommand extends BaseCommand<void, void> {
       });
       this.output.success("Shell completions installed successfully!");
       this.output.text("Restart your shell or source your profile to enable completions.");
-      return Result.ok(undefined);
     } catch (error) {
       this.output.error(`Failed to install completions: ${error}`);
-      return Result.ok(undefined);
+      throw error;
     }
   }
 }

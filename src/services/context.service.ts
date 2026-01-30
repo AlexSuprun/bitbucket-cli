@@ -2,10 +2,9 @@
  * Context service for resolving workspace and repository
  */
 
-import type { IContextService, IGitService, IConfigService } from "../core/interfaces/services.js";
-import { Result } from "../types/result.js";
-import { BBError, ErrorCode } from "../types/errors.js";
-import type { RepoContext, GlobalOptions } from "../types/config.js";
+import type { IContextService, IGitService, IConfigService } from '../core/interfaces/services.js';
+import { BBError, ErrorCode } from '../types/errors.js';
+import type { RepoContext, GlobalOptions } from '../types/config.js';
 
 export class ContextService implements IContextService {
   constructor(
@@ -45,20 +44,19 @@ export class ContextService implements IContextService {
   /**
    * Get repository context from current git repository
    */
-  public async getRepoContextFromGit(): Promise<Result<RepoContext | null, BBError>> {
+  public async getRepoContextFromGit(): Promise<RepoContext | null> {
     const isRepo = await this.gitService.isRepository();
     if (!isRepo) {
-      return Result.ok(null);
+      return null;
     }
 
-    const remoteResult = await this.gitService.getRemoteUrl();
-    if (!remoteResult.success) {
+    try {
+      const remoteUrl = await this.gitService.getRemoteUrl();
+      return this.parseRemoteUrl(remoteUrl);
+    } catch {
       // No remote configured - that's okay, just return null
-      return Result.ok(null);
+      return null;
     }
-
-    const context = this.parseRemoteUrl(remoteResult.value);
-    return Result.ok(context);
   }
 
   /**
@@ -69,72 +67,59 @@ export class ContextService implements IContextService {
    */
   public async getRepoContext(
     options: GlobalOptions
-  ): Promise<Result<RepoContext | null, BBError>> {
+  ): Promise<RepoContext | null> {
     // If both workspace and repo are provided via options, use them
     if (options.workspace && options.repo) {
-      return Result.ok({
+      return {
         workspace: options.workspace,
         repoSlug: options.repo,
-      });
+      };
     }
 
     // Try to get from current git repo
-    const gitContextResult = await this.getRepoContextFromGit();
-    if (!gitContextResult.success) {
-      return gitContextResult;
-    }
-    const gitContext = gitContextResult.value;
+    const gitContext = await this.getRepoContextFromGit();
 
     // If only workspace is provided, use it with git-detected repo
     if (options.workspace && gitContext) {
-      return Result.ok({
+      return {
         workspace: options.workspace,
         repoSlug: gitContext.repoSlug,
-      });
+      };
     }
 
     // If only repo is provided, try to use default workspace or git workspace
     if (options.repo) {
-      const configResult = await this.configService.getConfig();
-      if (!configResult.success) {
-        return configResult;
-      }
-
-      const workspace = gitContext?.workspace || configResult.value.defaultWorkspace;
+      const config = await this.configService.getConfig();
+      const workspace = gitContext?.workspace || config.defaultWorkspace;
       if (workspace) {
-        return Result.ok({
+        return {
           workspace,
           repoSlug: options.repo,
-        });
+        };
       }
     }
 
     // Fall back to git context
-    return Result.ok(gitContext);
+    return gitContext;
   }
 
   /**
-   * Require repository context or return error
+   * Require repository context or throw error
    */
   public async requireRepoContext(
     options: GlobalOptions
-  ): Promise<Result<RepoContext, BBError>> {
-    const contextResult = await this.getRepoContext(options);
-    if (!contextResult.success) {
-      return contextResult;
+  ): Promise<RepoContext> {
+    const context = await this.getRepoContext(options);
+
+    if (!context) {
+      throw new BBError({
+        code: ErrorCode.CONTEXT_REPO_NOT_FOUND,
+        message:
+          'Could not determine repository. Use --workspace and --repo options, ' +
+          'or run this command from within a Bitbucket repository.',
+      });
     }
 
-    if (!contextResult.value) {
-      return Result.err(
-        new BBError({
-          code: ErrorCode.CONTEXT_REPO_NOT_FOUND,
-          message:
-            "Could not determine repository. Use --workspace and --repo options, " +
-            "or run this command from within a Bitbucket repository.",
-        })
-      );
-    }
-
-    return Result.ok(contextResult.value);
+    return context;
   }
 }

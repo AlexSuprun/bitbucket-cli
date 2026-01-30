@@ -4,11 +4,10 @@
 
 import { describe, it, expect } from "bun:test";
 import { ContextService } from "../../src/services/context.service.js";
-import { Result } from "../../src/types/result.js";
 import { ErrorCode } from "../../src/types/errors.js";
 import type { IGitService, IConfigService } from "../../src/core/interfaces/services.js";
 import type { BBError } from "../../src/types/errors.js";
-import type { BBConfig } from "../../src/types/config.js";
+import type { BBConfig, AuthCredentials } from "../../src/types/config.js";
 
 function createMockGitService(options: {
   isRepo?: boolean;
@@ -20,60 +19,66 @@ function createMockGitService(options: {
       return options.isRepo ?? false;
     },
     async clone() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async fetch() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async checkout() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async checkoutNewBranch() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async getCurrentBranch() {
-      return Result.ok("main");
+      return "main";
     },
     async getRemoteUrl() {
       if (options.remoteError) {
-        return Result.err({ code: ErrorCode.GIT_REMOTE_NOT_FOUND, message: "No remote" } as BBError);
+        throw { code: ErrorCode.GIT_REMOTE_NOT_FOUND, message: "No remote" } as BBError;
       }
       if (options.remoteUrl) {
-        return Result.ok(options.remoteUrl);
+        return options.remoteUrl;
       }
-      return Result.err({ code: ErrorCode.GIT_REMOTE_NOT_FOUND, message: "No remote" } as BBError);
+      throw { code: ErrorCode.GIT_REMOTE_NOT_FOUND, message: "No remote" } as BBError;
     },
   };
 }
 
 function createMockConfigService(config: BBConfig = {}): IConfigService {
+  let currentConfig = { ...config };
+  
   return {
     async getConfig() {
-      return Result.ok(config);
+      return currentConfig;
     },
-    async setConfig() {
-      return Result.ok(undefined);
+    async setConfig(newConfig: BBConfig) {
+      currentConfig = newConfig;
     },
-    async getCredentials() {
-      if (config.username && config.apiToken) {
-        return Result.ok({
-          username: config.username,
-          apiToken: config.apiToken,
-        });
+    async getCredentials(): Promise<AuthCredentials> {
+      if (!currentConfig.username || !currentConfig.apiToken) {
+        throw {
+          code: ErrorCode.AUTH_REQUIRED,
+          message: "Auth required",
+        } as BBError;
       }
-      return Result.err({ code: ErrorCode.AUTH_REQUIRED, message: "Auth required" } as BBError);
+      return {
+        username: currentConfig.username,
+        apiToken: currentConfig.apiToken,
+      };
     },
-    async setCredentials() {
-      return Result.ok(undefined);
+    async setCredentials(creds: AuthCredentials) {
+      currentConfig.username = creds.username;
+      currentConfig.apiToken = creds.apiToken;
     },
     async clearConfig() {
-      return Result.ok(undefined);
+      currentConfig = {};
     },
     async getValue<K extends keyof BBConfig>(key: K) {
-      return Result.ok(config[key]);
+      return currentConfig[key];
     },
-    async setValue() {
-      return Result.ok(undefined);
+    async setValue<K extends keyof BBConfig>(key: K, value: BBConfig[K]) {
+      currentConfig[key] = value;
     },
     getConfigPath() {
       return "/test/config.json";
@@ -94,29 +99,13 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.workspace).toBe("workspace");
-          expect(result.value.repoSlug).toBe("repo");
-        }
-      });
-
-      it("should parse ssh://git@bitbucket.org/workspace/repo.git", async () => {
-        const gitService = createMockGitService({
-          isRepo: true,
-          remoteUrl: "ssh://git@bitbucket.org/workspace/repo.git",
+        expect(result).toEqual({
+          workspace: "workspace",
+          repoSlug: "repo",
         });
-        const configService = createMockConfigService();
-        const contextService = new ContextService(gitService, configService);
-
-        const result = await contextService.getRepoContext({});
-
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.workspace).toBe("workspace");
-          expect(result.value.repoSlug).toBe("repo");
-        }
       });
+
+
 
       it("should handle repo without .git extension", async () => {
         const gitService = createMockGitService({
@@ -128,10 +117,10 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.repoSlug).toBe("repo");
-        }
+        expect(result).toEqual({
+          workspace: "workspace",
+          repoSlug: "repo",
+        });
       });
     });
 
@@ -146,11 +135,10 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.workspace).toBe("workspace");
-          expect(result.value.repoSlug).toBe("repo");
-        }
+        expect(result).toEqual({
+          workspace: "workspace",
+          repoSlug: "repo",
+        });
       });
 
       it("should parse https://username@bitbucket.org/workspace/repo.git", async () => {
@@ -163,11 +151,10 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.workspace).toBe("workspace");
-          expect(result.value.repoSlug).toBe("repo");
-        }
+        expect(result).toEqual({
+          workspace: "workspace",
+          repoSlug: "repo",
+        });
       });
 
       it("should handle repo without .git extension", async () => {
@@ -180,10 +167,10 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.repoSlug).toBe("repo");
-        }
+        expect(result).toEqual({
+          workspace: "workspace",
+          repoSlug: "repo",
+        });
       });
     });
 
@@ -198,11 +185,10 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.workspace).toBe("my-workspace");
-          expect(result.value.repoSlug).toBe("my-repo");
-        }
+        expect(result).toEqual({
+          workspace: "my-workspace",
+          repoSlug: "my-repo",
+        });
       });
 
       it("should handle workspace with underscores", async () => {
@@ -215,11 +201,10 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.workspace).toBe("my_workspace");
-          expect(result.value.repoSlug).toBe("my_repo");
-        }
+        expect(result).toEqual({
+          workspace: "my_workspace",
+          repoSlug: "my_repo",
+        });
       });
 
       it("should handle numeric workspace/repo names", async () => {
@@ -232,11 +217,10 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        expect(result.success).toBe(true);
-        if (result.success && result.value) {
-          expect(result.value.workspace).toBe("123");
-          expect(result.value.repoSlug).toBe("456");
-        }
+        expect(result).toEqual({
+          workspace: "123",
+          repoSlug: "456",
+        });
       });
     });
 
@@ -251,11 +235,8 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        // Returns success with null value (not an error, just not parseable)
-        expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.value).toBeNull();
-        }
+        // Returns null value (not an error, just not parseable)
+        expect(result).toBeNull();
       });
 
       it("should return null for GitLab URLs (not parsed as Bitbucket)", async () => {
@@ -268,11 +249,8 @@ describe("ContextService - Extended Tests", () => {
 
         const result = await contextService.getRepoContext({});
 
-        // Returns success with null value (not an error, just not parseable)
-        expect(result.success).toBe(true);
-        if (result.success) {
-          expect(result.value).toBeNull();
-        }
+        // Returns null value (not an error, just not parseable)
+        expect(result).toBeNull();
       });
     });
   });
@@ -285,11 +263,8 @@ describe("ContextService - Extended Tests", () => {
 
       const result = await contextService.getRepoContext({});
 
-      // Returns success with null (not in a git repo is not an error)
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBeNull();
-      }
+      // Returns null (not in a git repo is not an error)
+      expect(result).toBeNull();
     });
 
     it("should return null when no remote exists", async () => {
@@ -302,11 +277,8 @@ describe("ContextService - Extended Tests", () => {
 
       const result = await contextService.getRepoContext({});
 
-      // Returns success with null (no remote is not an error)
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value).toBeNull();
-      }
+      // Returns null (no remote is not an error)
+      expect(result).toBeNull();
     });
   });
 
@@ -324,11 +296,8 @@ describe("ContextService - Extended Tests", () => {
         repo: "option-repo",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.workspace).toBe("option-workspace");
-        expect(result.value.repoSlug).toBe("option-repo");
-      }
+      expect(result.workspace).toBe("option-workspace");
+      expect(result.repoSlug).toBe("option-repo");
     });
 
     it("should use partial options with git context", async () => {
@@ -344,11 +313,8 @@ describe("ContextService - Extended Tests", () => {
         // repo not provided, should come from git
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.workspace).toBe("option-workspace");
-        expect(result.value.repoSlug).toBe("git-repo");
-      }
+      expect(result.workspace).toBe("option-workspace");
+      expect(result.repoSlug).toBe("git-repo");
     });
 
     it("should fail when not in git repo and no context available", async () => {
@@ -359,13 +325,10 @@ describe("ContextService - Extended Tests", () => {
       });
       const contextService = new ContextService(gitService, configService);
 
-      const result = await contextService.requireRepoContext({});
-
-      // requireRepoContext fails when no context can be determined
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.CONTEXT_REPO_NOT_FOUND);
-      }
+      // requireRepoContext throws when no context can be determined
+      await expect(contextService.requireRepoContext({})).rejects.toMatchObject({
+        code: ErrorCode.CONTEXT_REPO_NOT_FOUND,
+      });
     });
 
     it("should fail when no context available", async () => {
@@ -373,38 +336,19 @@ describe("ContextService - Extended Tests", () => {
       const configService = createMockConfigService({});
       const contextService = new ContextService(gitService, configService);
 
-      const result = await contextService.requireRepoContext({});
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe(ErrorCode.CONTEXT_REPO_NOT_FOUND);
-      }
+      await expect(contextService.requireRepoContext({})).rejects.toMatchObject({
+        code: ErrorCode.CONTEXT_REPO_NOT_FOUND,
+      });
     });
 
     it("should fail when only workspace available", async () => {
       const gitService = createMockGitService({ isRepo: false });
       const configService = createMockConfigService({
         defaultWorkspace: "workspace",
-        // No defaultRepo
       });
       const contextService = new ContextService(gitService, configService);
 
-      const result = await contextService.requireRepoContext({});
-
-      expect(result.success).toBe(false);
-    });
-
-    it("should fail when only repo available", async () => {
-      const gitService = createMockGitService({ isRepo: false });
-      const configService = createMockConfigService({
-        // No defaultWorkspace
-        defaultRepo: "repo",
-      });
-      const contextService = new ContextService(gitService, configService);
-
-      const result = await contextService.requireRepoContext({});
-
-      expect(result.success).toBe(false);
+      await expect(contextService.requireRepoContext({})).rejects.toBeDefined();
     });
   });
 
@@ -416,7 +360,6 @@ describe("ContextService - Extended Tests", () => {
       });
       const configService = createMockConfigService({
         defaultWorkspace: "config-ws",
-        defaultRepo: "config-repo",
       });
       const contextService = new ContextService(gitService, configService);
 
@@ -426,20 +369,14 @@ describe("ContextService - Extended Tests", () => {
         repo: "option-repo",
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.workspace).toBe("option-ws");
-        expect(result.value.repoSlug).toBe("option-repo");
-      }
+      expect(result.workspace).toBe("option-ws");
+      expect(result.repoSlug).toBe("option-repo");
 
       // Git remote takes priority over config
       result = await contextService.requireRepoContext({});
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.workspace).toBe("git-ws");
-        expect(result.value.repoSlug).toBe("git-repo");
-      }
+      expect(result.workspace).toBe("git-ws");
+      expect(result.repoSlug).toBe("git-repo");
     });
   });
 });

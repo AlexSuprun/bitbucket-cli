@@ -6,9 +6,6 @@ import chalk from "chalk";
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
 import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import type { BBConfig } from "../../types/config.js";
 
 export interface ConfigDisplay {
   username: string;
@@ -16,7 +13,7 @@ export interface ConfigDisplay {
   apiToken: string;
 }
 
-export class ListConfigCommand extends BaseCommand<void, ConfigDisplay> {
+export class ListConfigCommand extends BaseCommand<void, void> {
   public readonly name = "list";
   public readonly description = "List all configuration values";
 
@@ -29,15 +26,9 @@ export class ListConfigCommand extends BaseCommand<void, ConfigDisplay> {
 
   public async execute(
     _options: void,
-    context: CommandContext
-  ): Promise<Result<ConfigDisplay, BBError>> {
-    const configResult = await this.configService.getConfig();
-    if (!configResult.success) {
-      this.handleResult(configResult, context);
-      return configResult;
-    }
-
-    const config = configResult.value;
+    _context: CommandContext
+  ): Promise<void> {
+    const config = await this.configService.getConfig();
 
     // Build display config with masked password
     const displayConfig: ConfigDisplay = {
@@ -46,22 +37,18 @@ export class ListConfigCommand extends BaseCommand<void, ConfigDisplay> {
       apiToken: config.apiToken ? "********" : "",
     };
 
-    this.handleResult(Result.ok(displayConfig), context, (data) => {
-      this.output.text(chalk.dim(`Config file: ${this.configService.getConfigPath()}`));
-      this.output.text("");
+    this.output.text(chalk.dim(`Config file: ${this.configService.getConfigPath()}`));
+    this.output.text("");
 
-      const rows = Object.entries(data)
-        .filter(([, value]) => value !== "")
-        .map(([key, value]) => [key, value]);
+    const rows = Object.entries(displayConfig)
+      .filter(([, value]) => value !== "")
+      .map(([key, value]) => [key, value]);
 
-      if (rows.length === 0) {
-        this.output.text("No configuration set");
-        return;
-      }
+    if (rows.length === 0) {
+      this.output.text("No configuration set");
+      return;
+    }
 
-      this.output.table(["KEY", "VALUE"], rows);
-    });
-
-    return Result.ok(displayConfig);
+    this.output.table(["KEY", "VALUE"], rows);
   }
 }

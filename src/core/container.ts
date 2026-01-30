@@ -133,10 +133,10 @@ export const ServiceTokens = {
   HttpClient: "HttpClient",
   VersionService: "VersionService",
 
-  // Repositories
-  UserRepository: "UserRepository",
-  RepoRepository: "RepoRepository",
-  PullRequestRepository: "PullRequestRepository",
+  // API Clients
+  PullrequestsApi: "PullrequestsApi",
+  RepositoriesApi: "RepositoriesApi",
+  UsersApi: "UsersApi",
 
   // Commands - Auth
   LoginCommand: "LoginCommand",

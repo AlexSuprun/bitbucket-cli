@@ -4,29 +4,21 @@
 
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IConfigService,
-  IUserRepository,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import { ValidationError } from "../../types/errors.js";
-import type { BitbucketUser } from "../../types/api.js";
-import { HttpClient } from "../../services/http.client.js";
+import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
+import type { UsersApi } from "../../generated/api.js";
 
 export interface LoginOptions {
   username?: string;
   password?: string;
 }
 
-export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
+export class LoginCommand extends BaseCommand<LoginOptions, void> {
   public readonly name = "login";
   public readonly description = "Authenticate with Bitbucket using an API token";
 
   constructor(
     private readonly configService: IConfigService,
-    private readonly userRepositoryFactory: (configService: IConfigService) => IUserRepository,
+    private readonly usersApi: UsersApi,
     output: IOutputService
   ) {
     super(output);
@@ -35,58 +27,37 @@ export class LoginCommand extends BaseCommand<LoginOptions, BitbucketUser> {
   public async execute(
     options: LoginOptions,
     context: CommandContext
-  ): Promise<Result<BitbucketUser, BBError>> {
-    // Get credentials from options or environment
+  ): Promise<void> {
     const username = options.username || process.env.BB_USERNAME;
     const apiToken = options.password || process.env.BB_API_TOKEN;
 
-    // Validate credentials
     if (!username) {
-      const error = Result.err(
-        new ValidationError(
-          "username",
-          "Username is required. Use --username option or set BB_USERNAME environment variable."
-        )
+      const error = new Error(
+        "Username is required. Use --username option or set BB_USERNAME environment variable."
       );
-      this.handleResult(error, context);
-      return error;
+      this.output.error(error.message);
+      throw error;
     }
 
     if (!apiToken) {
-      const error = Result.err(
-        new ValidationError(
-          "password",
-          "API token is required. Use --password option or set BB_API_TOKEN environment variable."
-        )
+      const error = new Error(
+        "API token is required. Use --password option or set BB_API_TOKEN environment variable."
       );
-      this.handleResult(error, context);
-      return error;
+      this.output.error(error.message);
+      throw error;
     }
 
-    // Store credentials temporarily to test them
-    const setResult = await this.configService.setCredentials({ username, apiToken });
-    if (!setResult.success) {
-      this.handleResult(setResult, context);
-      return setResult;
-    }
+    await this.configService.setCredentials({ username, apiToken });
 
-    // Verify credentials by fetching user info
-    const userRepository = this.userRepositoryFactory(this.configService);
-    const userResult = await userRepository.getCurrentUser();
+    try {
+      const response = await this.usersApi.userGet();
+      const user = response.data;
 
-    if (!userResult.success) {
-      // Clear invalid credentials
-      await this.configService.clearConfig();
-      this.output.error(`Authentication failed: ${userResult.error.message}`);
-      return userResult;
-    }
-
-    // Output result
-    const user = userResult.value;
-    this.handleResult(userResult, context, () => {
       this.output.success(`Logged in as ${user.display_name} (${user.username})`);
-    });
-
-    return userResult;
+    } catch (error) {
+      await this.configService.clearConfig();
+      this.output.error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
   }
 }
