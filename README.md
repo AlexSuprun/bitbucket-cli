@@ -79,13 +79,13 @@ bb pr list
 
 ## Features
 
-| Category             | Commands                                                                                                                         |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Authentication**   | `login`, `logout`, `status`, `token`                                                                                             |
-| **Repositories**     | `clone`, `create`, `list`, `view`, `delete`                                                                                      |
-| **Pull Requests**    | `create`, `list`, `view`, `edit`, `merge`, `approve`, `decline`, `ready`, `checkout`, `diff`, `comment`, `comments`, `reviewers` |
-| **Configuration**    | `get`, `set`, `list`                                                                                                             |
-| **Shell Completion** | `install`, `uninstall`                                                                                                           |
+| Category             | Commands                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Authentication**   | `login`, `logout`, `status`, `token`                                                                                                                   |
+| **Repositories**     | `clone`, `create`, `list`, `view`, `delete`                                                                                                            |
+| **Pull Requests**    | `create`, `list`, `view`, `activity`, `checks`, `edit`, `merge`, `approve`, `decline`, `ready`, `checkout`, `diff`, `comment`, `comments`, `reviewers` |
+| **Configuration**    | `get`, `set`, `list`                                                                                                                                   |
+| **Shell Completion** | `install`, `uninstall`                                                                                                                                 |
 
 **Global Options:**
 
@@ -140,6 +140,7 @@ bb pr list
 # Review and merge
 bb pr view 42
 bb pr activity 42
+bb pr checks 42
 bb pr approve 42
 bb pr merge 42
 

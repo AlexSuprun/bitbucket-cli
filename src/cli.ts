@@ -35,6 +35,7 @@ import type { ReadyPRCommand } from './commands/pr/ready.command.js';
 import type { CheckoutPRCommand } from './commands/pr/checkout.command.js';
 import type { DiffPRCommand } from './commands/pr/diff.command.js';
 import type { ActivityPRCommand } from './commands/pr/activity.command.js';
+import type { ChecksPRCommand } from './commands/pr/checks.command.js';
 import type { CommentPRCommand } from './commands/pr/comment.command.js';
 import type { ListCommentsPRCommand } from './commands/pr/comments.list.command.js';
 import type { EditCommentPRCommand } from './commands/pr/comments.edit.command.js';
@@ -77,6 +78,7 @@ if (process.argv.includes('--get-yargs-completions') || process.env.COMP_LINE) {
         'list',
         'view',
         'activity',
+        'checks',
         'edit',
         'merge',
         'approve',
@@ -386,6 +388,25 @@ prCmd
     try {
       const cmd = container.resolve<ActivityPRCommand>(
         ServiceTokens.ActivityPRCommand
+      );
+      const context = createContext(cli);
+      await cmd.execute(
+        withGlobalOptions({ id, ...options }, context),
+        context
+      );
+    } catch {
+      process.exit(1);
+    }
+  });
+
+prCmd
+  .command('checks <id>')
+  .description('Show CI/CD checks and build status for a pull request')
+  .option('--json', 'Output as JSON')
+  .action(async (id, options) => {
+    try {
+      const cmd = container.resolve<ChecksPRCommand>(
+        ServiceTokens.ChecksPRCommand
       );
       const context = createContext(cli);
       await cmd.execute(

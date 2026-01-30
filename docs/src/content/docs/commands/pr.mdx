@@ -224,6 +224,43 @@ bb pr activity 42 --json
 
 ---
 
+## `bb pr checks`
+
+Show CI/CD checks and build status for a pull request.
+
+```bash
+bb pr checks <id> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Pull request ID |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-w, --workspace <workspace>` | Workspace |
+| `-r, --repo <repo>` | Repository |
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# View checks for PR #42
+bb pr checks 42
+
+# View checks in a specific repository
+bb pr checks 42 -w myworkspace -r myrepo
+
+# Get checks as JSON
+bb pr checks 42 --json
+```
+
+---
+
 ## `bb pr merge`
 
 Merge a pull request.
