@@ -503,6 +503,7 @@ bb pr comments list <id>
 | `-w, --workspace <workspace>` | Workspace |
 | `-r, --repo <repo>` | Repository |
 | `--limit <number>` | Maximum number of comments (default: 25) |
+| `--no-truncate` | Show full comment content without truncation |
 | `--json` | Output as JSON |
 
 ### Examples
@@ -514,12 +515,20 @@ bb pr comments list 42
 # List more comments
 bb pr comments list 42 --limit 50
 
+# Show full comment content (not truncated)
+bb pr comments list 42 --no-truncate
+
 # List comments in specific repository
 bb pr comments list 42 -w myworkspace -r myrepo
 
 # Get comments as JSON
 bb pr comments list 42 --json
 ```
+
+### Notes
+
+- By default, comment content is truncated to 60 characters in the table view
+- Use `--no-truncate` to display the full comment text
 
 ---
 

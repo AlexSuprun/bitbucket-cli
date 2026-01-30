@@ -416,6 +416,7 @@ prCmd
     .command("list <id>")
     .description("List comments on a pull request")
     .option("--limit <number>", "Maximum number of comments (default: 25)")
+    .option("--no-truncate", "Show full comment content without truncation")
     .action(async (id, options) => {
       const cmd = container.resolve<ListCommentsPRCommand>(ServiceTokens.ListCommentsPRCommand);
       const context = createContext(cli);
