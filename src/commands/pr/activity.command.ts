@@ -42,15 +42,18 @@ export class ActivityPRCommand extends BaseCommand<{ id: string } & ActivityPROp
         workspace: repoContext.workspace,
         repoSlug: repoContext.repoSlug,
         pullRequestId: prId,
-        pagelen: limit,
       });
 
-      const data = response.data;
+      // The generated API types say this returns void, but it actually returns paginated activity
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = response.data as any;
+      const values = data?.values ? Array.from(data.values) : [];
 
       const filterTypes = this.parseTypeFilter(options.type);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const activities = filterTypes.length > 0
-        ? (data.values ?? []).filter((activity) => filterTypes.includes(this.getActivityType(activity)))
-        : (data.values ?? []);
+        ? values.filter((activity: any) => filterTypes.includes(this.getActivityType(activity)))
+        : values;
 
       if (activities.length === 0) {
         if (filterTypes.length > 0) {
@@ -89,16 +92,8 @@ export class ActivityPRCommand extends BaseCommand<{ id: string } & ActivityPROp
       .filter((type) => type.length > 0);
   }
 
-  private getActivityType(activity: {
-    comment?: unknown;
-    approval?: unknown;
-    changes_requested?: unknown;
-    merge?: unknown;
-    decline?: unknown;
-    commit?: unknown;
-    update?: unknown;
-    type?: string;
-  }): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getActivityType(activity: any): string {
     if (activity.comment) {
       return "comment";
     }
@@ -130,16 +125,8 @@ export class ActivityPRCommand extends BaseCommand<{ id: string } & ActivityPROp
     return activity.type ? activity.type.toLowerCase() : "activity";
   }
 
-  private getActorName(activity: {
-    comment?: { user?: { display_name?: string; username?: string }; author?: { display_name?: string; username?: string } };
-    approval?: { user?: { display_name?: string; username?: string } };
-    update?: { author?: { display_name?: string; username?: string } };
-    changes_requested?: { user?: { display_name?: string; username?: string } };
-    merge?: { user?: { display_name?: string; username?: string } };
-    decline?: { user?: { display_name?: string; username?: string } };
-    commit?: { author?: { user?: { display_name?: string; username?: string } } };
-    user?: { display_name?: string; username?: string };
-  }): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getActorName(activity: any): string {
     const user =
       activity.comment?.user ??
       activity.comment?.author ??
@@ -158,15 +145,8 @@ export class ActivityPRCommand extends BaseCommand<{ id: string } & ActivityPROp
     return user.display_name || user.username || "Unknown";
   }
 
-  private formatActivityDate(activity: {
-    comment?: { created_on?: string };
-    approval?: { date?: string };
-    update?: { date?: string };
-    changes_requested?: { date?: string };
-    merge?: { date?: string };
-    decline?: { date?: string };
-    commit?: { date?: string };
-  }): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private formatActivityDate(activity: any): string {
     const date =
       activity.comment?.created_on ??
       activity.approval?.date ??
@@ -183,13 +163,8 @@ export class ActivityPRCommand extends BaseCommand<{ id: string } & ActivityPROp
     return this.output.formatDate(date);
   }
 
-  private buildActivityDetails(activity: {
-    comment?: { content?: { raw?: string }; id?: number };
-    changes_requested?: { reason?: string };
-    merge?: { commit?: { hash?: string } };
-    commit?: { hash?: string };
-    update?: { state?: string; title?: string; description?: string };
-  }, type: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildActivityDetails(activity: any, type: string): string {
     switch (type) {
       case "comment": {
         const content = activity.comment?.content?.raw ?? "";

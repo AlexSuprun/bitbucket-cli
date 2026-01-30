@@ -42,7 +42,8 @@ export class CheckoutPRCommand extends BaseCommand<{ id: string } & CheckoutPROp
       });
 
       const pr = prResponse.data;
-      const branchName = pr.source?.branch?.name;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const branchName = (pr.source as any)?.branch?.name;
       const localBranchName = `pr-${prId}`;
 
       if (!branchName) {
