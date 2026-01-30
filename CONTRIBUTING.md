@@ -85,7 +85,7 @@ Only skip changesets for changes that don't affect users:
 - Use TypeScript
 - Follow the command pattern in `src/commands/`
 - Use dependency injection via the container
-- Return `Result<T, Error>` for operations that can fail
+- Use standard Promises and throw errors for failure cases
 - Keep functions small and focused
 
 ## Architecture
@@ -94,7 +94,7 @@ Only skip changesets for changes that don't affect users:
 src/
 ├── commands/       # CLI commands (one per file)
 ├── core/           # DI container, interfaces
-├── repositories/   # API data access
+├── generated/      # Auto-generated API client from OpenAPI spec
 ├── services/       # Business logic
 └── types/          # TypeScript types
 ```

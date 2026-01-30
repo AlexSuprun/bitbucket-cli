@@ -18,7 +18,7 @@ bun run generate:api # Regenerate API client from OpenAPI spec
 - All imports must use `.js` extensions (ES modules)
 - Import local modules first, then third-party packages
 - Use `import type { X }` for type-only imports
-- Example: `import { Result } from "../types/result.js"`
+- Example: `import { BBError } from "../types/errors.js"`
 
 ### Formatting
 - Use Prettier (no explicit config - default settings)
@@ -28,10 +28,11 @@ bun run generate:api # Regenerate API client from OpenAPI spec
 
 ### Types
 - Always use explicit return types on functions, especially public methods
-- Use `Result<T, BBError>` for operations that can fail
+- Use standard Promises and throw BBError for operations that can fail
 - Type-only exports: `export type { Options }` or `import type { Options }`
 - Use interfaces for public APIs, types for internal data structures
 - Avoid `any` - use `unknown` for truly dynamic values
+- Use `Array.from()` to convert Set to Array when working with generated API responses
 
 ### Naming Conventions
 - Classes: PascalCase (e.g., `ConfigService`, `ListReposCommand`)
@@ -49,13 +50,20 @@ bun run generate:api # Regenerate API client from OpenAPI spec
 - Always handle Result types before proceeding
 - Only throw errors in truly exceptional circumstances (e.g., unexpected system failures)
 
+### Error Handling
+- Use standard Promises with try/catch for error handling
+- Throw `BBError` instances with appropriate `ErrorCode` for expected failures
+- Use `ErrorCode` enum from `src/types/errors.ts` for error codes
+- Handle errors at the CLI level (commands throw, CLI catches and displays)
+- Use `handleError()` method in commands for consistent error output
+
 ### Command Pattern
 - Extend `BaseCommand<TOptions, TResult>` for all CLI commands
 - Implement `name`, `description`, and `execute()` methods
 - Inject dependencies via constructor
-- Use `handleResult()` to output results
+- Use `handleError()` for consistent error handling
 - Use `requireOption()` for option validation
-- Return `Result<TResult, BBError>` from execute()
+- Return `Promise<TResult>` from execute()
 
 ### Dependency Injection
 - Register all services/commands in `bootstrap.ts`
@@ -66,7 +74,7 @@ bun run generate:api # Regenerate API client from OpenAPI spec
 ### File Organization
 - Commands: `src/commands/<category>/<action>.command.ts`
 - Services: `src/services/<name>.service.ts`
-- Repositories: `src/repositories/<name>.repository.ts`
+- Generated API: `src/generated/` (auto-generated from OpenAPI spec)
 - Types: `src/types/<name>.ts`
 - Tests: Mirror src structure in `tests/` directory
 
@@ -80,7 +88,7 @@ bun run generate:api # Regenerate API client from OpenAPI spec
 ### Async/Await
 - Always use async/await instead of Promise chains
 - Mark async methods explicitly
-- Handle errors with Result type, not try/catch
+- Handle errors with try/catch, not Result type
 
 ### Comments
 - Only add comments when necessary - prefer self-documenting code
