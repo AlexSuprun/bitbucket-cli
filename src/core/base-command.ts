@@ -4,7 +4,7 @@
 
 import type { ICommand, CommandContext } from "./interfaces/commands.js";
 import type { IOutputService } from "./interfaces/services.js";
-import type { BBError } from "../types/errors.js";
+import { BBError, ErrorCode } from "../types/errors.js";
 
 export abstract class BaseCommand<TOptions = unknown, TResult = void>
   implements ICommand<TOptions, TResult>
@@ -44,7 +44,10 @@ export abstract class BaseCommand<TOptions = unknown, TResult = void>
     message?: string
   ): T {
     if (value === undefined || value === null || value === "") {
-      throw new Error(message || `Option --${name} is required`);
+      throw new BBError({
+        code: ErrorCode.VALIDATION_REQUIRED,
+        message: message || `Option --${name} is required`,
+      });
     }
     return value;
   }
