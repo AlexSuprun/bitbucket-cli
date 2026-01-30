@@ -36,12 +36,16 @@ export function createApiClient(configService: IConfigService): AxiosInstance {
     (response) => {
       if (process.env.DEBUG === 'true') {
         console.debug(`[HTTP] Response: ${response.status}`);
+        console.debug(`[HTTP] Response Body:`, JSON.stringify(response.data, null, 2));
       }
       return response;
     },
     (error: AxiosError) => {
       if (process.env.DEBUG === 'true') {
         console.debug(`[HTTP] Error:`, error.message);
+        if (error.response) {
+          console.debug(`[HTTP] Error Response Body:`, JSON.stringify(error.response.data, null, 2));
+        }
       }
       if (error.response) {
         const { status, data } = error.response;
