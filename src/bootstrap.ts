@@ -9,7 +9,12 @@ import {
   ContextService,
   OutputService,
   HttpClient,
+  VersionService,
 } from "./services/index.js";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
 import {
   UserRepository,
   RepoRepository,
@@ -318,6 +323,12 @@ export function bootstrap(): Container {
   container.register(ServiceTokens.UninstallCompletionCommand, () => {
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
     return new UninstallCompletionCommand(output);
+  });
+
+  // Register version service
+  container.register(ServiceTokens.VersionService, () => {
+    const configService = container.resolve<ConfigService>(ServiceTokens.ConfigService);
+    return new VersionService(configService, pkg.version);
   });
 
   return container;

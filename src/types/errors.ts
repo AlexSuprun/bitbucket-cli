@@ -33,6 +33,9 @@ export enum ErrorCode {
   CONTEXT_REPO_NOT_FOUND = 6001,
   CONTEXT_WORKSPACE_NOT_FOUND = 6002,
 
+  // Network errors (7xxx)
+  NETWORK_ERROR = 7001,
+
   // Unknown
   UNKNOWN = 9999,
 }
