@@ -56,11 +56,11 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
         workspace: repoContext.workspace,
         repoSlug: repoContext.repoSlug,
         state: "OPEN",
-        pagelen: 50,
       });
 
-      const pr = prsResponse.data.values?.find(
-        (p) => p.source?.branch?.name === currentBranch
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pr = Array.from(prsResponse.data.values ?? []).find(
+        (p: any) => p.source?.branch?.name === currentBranch
       );
 
       if (!pr) {
@@ -77,7 +77,8 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
         pullRequestId: prId,
       });
 
-      const diffUrl = prResponse.data.links?.diff?.href;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const diffUrl = (prResponse.data.links as any)?.diff?.href;
       if (!diffUrl) {
         throw new Error("Could not get diff URL");
       }
@@ -138,18 +139,20 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
       pullRequestId: prId,
     });
 
-    const diffstat = diffstatResponse.data;
-    const files = diffstat.values?.map((file) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const diffstat = diffstatResponse.data as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const files = Array.from(diffstat.values ?? []).map((file: any) => {
       const path = file.new?.path || file.old?.path || "unknown";
       return {
         path,
         additions: file.lines_added ?? 0,
         deletions: file.lines_removed ?? 0,
       };
-    }) ?? [];
+    });
 
-    const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0);
-    const totalDeletions = files.reduce((sum, f) => sum + f.deletions, 0);
+    const totalAdditions = files.reduce((sum: number, f: typeof files[0]) => sum + f.additions, 0);
+    const totalDeletions = files.reduce((sum: number, f: typeof files[0]) => sum + f.deletions, 0);
     const filesChanged = files.length;
 
     for (const file of files) {
@@ -181,8 +184,10 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
       pullRequestId: prId,
     });
 
-    const diffstat = diffstatResponse.data;
-    const fileNames = diffstat.values?.map((file) => file.new?.path || file.old?.path || "unknown") ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const diffstat = diffstatResponse.data as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fileNames = Array.from(diffstat.values ?? []).map((file: any) => file.new?.path || file.old?.path || "unknown");
 
     for (const fileName of fileNames) {
       this.output.text(fileName);

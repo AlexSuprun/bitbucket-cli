@@ -38,12 +38,14 @@ export class CreateRepoCommand extends BaseCommand<{ name: string } & CreateRepo
     const workspace = await this.resolveWorkspace(options.workspace);
 
     const request: {
-      scm: string;
+      type: "repository";
+      scm: "git";
       name: string;
       is_private: boolean;
       description?: string;
-      project?: { key: string };
+      project?: { type: "project"; key: string };
     } = {
+      type: "repository",
       scm: "git",
       name,
       is_private: !isPublic,
@@ -54,22 +56,25 @@ export class CreateRepoCommand extends BaseCommand<{ name: string } & CreateRepo
     }
 
     if (project) {
-      request.project = { key: project };
+      request.project = { type: "project", key: project };
     }
 
     try {
       const response = await this.repositoriesApi.repositoriesWorkspaceRepoSlugPost({
         workspace,
+        repoSlug: name,
         body: request,
       });
 
       const repo = response.data;
 
       this.output.success(`Created repository ${repo.full_name}`);
-      this.output.text(`  ${chalk.dim("URL:")} ${repo.links?.html?.href}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.output.text(`  ${chalk.dim("URL:")} ${(repo.links as any)?.html?.href}`);
 
-      const sshClone = repo.links?.clone?.find((c) => c.name === "ssh");
-      if (sshClone) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sshClone = Array.from((repo.links as any)?.clone ?? []).find((c: any) => c.name === "ssh") as { href?: string } | undefined;
+      if (sshClone?.href) {
         this.output.text(`  ${chalk.dim("Clone:")} git clone ${sshClone.href}`);
       }
     } catch (error) {

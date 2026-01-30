@@ -72,10 +72,12 @@ export class ViewRepoCommand extends BaseCommand<ViewRepoOptions, void> {
       this.output.text(`  ${chalk.dim("Created:")} ${this.output.formatDate(repo.created_on ?? "")}`);
       this.output.text(`  ${chalk.dim("Updated:")} ${this.output.formatDate(repo.updated_on ?? "")}`);
       this.output.text("");
-      this.output.text(`  ${chalk.dim("URL:")} ${repo.links?.html?.href}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.output.text(`  ${chalk.dim("URL:")} ${(repo.links as any)?.html?.href}`);
 
-      const sshClone = repo.links?.clone?.find((c) => c.name === "ssh");
-      if (sshClone) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sshClone = Array.from((repo.links as any)?.clone ?? []).find((c: any) => c.name === "ssh") as { href?: string } | undefined;
+      if (sshClone?.href) {
         this.output.text(`  ${chalk.dim("SSH:")} ${sshClone.href}`);
       }
     } catch (error) {

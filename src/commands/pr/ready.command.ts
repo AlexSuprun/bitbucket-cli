@@ -39,6 +39,7 @@ export class ReadyPRCommand extends BaseCommand<{ id: string } & ReadyPROptions,
         repoSlug: repoContext.repoSlug,
         pullRequestId: prId,
         body: {
+          type: "pullrequest",
           draft: false,
         },
       });

@@ -5,7 +5,7 @@
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
 import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
+import type { PullrequestsApi, PullrequestMergeParametersMergeStrategyEnum } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface MergePROptions extends GlobalOptions {
@@ -38,10 +38,13 @@ export class MergePRCommand extends BaseCommand<{ id: string } & MergePROptions,
     const prId = parseInt(options.id, 10);
 
     const request: {
+      type: "pullrequest_merge_parameters";
       message?: string;
       close_source_branch?: boolean;
-      merge_strategy?: string;
-    } = {};
+      merge_strategy?: PullrequestMergeParametersMergeStrategyEnum;
+    } = {
+      type: "pullrequest_merge_parameters",
+    };
 
     if (options.message) {
       request.message = options.message;
@@ -52,7 +55,7 @@ export class MergePRCommand extends BaseCommand<{ id: string } & MergePROptions,
     }
 
     if (options.strategy) {
-      request.merge_strategy = options.strategy;
+      request.merge_strategy = options.strategy as PullrequestMergeParametersMergeStrategyEnum;
     }
 
     try {

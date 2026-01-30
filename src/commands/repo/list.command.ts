@@ -34,17 +34,16 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
     try {
       const response = await this.repositoriesApi.repositoriesWorkspaceGet({
         workspace,
-        pagelen: limit,
       });
 
-      const data = response.data;
+      const repos = Array.from(response.data.values ?? []).slice(0, limit);
 
-      if ((data.values ?? []).length === 0) {
+      if (repos.length === 0) {
         this.output.text("No repositories found");
         return;
       }
 
-      const rows = (data.values ?? []).map((repo) => [
+      const rows = repos.map((repo) => [
         repo.full_name ?? "",
         repo.is_private ? "private" : "public",
         (repo.description || "").substring(0, 50),
