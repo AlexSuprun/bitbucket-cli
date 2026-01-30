@@ -1,0 +1,72 @@
+/**
+ * API Client Service - Axios instance with auth and error handling
+ */
+
+import axios, { AxiosInstance, AxiosError } from 'axios';
+import type { IConfigService } from '../core/interfaces/services.js';
+import { BBError, ErrorCode, APIError } from '../types/errors.js';
+
+const BASE_URL = 'https://api.bitbucket.org/2.0';
+
+export function createApiClient(configService: IConfigService): AxiosInstance {
+  const instance = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  });
+
+  // Request interceptor to add Basic auth header
+  instance.interceptors.request.use(
+    async (config) => {
+      const credentials = await configService.getCredentials();
+      const authString = Buffer.from(`${credentials.username}:${credentials.apiToken}`).toString('base64');
+      config.headers.Authorization = `Basic ${authString}`;
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Response interceptor to transform axios errors into BBError
+  instance.interceptors.response.use(
+    (response) => response,
+    (error: AxiosError) => {
+      if (error.response) {
+        const { status, data } = error.response;
+        const message = extractErrorMessage(data) || error.message;
+        throw new APIError(message, status, data);
+      } else if (error.request) {
+        throw new BBError({
+          code: ErrorCode.NETWORK_ERROR,
+          message: 'Network error: Unable to reach Bitbucket API',
+          cause: error,
+        });
+      } else {
+        throw new BBError({
+          code: ErrorCode.UNKNOWN,
+          message: error.message || 'Unknown error occurred',
+          cause: error,
+        });
+      }
+    }
+  );
+
+  return instance;
+}
+
+function extractErrorMessage(data: unknown): string | undefined {
+  if (typeof data === 'object' && data !== null) {
+    const errorObj = data as Record<string, unknown>;
+    if (typeof errorObj.error === 'object' && errorObj.error !== null) {
+      const errorDetail = errorObj.error as Record<string, unknown>;
+      if (typeof errorDetail.message === 'string') {
+        return errorDetail.message;
+      }
+    }
+    if (typeof errorObj.message === 'string') {
+      return errorObj.message;
+    }
+  }
+  return undefined;
+}

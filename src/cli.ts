@@ -81,12 +81,12 @@ if (process.argv.includes("--get-yargs-completions") || process.env.COMP_LINE) {
         "merge",
         "approve",
         "decline",
-      "ready",
-      "checkout",
-      "diff",
-      "comments",
-      "reviewers"
-    );
+        "ready",
+        "checkout",
+        "diff",
+        "comments",
+        "reviewers"
+      );
     } else if (env.prev === "reviewers") {
       completions.push("list", "add", "remove");
     } else if (env.prev === "config") {
@@ -142,15 +142,18 @@ cli
     const versionService = container.resolve<VersionService>(ServiceTokens.VersionService);
     const output = container.resolve<OutputService>(ServiceTokens.OutputService);
 
-    const result = await versionService.checkForUpdate();
-
-    if (result.success && result.value?.updateAvailable) {
-      console.log("");
-      console.log("─".repeat(50));
-      console.log(`⚠ A new version is available: ${result.value.latestVersion} (you have ${result.value.currentVersion})`);
-      console.log(`  Run '${versionService.getInstallCommand()}' to update`);
-      console.log(`  Or disable with 'bb config set skipVersionCheck true'`);
-      console.log("─".repeat(50));
+    try {
+      const result = await versionService.checkForUpdate();
+      if (result?.updateAvailable) {
+        console.log("");
+        console.log("─".repeat(50));
+        console.log(`⚠ A new version is available: ${result.latestVersion} (you have ${result.currentVersion})`);
+        console.log(`  Run '${versionService.getInstallCommand()}' to update`);
+        console.log(`  Or disable with 'bb config set skipVersionCheck true'`);
+        console.log("─".repeat(50));
+      }
+    } catch {
+      // Silently ignore version check errors
     }
   });
 
@@ -163,9 +166,10 @@ authCmd
   .option("-u, --username <username>", "Bitbucket username")
   .option("-p, --password <password>", "Bitbucket API token")
   .action(async (options) => {
-    const cmd = container.resolve<LoginCommand>(ServiceTokens.LoginCommand);
-    const result = await cmd.execute(options, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<LoginCommand>(ServiceTokens.LoginCommand);
+      await cmd.execute(options, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -174,9 +178,10 @@ authCmd
   .command("logout")
   .description("Log out of Bitbucket")
   .action(async () => {
-    const cmd = container.resolve<LogoutCommand>(ServiceTokens.LogoutCommand);
-    const result = await cmd.execute(undefined, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<LogoutCommand>(ServiceTokens.LogoutCommand);
+      await cmd.execute(undefined, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -185,9 +190,10 @@ authCmd
   .command("status")
   .description("Show authentication status")
   .action(async () => {
-    const cmd = container.resolve<StatusCommand>(ServiceTokens.StatusCommand);
-    const result = await cmd.execute(undefined, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<StatusCommand>(ServiceTokens.StatusCommand);
+      await cmd.execute(undefined, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -196,9 +202,10 @@ authCmd
   .command("token")
   .description("Print the current access token")
   .action(async () => {
-    const cmd = container.resolve<TokenCommand>(ServiceTokens.TokenCommand);
-    const result = await cmd.execute(undefined, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<TokenCommand>(ServiceTokens.TokenCommand);
+      await cmd.execute(undefined, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -213,9 +220,10 @@ repoCmd
   .description("Clone a Bitbucket repository")
   .option("-d, --directory <dir>", "Directory to clone into")
   .action(async (repository, options) => {
-    const cmd = container.resolve<CloneCommand>(ServiceTokens.CloneCommand);
-    const result = await cmd.execute({ repository, ...options }, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<CloneCommand>(ServiceTokens.CloneCommand);
+      await cmd.execute({ repository, ...options }, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -228,10 +236,11 @@ repoCmd
   .option("--public", "Create a public repository")
   .option("-p, --project <project>", "Project key")
   .action(async (name, options) => {
-    const cmd = container.resolve<CreateRepoCommand>(ServiceTokens.CreateRepoCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ name, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<CreateRepoCommand>(ServiceTokens.CreateRepoCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ name, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -241,10 +250,11 @@ repoCmd
   .description("List repositories")
   .option("--limit <number>", "Maximum number of repositories to list", "25")
   .action(async (options) => {
-    const cmd = container.resolve<ListReposCommand>(ServiceTokens.ListReposCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions(options, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ListReposCommand>(ServiceTokens.ListReposCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions(options, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -253,10 +263,11 @@ repoCmd
   .command("view [repository]")
   .description("View repository details")
   .action(async (repository, options) => {
-    const cmd = container.resolve<ViewRepoCommand>(ServiceTokens.ViewRepoCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ViewRepoCommand>(ServiceTokens.ViewRepoCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -266,10 +277,11 @@ repoCmd
   .description("Delete a repository")
   .option("-y, --yes", "Skip confirmation prompt")
   .action(async (repository, options) => {
-    const cmd = container.resolve<DeleteRepoCommand>(ServiceTokens.DeleteRepoCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<DeleteRepoCommand>(ServiceTokens.DeleteRepoCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ repository, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -289,10 +301,11 @@ prCmd
   .option("--close-source-branch", "Close source branch after merge")
   .option("--draft", "Create the pull request as draft")
   .action(async (options) => {
-    const cmd = container.resolve<CreatePRCommand>(ServiceTokens.CreatePRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions(options, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<CreatePRCommand>(ServiceTokens.CreatePRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions(options, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -303,10 +316,11 @@ prCmd
   .option("-s, --state <state>", "Filter by state (OPEN, MERGED, DECLINED, SUPERSEDED)", "OPEN")
   .option("--limit <number>", "Maximum number of PRs to list", "25")
   .action(async (options) => {
-    const cmd = container.resolve<ListPRsCommand>(ServiceTokens.ListPRsCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions(options, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ListPRsCommand>(ServiceTokens.ListPRsCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions(options, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -315,10 +329,11 @@ prCmd
   .command("view <id>")
   .description("View pull request details")
   .action(async (id, options) => {
-    const cmd = container.resolve<ViewPRCommand>(ServiceTokens.ViewPRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ViewPRCommand>(ServiceTokens.ViewPRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -329,10 +344,11 @@ prCmd
   .option("--limit <number>", "Maximum number of activity entries", "25")
   .option("--type <types>", "Filter activity by type (comma-separated)")
   .action(async (id, options) => {
-    const cmd = container.resolve<ActivityPRCommand>(ServiceTokens.ActivityPRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ActivityPRCommand>(ServiceTokens.ActivityPRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -344,10 +360,11 @@ prCmd
   .option("-b, --body <body>", "New pull request description")
   .option("-F, --body-file <file>", "Read description from file")
   .action(async (id, options) => {
-    const cmd = container.resolve<EditPRCommand>(ServiceTokens.EditPRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<EditPRCommand>(ServiceTokens.EditPRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -359,10 +376,11 @@ prCmd
   .option("--close-source-branch", "Delete the source branch after merging")
   .option("--strategy <strategy>", "Merge strategy (merge_commit, squash, fast_forward)")
   .action(async (id, options) => {
-    const cmd = container.resolve<MergePRCommand>(ServiceTokens.MergePRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<MergePRCommand>(ServiceTokens.MergePRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -371,10 +389,11 @@ prCmd
   .command("approve <id>")
   .description("Approve a pull request")
   .action(async (id, options) => {
-    const cmd = container.resolve<ApprovePRCommand>(ServiceTokens.ApprovePRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ApprovePRCommand>(ServiceTokens.ApprovePRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -383,10 +402,11 @@ prCmd
   .command("decline <id>")
   .description("Decline a pull request")
   .action(async (id, options) => {
-    const cmd = container.resolve<DeclinePRCommand>(ServiceTokens.DeclinePRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<DeclinePRCommand>(ServiceTokens.DeclinePRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -395,10 +415,11 @@ prCmd
   .command("ready <id>")
   .description("Mark a draft pull request as ready for review")
   .action(async (id, options) => {
-    const cmd = container.resolve<ReadyPRCommand>(ServiceTokens.ReadyPRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ReadyPRCommand>(ServiceTokens.ReadyPRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -407,10 +428,11 @@ prCmd
   .command("checkout <id>")
   .description("Checkout a pull request locally")
   .action(async (id, options) => {
-    const cmd = container.resolve<CheckoutPRCommand>(ServiceTokens.CheckoutPRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<CheckoutPRCommand>(ServiceTokens.CheckoutPRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
@@ -423,107 +445,115 @@ prCmd
   .option("--stat", "Show diffstat")
   .option("-w, --web", "Open diff in web browser")
   .action(async (id, options) => {
-    const cmd = container.resolve<DiffPRCommand>(ServiceTokens.DiffPRCommand);
-    const context = createContext(cli);
-    const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<DiffPRCommand>(ServiceTokens.DiffPRCommand);
+      const context = createContext(cli);
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
       process.exit(1);
     }
   });
 
-  const prCommentsCmd = new Command("comments").description("Manage pull request comments");
+const prCommentsCmd = new Command("comments").description("Manage pull request comments");
 
-  prCommentsCmd
-    .command("list <id>")
-    .description("List comments on a pull request")
-    .option("--limit <number>", "Maximum number of comments (default: 25)")
-    .option("--no-truncate", "Show full comment content without truncation")
-    .action(async (id, options) => {
+prCommentsCmd
+  .command("list <id>")
+  .description("List comments on a pull request")
+  .option("--limit <number>", "Maximum number of comments (default: 25)")
+  .option("--no-truncate", "Show full comment content without truncation")
+  .action(async (id, options) => {
+    try {
       const cmd = container.resolve<ListCommentsPRCommand>(ServiceTokens.ListCommentsPRCommand);
       const context = createContext(cli);
-      const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-      if (!result.success) {
-        process.exit(1);
-      }
-    });
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
+      process.exit(1);
+    }
+  });
 
-  prCommentsCmd
-    .command("add <id> <message>")
-    .description("Add a comment to a pull request")
-    .action(async (id, message, options) => {
+prCommentsCmd
+  .command("add <id> <message>")
+  .description("Add a comment to a pull request")
+  .action(async (id, message, options) => {
+    try {
       const cmd = container.resolve<CommentPRCommand>(ServiceTokens.CommentPRCommand);
       const context = createContext(cli);
-      const result = await cmd.execute(withGlobalOptions({ id, message }, context), context);
-      if (!result.success) {
-        process.exit(1);
-      }
-    });
+      await cmd.execute(withGlobalOptions({ id, message }, context), context);
+    } catch {
+      process.exit(1);
+    }
+  });
 
-  prCommentsCmd
-    .command("edit <pr-id> <comment-id> <message>")
-    .description("Edit a comment on a pull request")
-    .action(async (prId, commentId, message, options) => {
+prCommentsCmd
+  .command("edit <pr-id> <comment-id> <message>")
+  .description("Edit a comment on a pull request")
+  .action(async (prId, commentId, message, options) => {
+    try {
       const cmd = container.resolve<EditCommentPRCommand>(ServiceTokens.EditCommentPRCommand);
       const context = createContext(cli);
-      const result = await cmd.execute(withGlobalOptions({ prId, commentId, message }, context), context);
-      if (!result.success) {
-        process.exit(1);
-      }
-    });
+      await cmd.execute(withGlobalOptions({ prId, commentId, message }, context), context);
+    } catch {
+      process.exit(1);
+    }
+  });
 
-  prCommentsCmd
-    .command("delete <pr-id> <comment-id>")
-    .description("Delete a comment on a pull request")
-    .action(async (prId, commentId, options) => {
+prCommentsCmd
+  .command("delete <pr-id> <comment-id>")
+  .description("Delete a comment on a pull request")
+  .action(async (prId, commentId, options) => {
+    try {
       const cmd = container.resolve<DeleteCommentPRCommand>(ServiceTokens.DeleteCommentPRCommand);
       const context = createContext(cli);
-      const result = await cmd.execute(withGlobalOptions({ prId, commentId }, context), context);
-      if (!result.success) {
-        process.exit(1);
-      }
-    });
+      await cmd.execute(withGlobalOptions({ prId, commentId }, context), context);
+    } catch {
+      process.exit(1);
+    }
+  });
 
-  const prReviewersCmd = new Command("reviewers").description("Manage pull request reviewers");
+const prReviewersCmd = new Command("reviewers").description("Manage pull request reviewers");
 
-  prReviewersCmd
-    .command("list <id>")
-    .description("List reviewers on a pull request")
-    .action(async (id, options) => {
+prReviewersCmd
+  .command("list <id>")
+  .description("List reviewers on a pull request")
+  .action(async (id, options) => {
+    try {
       const cmd = container.resolve<ListReviewersPRCommand>(ServiceTokens.ListReviewersPRCommand);
       const context = createContext(cli);
-      const result = await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
-      if (!result.success) {
-        process.exit(1);
-      }
-    });
+      await cmd.execute(withGlobalOptions({ id, ...options }, context), context);
+    } catch {
+      process.exit(1);
+    }
+  });
 
-  prReviewersCmd
-    .command("add <id> <username>")
-    .description("Add a reviewer to a pull request")
-    .action(async (id, username, options) => {
+prReviewersCmd
+  .command("add <id> <username>")
+  .description("Add a reviewer to a pull request")
+  .action(async (id, username, options) => {
+    try {
       const cmd = container.resolve<AddReviewerPRCommand>(ServiceTokens.AddReviewerPRCommand);
       const context = createContext(cli);
-      const result = await cmd.execute(withGlobalOptions({ id, username, ...options }, context), context);
-      if (!result.success) {
-        process.exit(1);
-      }
-    });
+      await cmd.execute(withGlobalOptions({ id, username, ...options }, context), context);
+    } catch {
+      process.exit(1);
+    }
+  });
 
-  prReviewersCmd
-    .command("remove <id> <username>")
-    .description("Remove a reviewer from a pull request")
-    .action(async (id, username, options) => {
+prReviewersCmd
+  .command("remove <id> <username>")
+  .description("Remove a reviewer from a pull request")
+  .action(async (id, username, options) => {
+    try {
       const cmd = container.resolve<RemoveReviewerPRCommand>(ServiceTokens.RemoveReviewerPRCommand);
       const context = createContext(cli);
-      const result = await cmd.execute(withGlobalOptions({ id, username, ...options }, context), context);
-      if (!result.success) {
-        process.exit(1);
-      }
-    });
+      await cmd.execute(withGlobalOptions({ id, username, ...options }, context), context);
+    } catch {
+      process.exit(1);
+    }
+  });
 
-  cli.addCommand(prCmd);
-  prCmd.addCommand(prCommentsCmd);
-  prCmd.addCommand(prReviewersCmd);
+cli.addCommand(prCmd);
+prCmd.addCommand(prCommentsCmd);
+prCmd.addCommand(prReviewersCmd);
 
 // Config commands
 const configCmd = new Command("config").description("Manage configuration");
@@ -532,9 +562,10 @@ configCmd
   .command("get <key>")
   .description("Get a configuration value")
   .action(async (key) => {
-    const cmd = container.resolve<GetConfigCommand>(ServiceTokens.GetConfigCommand);
-    const result = await cmd.execute({ key }, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<GetConfigCommand>(ServiceTokens.GetConfigCommand);
+      await cmd.execute({ key }, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -543,9 +574,10 @@ configCmd
   .command("set <key> <value>")
   .description("Set a configuration value")
   .action(async (key, value) => {
-    const cmd = container.resolve<SetConfigCommand>(ServiceTokens.SetConfigCommand);
-    const result = await cmd.execute({ key, value }, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<SetConfigCommand>(ServiceTokens.SetConfigCommand);
+      await cmd.execute({ key, value }, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -554,9 +586,10 @@ configCmd
   .command("list")
   .description("List all configuration values")
   .action(async () => {
-    const cmd = container.resolve<ListConfigCommand>(ServiceTokens.ListConfigCommand);
-    const result = await cmd.execute(undefined, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<ListConfigCommand>(ServiceTokens.ListConfigCommand);
+      await cmd.execute(undefined, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -570,9 +603,10 @@ completionCmd
   .command("install")
   .description("Install shell completions for bash, zsh, or fish")
   .action(async () => {
-    const cmd = container.resolve<InstallCompletionCommand>(ServiceTokens.InstallCompletionCommand);
-    const result = await cmd.execute(undefined, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<InstallCompletionCommand>(ServiceTokens.InstallCompletionCommand);
+      await cmd.execute(undefined, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });
@@ -581,9 +615,10 @@ completionCmd
   .command("uninstall")
   .description("Uninstall shell completions")
   .action(async () => {
-    const cmd = container.resolve<UninstallCompletionCommand>(ServiceTokens.UninstallCompletionCommand);
-    const result = await cmd.execute(undefined, createContext(cli));
-    if (!result.success) {
+    try {
+      const cmd = container.resolve<UninstallCompletionCommand>(ServiceTokens.UninstallCompletionCommand);
+      await cmd.execute(undefined, createContext(cli));
+    } catch {
       process.exit(1);
     }
   });

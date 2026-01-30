@@ -2,8 +2,6 @@
  * Command interfaces for the command pattern
  */
 
-import type { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 /**
@@ -20,14 +18,7 @@ export interface ICommand<TOptions = unknown, TResult = void> {
   readonly name: string;
   readonly description: string;
 
-  execute(options: TOptions, context: CommandContext): Promise<Result<TResult, BBError>>;
-}
-
-/**
- * Command with validation
- */
-export interface IValidatedCommand<TOptions = unknown, TResult = void> extends ICommand<TOptions, TResult> {
-  validate(options: TOptions): Result<void, BBError>;
+  execute(options: TOptions, context: CommandContext): Promise<TResult>;
 }
 
 /**

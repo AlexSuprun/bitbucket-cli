@@ -4,33 +4,18 @@
 
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IGitService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
+import type { IContextService, IGitService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface CheckoutPROptions extends GlobalOptions {}
 
-export interface CheckoutResult {
-  prId: number;
-  branch: string;
-  title: string;
-}
-
-export class CheckoutPRCommand extends BaseCommand<
-  { id: string } & CheckoutPROptions,
-  CheckoutResult
-> {
+export class CheckoutPRCommand extends BaseCommand<{ id: string } & CheckoutPROptions, void> {
   public readonly name = "checkout";
   public readonly description = "Checkout a pull request locally";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     private readonly gitService: IGitService,
     output: IOutputService
@@ -41,72 +26,46 @@ export class CheckoutPRCommand extends BaseCommand<
   public async execute(
     options: { id: string } & CheckoutPROptions,
     context: CommandContext
-  ): Promise<Result<CheckoutResult, BBError>> {
-    // Get repository context
-    const repoContextResult = await this.contextService.requireRepoContext({
+  ): Promise<void> {
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
-
-    const { workspace, repoSlug } = repoContextResult.value;
     const prId = parseInt(options.id, 10);
 
-    // Get PR details
-    const prResult = await this.prRepository.get(workspace, repoSlug, prId);
-    if (!prResult.success) {
-      this.handleResult(prResult, context);
-      return prResult;
-    }
+    try {
+      const prResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+      });
 
-    const pr = prResult.value;
-    const branchName = pr.source.branch.name;
-    const localBranchName = `pr-${prId}`;
+      const pr = prResponse.data;
+      const branchName = pr.source?.branch?.name;
+      const localBranchName = `pr-${prId}`;
 
-    // Fetch latest
-    const fetchResult = await this.gitService.fetch();
-    if (!fetchResult.success) {
-      this.handleResult(fetchResult, context);
-      return fetchResult;
-    }
-
-    // Try to checkout the branch
-    let checkoutResult = await this.gitService.checkout(branchName);
-
-    if (!checkoutResult.success) {
-      // If branch doesn't exist locally, create tracking branch
-      checkoutResult = await this.gitService.checkoutNewBranch(
-        localBranchName,
-        `origin/${branchName}`
-      );
-
-      if (!checkoutResult.success) {
-        this.output.error(
-          `Could not checkout branch '${branchName}'. ` +
-            `Make sure the source branch exists and try fetching first.`
-        );
-        if (process.env.NODE_ENV !== "test") {
-          process.exitCode = 1;
-        }
-        return checkoutResult;
+      if (!branchName) {
+        throw new Error("Pull request source branch not found");
       }
+
+      await this.gitService.fetch();
+
+      try {
+        await this.gitService.checkout(branchName);
+        this.output.success(`Checked out PR #${prId} as '${branchName}'`);
+      } catch {
+        await this.gitService.checkoutNewBranch(
+          localBranchName,
+          `origin/${branchName}`
+        );
+        this.output.success(`Checked out PR #${prId} as '${localBranchName}'`);
+      }
+
+      this.output.text(`  Title: ${pr.title}`);
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
     }
-
-    const result: CheckoutResult = {
-      prId,
-      branch: checkoutResult.success ? branchName : localBranchName,
-      title: pr.title,
-    };
-
-    this.handleResult(Result.ok(result), context, (data) => {
-      this.output.success(`Checked out PR #${data.prId} as '${data.branch}'`);
-      this.output.text(`  Title: ${data.title}`);
-    });
-
-    return Result.ok(result);
   }
 }

@@ -4,18 +4,8 @@
 
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import type {
-  BitbucketPullRequest,
-  MergePullRequestRequest,
-  MergeStrategy,
-} from "../../types/api.js";
+import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface MergePROptions extends GlobalOptions {
@@ -24,15 +14,12 @@ export interface MergePROptions extends GlobalOptions {
   strategy?: string;
 }
 
-export class MergePRCommand extends BaseCommand<
-  { id: string } & MergePROptions,
-  BitbucketPullRequest
-> {
+export class MergePRCommand extends BaseCommand<{ id: string } & MergePROptions, void> {
   public readonly name = "merge";
   public readonly description = "Merge a pull request";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     output: IOutputService
   ) {
@@ -42,23 +29,19 @@ export class MergePRCommand extends BaseCommand<
   public async execute(
     options: { id: string } & MergePROptions,
     context: CommandContext
-  ): Promise<Result<BitbucketPullRequest, BBError>> {
-    // Get repository context
-    const repoContextResult = await this.contextService.requireRepoContext({
+  ): Promise<void> {
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
-
-    const { workspace, repoSlug } = repoContextResult.value;
     const prId = parseInt(options.id, 10);
 
-    // Build merge request
-    const request: MergePullRequestRequest = {};
+    const request: {
+      message?: string;
+      close_source_branch?: boolean;
+      merge_strategy?: string;
+    } = {};
 
     if (options.message) {
       request.message = options.message;
@@ -69,16 +52,23 @@ export class MergePRCommand extends BaseCommand<
     }
 
     if (options.strategy) {
-      request.merge_strategy = options.strategy as MergeStrategy;
+      request.merge_strategy = options.strategy;
     }
 
-    // Merge pull request
-    const result = await this.prRepository.merge(workspace, repoSlug, prId, request);
+    try {
+      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        body: request,
+      });
 
-    this.handleResult(result, context, (pr) => {
+      const pr = response.data;
+
       this.output.success(`Merged pull request #${prId}: ${pr.title}`);
-    });
-
-    return result;
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 }

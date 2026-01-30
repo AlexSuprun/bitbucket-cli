@@ -6,5 +6,5 @@ export { ConfigService } from "./config.service.js";
 export { GitService } from "./git.service.js";
 export { ContextService } from "./context.service.js";
 export { OutputService } from "./output.service.js";
-export { HttpClient } from "./http.client.js";
 export { VersionService } from "./version.service.js";
+export { createApiClient } from "./api-client.service.js";

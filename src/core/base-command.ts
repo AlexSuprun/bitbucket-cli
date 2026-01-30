@@ -4,7 +4,6 @@
 
 import type { ICommand, CommandContext } from "./interfaces/commands.js";
 import type { IOutputService } from "./interfaces/services.js";
-import { Result } from "../types/result.js";
 import type { BBError } from "../types/errors.js";
 
 export abstract class BaseCommand<TOptions = unknown, TResult = void>
@@ -18,29 +17,21 @@ export abstract class BaseCommand<TOptions = unknown, TResult = void>
   public abstract execute(
     options: TOptions,
     context: CommandContext
-  ): Promise<Result<TResult, BBError>>;
+  ): Promise<TResult>;
 
   /**
-   * Handle command result - output success or error
+   * Handle command error - output error and set exit code
    */
-  protected handleResult<T>(
-    result: Result<T, BBError>,
-    context: CommandContext,
-    formatOutput?: (data: T) => void
-  ): void {
-    if (result.success) {
-      if (context.globalOptions.json && result.value !== undefined) {
-        this.output.json(result.value);
-      } else if (formatOutput) {
-        formatOutput(result.value);
-      }
+  protected handleError(error: unknown, context: CommandContext): void {
+    if (error instanceof Error) {
+      this.output.error(error.message);
     } else {
-      this.output.error(result.error.message);
-      // Only set exit code in production - during tests this causes false failures
-      // because the exit code persists across test files
-      if (process.env.NODE_ENV !== "test") {
-        process.exitCode = 1;
-      }
+      this.output.error(String(error));
+    }
+    // Only set exit code in production - during tests this causes false failures
+    // because the exit code persists across test files
+    if (process.env.NODE_ENV !== "test") {
+      process.exitCode = 1;
     }
   }
 
@@ -51,14 +42,10 @@ export abstract class BaseCommand<TOptions = unknown, TResult = void>
     value: T | undefined,
     name: string,
     message?: string
-  ): Result<T, BBError> {
+  ): T {
     if (value === undefined || value === null || value === "") {
-      return Result.err({
-        code: 5001,
-        message: message || `Option --${name} is required`,
-        name: "ValidationError",
-      } as BBError);
+      throw new Error(message || `Option --${name} is required`);
     }
-    return Result.ok(value);
+    return value;
   }
 }

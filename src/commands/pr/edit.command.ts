@@ -6,17 +6,9 @@ import * as fs from "fs";
 import chalk from "chalk";
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IGitService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import { BBError, ValidationError } from "../../types/errors.js";
-import type { BitbucketPullRequest, UpdatePullRequestRequest } from "../../types/api.js";
+import type { IContextService, IGitService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi, Pullrequest } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
-import { DEFAULT_PAGELEN } from "../../constants.js";
 
 export interface EditPROptions extends GlobalOptions {
   id?: string;
@@ -25,12 +17,12 @@ export interface EditPROptions extends GlobalOptions {
   bodyFile?: string;
 }
 
-export class EditPRCommand extends BaseCommand<EditPROptions, BitbucketPullRequest> {
+export class EditPRCommand extends BaseCommand<EditPROptions, void> {
   public readonly name = "edit";
   public readonly description = "Edit a pull request";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     private readonly gitService: IGitService,
     output: IOutputService
@@ -41,96 +33,76 @@ export class EditPRCommand extends BaseCommand<EditPROptions, BitbucketPullReque
   public async execute(
     options: EditPROptions,
     context: CommandContext
-  ): Promise<Result<BitbucketPullRequest, BBError>> {
-    // Get repository context
-    const repoContextResult = await this.contextService.requireRepoContext({
+  ): Promise<void> {
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
-
-    const { workspace, repoSlug } = repoContextResult.value;
-
-    // Determine PR ID
     let prId: number;
     if (options.id) {
       prId = parseInt(options.id, 10);
     } else {
-      // Auto-detect PR from current branch
-      const branchResult = await this.gitService.getCurrentBranch();
-      if (!branchResult.success) {
-        this.handleResult(branchResult, context);
-        return branchResult;
-      }
+      const currentBranch = await this.gitService.getCurrentBranch();
+      
+      const prsResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        state: "OPEN",
+      });
 
-      const currentBranch = branchResult.value;
-      const prsResult = await this.prRepository.list(
-        workspace,
-        repoSlug,
-        "OPEN",
-        DEFAULT_PAGELEN.PULL_REQUESTS
-      );
-      if (!prsResult.success) {
-        this.handleResult(prsResult, context);
-        return prsResult;
-      }
-
-      const matchingPR = prsResult.value.values.find(
-        (pr) => pr.source.branch.name === currentBranch
+      const values = prsResponse.data.values ? Array.from(prsResponse.data.values) : [];
+      const matchingPR = values.find(
+        (pr: Pullrequest) => {
+          const source = pr.source as { branch?: { name?: string } } | undefined;
+          return source?.branch?.name === currentBranch;
+        }
       );
 
       if (!matchingPR) {
-        const error = new ValidationError(
-          "id",
+        const error = new Error(
           `No open pull request found for current branch '${currentBranch}'. Specify a PR ID explicitly.`
         );
         this.output.error(error.message);
         if (process.env.NODE_ENV !== "test") {
           process.exitCode = 1;
         }
-        return Result.err(error);
+        throw error;
       }
 
-      prId = matchingPR.id;
+      prId = matchingPR.id!;
     }
 
-    // Read body from file if specified
     let body = options.body;
     if (options.bodyFile) {
       try {
         body = fs.readFileSync(options.bodyFile, "utf-8");
       } catch (err) {
-        const error = new ValidationError(
-          "bodyFile",
+        const error = new Error(
           `Failed to read file '${options.bodyFile}': ${err instanceof Error ? err.message : "Unknown error"}`
         );
         this.output.error(error.message);
         if (process.env.NODE_ENV !== "test") {
           process.exitCode = 1;
         }
-        return Result.err(error);
+        throw error;
       }
     }
 
-    // Validate at least one change is provided
     if (!options.title && !body) {
-      const error = new ValidationError(
-        "title",
+      const error = new Error(
         "At least one of --title or --body (or --body-file) is required."
       );
       this.output.error(error.message);
       if (process.env.NODE_ENV !== "test") {
         process.exitCode = 1;
       }
-      return Result.err(error);
+      throw error;
     }
 
-    // Build update request
-    const request: UpdatePullRequestRequest = {};
+    const request: Pullrequest = {
+      type: "pullrequest",
+    };
     if (options.title) {
       request.title = options.title;
     }
@@ -138,10 +110,17 @@ export class EditPRCommand extends BaseCommand<EditPROptions, BitbucketPullReque
       request.description = body;
     }
 
-    // Update pull request
-    const result = await this.prRepository.update(workspace, repoSlug, prId, request);
+    try {
+      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        body: request,
+      });
 
-    this.handleResult(result, context, (pr) => {
+      const pr = response.data;
+      const links = pr.links as { html?: { href?: string } } | undefined;
+
       this.output.success(`Updated pull request #${pr.id}`);
       this.output.text(`  ${chalk.dim("Title:")} ${pr.title}`);
       if (pr.description) {
@@ -150,9 +129,10 @@ export class EditPRCommand extends BaseCommand<EditPROptions, BitbucketPullReque
           : pr.description;
         this.output.text(`  ${chalk.dim("Description:")} ${truncatedDesc}`);
       }
-      this.output.text(`  ${chalk.dim("URL:")} ${pr.links.html.href}`);
-    });
-
-    return result;
+      this.output.text(`  ${chalk.dim("URL:")} ${links?.html?.href}`);
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 }

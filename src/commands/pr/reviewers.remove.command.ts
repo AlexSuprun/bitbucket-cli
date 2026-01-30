@@ -4,14 +4,8 @@
 
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import type { BitbucketPullRequest } from "../../types/api.js";
+import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface RemoveReviewerPROptions extends GlobalOptions {
@@ -19,15 +13,12 @@ export interface RemoveReviewerPROptions extends GlobalOptions {
   username: string;
 }
 
-export class RemoveReviewerPRCommand extends BaseCommand<
-  RemoveReviewerPROptions,
-  BitbucketPullRequest
-> {
+export class RemoveReviewerPRCommand extends BaseCommand<RemoveReviewerPROptions, void> {
   public readonly name = "reviewers.remove";
   public readonly description = "Remove a reviewer from a pull request";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     output: IOutputService
   ) {
@@ -37,31 +28,43 @@ export class RemoveReviewerPRCommand extends BaseCommand<
   public async execute(
     options: RemoveReviewerPROptions,
     context: CommandContext
-  ): Promise<Result<BitbucketPullRequest, BBError>> {
-    const repoContextResult = await this.contextService.requireRepoContext({
+  ): Promise<void> {
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
-
-    const { workspace, repoSlug } = repoContextResult.value;
     const prId = parseInt(options.id, 10);
 
-    const result = await this.prRepository.removeReviewer(
-      workspace,
-      repoSlug,
-      prId,
-      options.username
-    );
+    try {
+      // First get the current PR to see existing reviewers
+      const prResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+      });
 
-    this.handleResult(result, context, () => {
+      const pr = prResponse.data;
+      const currentReviewers = pr.reviewers ?? [];
+      
+      // Filter out the reviewer to remove
+      const updatedReviewers = currentReviewers.filter(
+        (r) => r.username !== options.username
+      );
+
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        body: {
+          reviewers: updatedReviewers,
+        },
+      });
+
       this.output.success(`Removed ${options.username} as reviewer from pull request #${prId}`);
-    });
-
-    return result;
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 }

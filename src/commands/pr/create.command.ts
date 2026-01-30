@@ -5,15 +5,8 @@
 import chalk from "chalk";
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IGitService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import { BBError, ValidationError } from "../../types/errors.js";
-import type { BitbucketPullRequest, CreatePullRequestRequest } from "../../types/api.js";
+import type { IContextService, IGitService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi, Pullrequest } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface CreatePROptions extends GlobalOptions {
@@ -25,12 +18,12 @@ export interface CreatePROptions extends GlobalOptions {
   draft?: boolean;
 }
 
-export class CreatePRCommand extends BaseCommand<CreatePROptions, BitbucketPullRequest> {
+export class CreatePRCommand extends BaseCommand<CreatePROptions, void> {
   public readonly name = "create";
   public readonly description = "Create a pull request";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     private readonly gitService: IGitService,
     output: IOutputService
@@ -41,51 +34,36 @@ export class CreatePRCommand extends BaseCommand<CreatePROptions, BitbucketPullR
   public async execute(
     options: CreatePROptions,
     context: CommandContext
-  ): Promise<Result<BitbucketPullRequest, BBError>> {
-    // Validate title
+  ): Promise<void> {
     if (!options.title) {
-      const error = new ValidationError(
-        "title",
-        "Pull request title is required. Use --title option."
-      );
-      this.output.error(error.message);
+      this.output.error("Pull request title is required. Use --title option.");
       if (process.env.NODE_ENV !== "test") {
         process.exitCode = 1;
       }
-      return Result.err(error);
+      throw new Error("Pull request title is required");
     }
 
-    // Get repository context
-    const repoContextResult = await this.contextService.requireRepoContext({
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
-
-    const { workspace, repoSlug } = repoContextResult.value;
-
-    // Get source branch (default to current branch)
     let sourceBranch = options.source;
     if (!sourceBranch) {
-      const branchResult = await this.gitService.getCurrentBranch();
-      if (!branchResult.success) {
-        this.handleResult(branchResult, context);
-        return branchResult;
-      }
-      sourceBranch = branchResult.value;
+      sourceBranch = await this.gitService.getCurrentBranch();
     }
 
     const destinationBranch = options.destination || "main";
 
-    // Build request
-    const request: CreatePullRequestRequest = {
+    const request: Pullrequest = {
+      type: "pullrequest",
       title: options.title,
-      source: { branch: { name: sourceBranch } },
-      destination: { branch: { name: destinationBranch } },
+      source: { 
+        branch: { name: sourceBranch } 
+      } as Pullrequest["source"],
+      destination: { 
+        branch: { name: destinationBranch } 
+      } as Pullrequest["destination"],
     };
 
     if (options.body) {
@@ -100,15 +78,22 @@ export class CreatePRCommand extends BaseCommand<CreatePROptions, BitbucketPullR
       request.draft = true;
     }
 
-    // Create pull request
-    const result = await this.prRepository.create(workspace, repoSlug, request);
+    try {
+      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPost({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        body: request,
+      });
 
-    this.handleResult(result, context, (pr) => {
+      const pr = response.data;
+      const links = pr.links as { html?: { href?: string } } | undefined;
+
       this.output.success(`Created pull request #${pr.id}`);
       this.output.text(`  ${chalk.dim("Title:")} ${pr.title}`);
-      this.output.text(`  ${chalk.dim("URL:")} ${pr.links.html.href}`);
-    });
-
-    return result;
+      this.output.text(`  ${chalk.dim("URL:")} ${links?.html?.href}`);
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 }

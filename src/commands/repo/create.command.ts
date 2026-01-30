@@ -5,14 +5,8 @@
 import chalk from "chalk";
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IRepoRepository,
-  IConfigService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import { BBError, ValidationError, ErrorCode } from "../../types/errors.js";
-import type { BitbucketRepository, CreateRepositoryRequest } from "../../types/api.js";
+import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
+import type { RepositoriesApi } from "../../generated/api.js";
 
 export interface CreateRepoOptions {
   workspace?: string;
@@ -22,15 +16,12 @@ export interface CreateRepoOptions {
   project?: string;
 }
 
-export class CreateRepoCommand extends BaseCommand<
-  { name: string } & CreateRepoOptions,
-  BitbucketRepository
-> {
+export class CreateRepoCommand extends BaseCommand<{ name: string } & CreateRepoOptions, void> {
   public readonly name = "create";
   public readonly description = "Create a new repository";
 
   constructor(
-    private readonly repoRepository: IRepoRepository,
+    private readonly repositoriesApi: RepositoriesApi,
     private readonly configService: IConfigService,
     output: IOutputService
   ) {
@@ -40,21 +31,19 @@ export class CreateRepoCommand extends BaseCommand<
   public async execute(
     options: { name: string } & CreateRepoOptions,
     context: CommandContext
-  ): Promise<Result<BitbucketRepository, BBError>> {
+  ): Promise<void> {
     const { name, description, project } = options;
     const isPublic = options.public === true;
 
-    // Resolve workspace
-    const workspaceResult = await this.resolveWorkspace(options.workspace);
-    if (!workspaceResult.success) {
-      this.handleResult(workspaceResult, context);
-      return workspaceResult;
-    }
+    const workspace = await this.resolveWorkspace(options.workspace);
 
-    const workspace = workspaceResult.value;
-
-    // Build request
-    const request: CreateRepositoryRequest = {
+    const request: {
+      scm: string;
+      name: string;
+      is_private: boolean;
+      description?: string;
+      project?: { key: string };
+    } = {
       scm: "git",
       name,
       is_private: !isPublic,
@@ -68,43 +57,40 @@ export class CreateRepoCommand extends BaseCommand<
       request.project = { key: project };
     }
 
-    // Create repository
-    const result = await this.repoRepository.create(workspace, request);
+    try {
+      const response = await this.repositoriesApi.repositoriesWorkspaceRepoSlugPost({
+        workspace,
+        body: request,
+      });
 
-    this.handleResult(result, context, (repo) => {
+      const repo = response.data;
+
       this.output.success(`Created repository ${repo.full_name}`);
-      this.output.text(`  ${chalk.dim("URL:")} ${repo.links.html.href}`);
+      this.output.text(`  ${chalk.dim("URL:")} ${repo.links?.html?.href}`);
 
-      const sshClone = repo.links.clone.find((c) => c.name === "ssh");
+      const sshClone = repo.links?.clone?.find((c) => c.name === "ssh");
       if (sshClone) {
         this.output.text(`  ${chalk.dim("Clone:")} git clone ${sshClone.href}`);
       }
-    });
-
-    return result;
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 
-  private async resolveWorkspace(
-    workspace?: string
-  ): Promise<Result<string, BBError>> {
+  private async resolveWorkspace(workspace?: string): Promise<string> {
     if (workspace) {
-      return Result.ok(workspace);
+      return workspace;
     }
 
-    const configResult = await this.configService.getConfig();
-    if (!configResult.success) {
-      return configResult;
-    }
+    const config = await this.configService.getConfig();
 
-    if (!configResult.value.defaultWorkspace) {
-      return Result.err(
-        new BBError({
-          code: ErrorCode.CONTEXT_WORKSPACE_NOT_FOUND,
-          message: "No workspace specified. Use --workspace option or set a default workspace.",
-        })
+    if (!config.defaultWorkspace) {
+      throw new Error(
+        "No workspace specified. Use --workspace option or set a default workspace."
       );
     }
 
-    return Result.ok(configResult.value.defaultWorkspace);
+    return config.defaultWorkspace;
   }
 }

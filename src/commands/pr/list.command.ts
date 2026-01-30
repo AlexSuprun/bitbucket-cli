@@ -4,18 +4,8 @@
 
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import type {
-  BitbucketPullRequest,
-  PaginatedResponse,
-  PullRequestState,
-} from "../../types/api.js";
+import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi, Pullrequest } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface ListPRsOptions extends GlobalOptions {
@@ -23,15 +13,12 @@ export interface ListPRsOptions extends GlobalOptions {
   limit?: string;
 }
 
-export class ListPRsCommand extends BaseCommand<
-  ListPRsOptions,
-  PaginatedResponse<BitbucketPullRequest>
-> {
+export class ListPRsCommand extends BaseCommand<ListPRsOptions, void> {
   public readonly name = "list";
   public readonly description = "List pull requests";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     output: IOutputService
   ) {
@@ -41,45 +28,46 @@ export class ListPRsCommand extends BaseCommand<
   public async execute(
     options: ListPRsOptions,
     context: CommandContext
-  ): Promise<Result<PaginatedResponse<BitbucketPullRequest>, BBError>> {
-    // Get repository context
-    const repoContextResult = await this.contextService.requireRepoContext({
+  ): Promise<void> {
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
+    const state = (options.state || "OPEN") as "OPEN" | "MERGED" | "DECLINED" | "SUPERSEDED";
 
-    const { workspace, repoSlug } = repoContextResult.value;
-    const state = (options.state || "OPEN") as PullRequestState;
-    const limit = parseInt(options.limit || "25", 10);
+    try {
+      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        state,
+      });
 
-    // List pull requests
-    const result = await this.prRepository.list(workspace, repoSlug, state, limit);
+      const data = response.data;
+      const values = data.values ? Array.from(data.values) : [];
 
-    this.handleResult(result, context, (data) => {
-      if (data.values.length === 0) {
+      if (values.length === 0) {
         this.output.text(`No ${state.toLowerCase()} pull requests found`);
         return;
       }
 
-      const rows = data.values.map((pr) => {
+      const rows = values.map((pr: Pullrequest) => {
         const title = pr.draft ? `[DRAFT] ${pr.title}` : pr.title;
+        const source = pr.source as { branch?: { name?: string } } | undefined;
+        const destination = pr.destination as { branch?: { name?: string } } | undefined;
         return [
           `#${pr.id}`,
-          this.truncate(title, 50),
-          pr.author.display_name,
-          `${pr.source.branch.name} → ${pr.destination.branch.name}`,
+          this.truncate(title ?? "", 50),
+          pr.author?.display_name ?? "Unknown",
+          `${source?.branch?.name ?? "unknown"} → ${destination?.branch?.name ?? "unknown"}`,
         ];
       });
 
       this.output.table(["ID", "TITLE", "AUTHOR", "BRANCHES"], rows);
-    });
-
-    return result;
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 
   private truncate(text: string, maxLength: number): string {

@@ -4,14 +4,8 @@
 
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
-import type {
-  IPullRequestRepository,
-  IContextService,
-  IOutputService,
-} from "../../core/interfaces/services.js";
-import { Result } from "../../types/result.js";
-import type { BBError } from "../../types/errors.js";
-import type { BitbucketPullRequest } from "../../types/api.js";
+import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
+import type { PullrequestsApi } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface AddReviewerPROptions extends GlobalOptions {
@@ -19,15 +13,12 @@ export interface AddReviewerPROptions extends GlobalOptions {
   username: string;
 }
 
-export class AddReviewerPRCommand extends BaseCommand<
-  AddReviewerPROptions,
-  BitbucketPullRequest
-> {
+export class AddReviewerPRCommand extends BaseCommand<AddReviewerPROptions, void> {
   public readonly name = "reviewers.add";
   public readonly description = "Add a reviewer to a pull request";
 
   constructor(
-    private readonly prRepository: IPullRequestRepository,
+    private readonly pullrequestsApi: PullrequestsApi,
     private readonly contextService: IContextService,
     output: IOutputService
   ) {
@@ -37,31 +28,30 @@ export class AddReviewerPRCommand extends BaseCommand<
   public async execute(
     options: AddReviewerPROptions,
     context: CommandContext
-  ): Promise<Result<BitbucketPullRequest, BBError>> {
-    const repoContextResult = await this.contextService.requireRepoContext({
+  ): Promise<void> {
+    const repoContext = await this.contextService.requireRepoContext({
       ...context.globalOptions,
       ...options,
     });
 
-    if (!repoContextResult.success) {
-      this.handleResult(repoContextResult, context);
-      return repoContextResult;
-    }
-
-    const { workspace, repoSlug } = repoContextResult.value;
     const prId = parseInt(options.id, 10);
 
-    const result = await this.prRepository.addReviewer(
-      workspace,
-      repoSlug,
-      prId,
-      options.username
-    );
+    try {
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        body: {
+          reviewers: [
+            { username: options.username },
+          ],
+        },
+      });
 
-    this.handleResult(result, context, () => {
       this.output.success(`Added ${options.username} as reviewer to pull request #${prId}`);
-    });
-
-    return result;
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
   }
 }
