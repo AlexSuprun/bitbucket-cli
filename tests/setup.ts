@@ -9,12 +9,7 @@ import type {
   IGitService,
   IContextService,
   IOutputService,
-  IHttpClient,
-  IUserRepository,
-  IRepoRepository,
-  IPullRequestRepository,
 } from "../src/core/interfaces/services.js";
-import { Result } from "../src/types/result.js";
 import type { BBError } from "../src/types/errors.js";
 import type {
   BBConfig,
@@ -22,18 +17,6 @@ import type {
   RepoContext,
   GlobalOptions,
 } from "../src/types/config.js";
-import type {
-  BitbucketUser,
-  BitbucketRepository,
-  BitbucketPullRequest,
-  BitbucketApproval,
-  PaginatedResponse,
-  PullRequestState,
-  CreateRepositoryRequest,
-  CreatePullRequestRequest,
-  MergePullRequestRequest,
-  DiffStat,
-} from "../src/types/api.js";
 
 // Reset container before each test
 beforeEach(() => {
@@ -53,39 +36,35 @@ export function createMockConfigService(config: BBConfig = {}): IConfigService {
 
   return {
     async getConfig() {
-      return Result.ok(currentConfig);
+      return currentConfig;
     },
     async setConfig(newConfig: BBConfig) {
       currentConfig = newConfig;
-      return Result.ok(undefined);
     },
-    async getCredentials() {
+    async getCredentials(): Promise<AuthCredentials> {
       if (!currentConfig.username || !currentConfig.apiToken) {
-        return Result.err({
+        throw {
           code: 1001,
           message: "Auth required",
-        } as BBError);
+        } as BBError;
       }
-      return Result.ok({
+      return {
         username: currentConfig.username,
         apiToken: currentConfig.apiToken,
-      });
+      };
     },
     async setCredentials(creds: AuthCredentials) {
       currentConfig.username = creds.username;
       currentConfig.apiToken = creds.apiToken;
-      return Result.ok(undefined);
     },
     async clearConfig() {
       currentConfig = {};
-      return Result.ok(undefined);
     },
-    async getValue<K extends keyof BBConfig>(key: K) {
-      return Result.ok(currentConfig[key]);
+    async getValue<K extends keyof BBConfig>(key: K): Promise<BBConfig[K] | undefined> {
+      return currentConfig[key];
     },
     async setValue<K extends keyof BBConfig>(key: K, value: BBConfig[K]) {
       currentConfig[key] = value;
-      return Result.ok(undefined);
     },
     getConfigPath() {
       return "/tmp/test-config/config.json";
@@ -103,25 +82,25 @@ export function createMockGitService(options: {
       return options.isRepo ?? false;
     },
     async clone() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async fetch() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async checkout() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async checkoutNewBranch() {
-      return Result.ok(undefined);
+      // Mock implementation
     },
     async getCurrentBranch() {
-      return Result.ok(options.currentBranch ?? "main");
+      return options.currentBranch ?? "main";
     },
     async getRemoteUrl() {
       if (options.remoteUrl) {
-        return Result.ok(options.remoteUrl);
+        return options.remoteUrl;
       }
-      return Result.err({ code: 3003, message: "No remote" } as BBError);
+      throw { code: 3003, message: "No remote" } as BBError;
     },
   };
 }
@@ -159,43 +138,19 @@ export function createMockOutputService(): IOutputService & { logs: string[] } {
   };
 }
 
-export function createMockHttpClient<T>(
-  responses: Map<string, Result<T, BBError>>
-): IHttpClient & { capturedBodies: Map<string, unknown> } {
-  const capturedBodies = new Map<string, unknown>();
-  
-  return {
-    capturedBodies,
-    async get<R>(path: string): Promise<Result<R, BBError>> {
-      const result = responses.get(`GET:${path}`);
-      return (result as Result<R, BBError>) ?? Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async getText(path: string): Promise<Result<string, BBError>> {
-      const result = responses.get(`GET:${path}`);
-      return (result as Result<string, BBError>) ?? Result.err({ code: 2002, message: "Not found" } as BBError);
-    },
-    async post<R>(path: string, body?: unknown): Promise<Result<R, BBError>> {
-      capturedBodies.set(`POST:${path}`, body);
-      const result = responses.get(`POST:${path}`);
-      return (result as Result<R, BBError>) ?? Result.err({ code: 2001, message: "Failed" } as BBError);
-    },
-    async put<R>(path: string, body?: unknown): Promise<Result<R, BBError>> {
-      capturedBodies.set(`PUT:${path}`, body);
-      const result = responses.get(`PUT:${path}`);
-      return (result as Result<R, BBError>) ?? Result.err({ code: 2001, message: "Failed" } as BBError);
-    },
-    async delete<R>(path: string): Promise<Result<R, BBError>> {
-      const result = responses.get(`DELETE:${path}`);
-      return (result as Result<R, BBError>) ?? Result.err({ code: 2001, message: "Failed" } as BBError);
-    },
-  };
-}
-
 /**
- * Mock data
+ * Mock data - using generated API types
  */
 
-export const mockUser: BitbucketUser = {
+// Import types from generated API
+import type {
+  Account,
+  Repository,
+  Pullrequest,
+} from "../src/generated/api.js";
+
+export const mockUser: Account = {
+  type: "user",
   uuid: "{user-uuid}",
   username: "testuser",
   display_name: "Test User",
@@ -203,10 +158,11 @@ export const mockUser: BitbucketUser = {
   links: {
     html: { href: "https://bitbucket.org/testuser" },
     avatar: { href: "https://avatar.bitbucket.org/testuser" },
-  },
+  } as unknown as import("../src/generated/api.js").AccountLinks,
 };
 
-export const mockRepository: BitbucketRepository = {
+export const mockRepository: Repository = {
+  type: "repository",
   uuid: "{repo-uuid}",
   full_name: "workspace/repo",
   name: "repo",
@@ -215,9 +171,6 @@ export const mockRepository: BitbucketRepository = {
   is_private: true,
   created_on: "2024-01-01T00:00:00.000Z",
   updated_on: "2024-01-02T00:00:00.000Z",
-  size: 1024,
-  language: "TypeScript",
-  mainbranch: { name: "main", type: "branch" },
   links: {
     html: { href: "https://bitbucket.org/workspace/repo" },
     clone: [
@@ -225,20 +178,22 @@ export const mockRepository: BitbucketRepository = {
       { name: "https", href: "https://bitbucket.org/workspace/repo.git" },
     ],
     avatar: { href: "https://avatar.bitbucket.org/repo" },
-  },
+  } as unknown as import("../src/generated/api.js").RepositoryLinks,
   owner: mockUser,
   workspace: {
+    type: "workspace",
     uuid: "{workspace-uuid}",
     slug: "workspace",
     name: "Workspace",
     links: {
       html: { href: "https://bitbucket.org/workspace" },
       avatar: { href: "https://avatar.bitbucket.org/workspace" },
-    },
+    } as unknown as import("../src/generated/api.js").WorkspaceLinks,
   },
 };
 
-export const mockPullRequest: BitbucketPullRequest = {
+export const mockPullRequest: Pullrequest = {
+  type: "pullrequest",
   id: 1,
   title: "Test PR",
   description: "Test description",
@@ -249,17 +204,15 @@ export const mockPullRequest: BitbucketPullRequest = {
     branch: { name: "feature-branch" },
     repository: { full_name: "workspace/repo" },
     commit: { hash: "abc123" },
-  },
+  } as unknown as import("../src/generated/api.js").PullrequestSource,
   destination: {
     branch: { name: "main" },
     repository: { full_name: "workspace/repo" },
     commit: { hash: "def456" },
-  },
+  } as unknown as import("../src/generated/api.js").PullrequestDestination,
   created_on: "2024-01-01T00:00:00.000Z",
   updated_on: "2024-01-02T00:00:00.000Z",
   close_source_branch: false,
-  comment_count: 0,
-  task_count: 0,
   links: {
     html: { href: "https://bitbucket.org/workspace/repo/pull-requests/1" },
     diff: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/diff" },
@@ -268,44 +221,7 @@ export const mockPullRequest: BitbucketPullRequest = {
     approve: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/approve" },
     decline: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/decline" },
     merge: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/merge" },
-  },
+  } as unknown as import("../src/generated/api.js").PullrequestLinks,
   participants: [],
   reviewers: [],
 };
-
-export const mockApproval: BitbucketApproval = {
-  approved: true,
-  user: mockUser,
-  date: "2024-01-02T00:00:00.000Z",
-};
-
-export const mockDiffStat: DiffStat = {
-  values: [
-    {
-      type: "diffstat",
-      status: "modified",
-      lines_removed: 5,
-      lines_added: 10,
-      old: { path: "src/file.ts" },
-      new: { path: "src/file.ts" },
-    },
-    {
-      type: "diffstat",
-      status: "added",
-      lines_removed: 0,
-      lines_added: 20,
-      new: { path: "src/newfile.ts" },
-    },
-  ],
-  pagelen: 2,
-  size: 2,
-};
-
-export const mockDiff = `diff --git a/src/file.ts b/src/file.ts
-index abc123..def456 100644
---- a/src/file.ts
-+++ b/src/file.ts
-@@ -1,3 +1,4 @@
- line 1
-+line 2
- line 3`;
