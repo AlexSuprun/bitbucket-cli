@@ -1,43 +1,74 @@
 # AGENTS.md
 
+This repository is a Bun-based, ESM TypeScript CLI for Bitbucket Cloud.
+Agents should follow the existing command/DI patterns and keep edits aligned
+with the current conventions.
+
 ## Commands
 
 ```bash
-bun install          # Install dependencies
-bun run dev          # Run CLI in development mode
-bun run build        # Build for production
+# Dependencies
+bun install
+
+# CLI
+bun run dev          # Run CLI in dev mode (executes src/index.ts)
+bun run build        # Build CLI to dist/
+
+# Tests
 bun test             # Run all tests
-bun test <file>      # Run single test file (e.g., bun test tests/commands/repo.test.ts)
-bun run lint         # Type-check with TypeScript (tsc --noEmit)
-bun run format       # Format all files with Prettier
-bun run format:check # Check formatting without modifying files
-bun run generate:api # Regenerate API client from OpenAPI spec
+bun test <file>      # Run a single test file (e.g., bun test tests/commands/repo.test.ts)
+
+# Type-checking / formatting
+bun run lint         # Type-check with tsc --noEmit
+bun run format       # Prettier write
+bun run format:check # Prettier check
+
+# Generated API
+bun run generate:api # Regenerate src/generated/ from OpenAPI spec
+
+# Docs site (Astro, in docs/)
+bun run docs:dev     # Start docs dev server
+bun run docs:build   # Build docs
+
+# Release helpers
+bun run changeset
+bun run version
+bun run release
 ```
+
+## Repository Layout
+
+- `src/index.ts` entrypoint (Bun shebang)
+- `src/cli.ts` Commander CLI wiring and option parsing
+- `src/bootstrap.ts` dependency injection registrations
+- `src/commands/**` command implementations (`*.command.ts`)
+- `src/services/**` service implementations
+- `src/types/**` shared types and error definitions
+- `src/generated/**` OpenAPI client (auto-generated; do not edit)
+- `tests/**` Bun tests mirroring src structure
 
 ## Code Style Guidelines
 
 ### Imports
 
-- All imports must use `.js` extensions (ES modules)
-- Import local modules first, then third-party packages
-- Use `import type { X }` for type-only imports
-- Example: `import { BBError } from "../types/errors.js"`
+- Use ESM imports with `.js` extensions (even in `.ts` files)
+- Prefer ordering: Node/third-party first, then local modules
+- Use `import type { ... }` for type-only imports
+- Export types with `export type { ... }` where appropriate
 
 ### Formatting
 
-- Use Prettier (no explicit config - default settings)
-- 2-space indentation
+- Prettier (default config) is the source of truth
+- 2-space indentation, single quotes
 - No trailing whitespace
-- Single quotes for strings
 
 ### Types
 
-- Always use explicit return types on functions, especially public methods
-- Use standard Promises and throw BBError for operations that can fail
-- Type-only exports: `export type { Options }` or `import type { Options }`
-- Use interfaces for public APIs, types for internal data structures
-- Avoid `any` - use `unknown` for truly dynamic values
-- Use `Array.from()` to convert Set to Array when working with generated API responses
+- TypeScript is `strict` (see `tsconfig.json`)
+- Use explicit return types, especially on public methods
+- Avoid `any`; use `unknown` for dynamic values
+- Prefer interfaces for public APIs, types for internal structures
+- Use `Array.from()` when converting `Set` values from generated API responses
 
 ### Naming Conventions
 
@@ -45,72 +76,50 @@ bun run generate:api # Regenerate API client from OpenAPI spec
 - Functions/Methods: camelCase (e.g., `execute`, `getConfig`)
 - Constants: UPPER_SNAKE_CASE (e.g., `MAX_RETRIES`)
 - Interfaces: PascalCase with `I` prefix (e.g., `IConfigService`)
-- Private members: prefix with underscore (e.g., `private readonly _cache`)
-- Type parameters: Single uppercase letter (e.g., `T`, `E`, `R`)
+- Private members: underscore prefix (e.g., `private readonly _cache`)
+- Type parameters: single uppercase letter (e.g., `T`, `E`, `R`)
 
 ### Error Handling
 
-- Never throw errors in business logic - return `Result.err()`
-- Use `Result.ok()` for success, `Result.err()` for failure
-- Use `Result.isOk()` and `Result.isErr()` to check results
-- Use `ErrorCode` enum from `src/types/errors.ts` for error codes
-- Always handle Result types before proceeding
-- Only throw errors in truly exceptional circumstances (e.g., unexpected system failures)
-
-### Error Handling
-
-- Use standard Promises with try/catch for error handling
-- Throw `BBError` instances with appropriate `ErrorCode` for expected failures
-- Use `ErrorCode` enum from `src/types/errors.ts` for error codes
-- Handle errors at the CLI level (commands throw, CLI catches and displays)
-- Use `handleError()` method in commands for consistent error output
+- Use `BBError` and `ErrorCode` from `src/types/errors.ts` for expected failures
+- API errors are normalized in `src/services/api-client.service.ts` to `APIError`
+- Commands should `try/catch`, call `handleError()`, then rethrow
+- Use `requireOption()` from `BaseCommand` for required CLI options
+- Only throw for exceptional cases; CLI is responsible for exit behavior
 
 ### Command Pattern
 
-- Extend `BaseCommand<TOptions, TResult>` for all CLI commands
-- Implement `name`, `description`, and `execute()` methods
-- Inject dependencies via constructor
-- Use `handleError()` for consistent error handling
-- Use `requireOption()` for option validation
-- Return `Promise<TResult>` from execute()
+- Commands extend `BaseCommand<TOptions, TResult>`
+- Implement `name`, `description`, and `execute()` returning `Promise<TResult>`
+- Inject dependencies via constructor; avoid service locators in commands
+- `CommandContext` carries `globalOptions` (workspace/repo/json)
+- Use `withGlobalOptions()` when merging per-command options
 
 ### Dependency Injection
 
-- Register all services/commands in `bootstrap.ts`
-- Use `ServiceTokens` string constants for registration keys
-- Resolve dependencies from container
+- Register services and commands in `src/bootstrap.ts` with `ServiceTokens`
+- Container is a singleton; tests reset it in `tests/setup.ts`
 - Services are singletons by default
-
-### File Organization
-
-- Commands: `src/commands/<category>/<action>.command.ts`
-- Services: `src/services/<name>.service.ts`
-- Generated API: `src/generated/` (auto-generated from OpenAPI spec)
-- Types: `src/types/<name>.ts`
-- Tests: Mirror src structure in `tests/` directory
 
 ### Testing
 
-- Use Bun test runner
-- Mock factories in `tests/setup.ts`
-- Reset DI container before/after each test (automatic in setup.ts)
+- Use Bun test runner (`bun:test`)
 - Test files: `<name>.test.ts` or `<name>.expanded.test.ts`
-- Use descriptive test names that explain what is being tested
+- Mocks/utilities live in `tests/setup.ts` (container reset hooks included)
+- Prefer descriptive test names focused on behavior
 
-### Async/Await
+### Generated Code
 
-- Always use async/await instead of Promise chains
-- Mark async methods explicitly
-- Handle errors with try/catch, not Result type
-
-### Comments
-
-- Only add comments when necessary - prefer self-documenting code
-- No inline comments that explain what code does (only why)
-- JSDoc comments for public APIs
+- `src/generated/**` is auto-generated; avoid manual edits
+- Regenerate via `bun run generate:api` when specs change
 
 ### Security
 
-- Never log or commit secrets (API tokens, passwords)
-- Use 0o600 file permissions for config files containing secrets
-- Sensitive data in config should never be exposed to logs
+- Never log or commit secrets (tokens, passwords)
+- Config is stored in `~/.config/bb/config.json` with 0o600 permissions
+- Avoid printing sensitive config values to output
+
+## Tooling Notes
+
+- Git hook: `simple-git-hooks` runs `bun run format:check` on pre-commit
+- Runtime: Bun only (`src/index.ts` guards against non-Bun runtimes)
