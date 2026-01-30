@@ -17,7 +17,12 @@ const require = createRequire(import.meta.url);
 const pkg = require('../package.json');
 
 // Import generated API classes
-import { PullrequestsApi, RepositoriesApi, UsersApi } from './generated/api.js';
+import {
+  PullrequestsApi,
+  RepositoriesApi,
+  UsersApi,
+  CommitStatusesApi,
+} from './generated/api.js';
 
 // Auth commands
 import { LoginCommand } from './commands/auth/login.command.js';
@@ -51,6 +56,7 @@ import { DeleteCommentPRCommand } from './commands/pr/comments.delete.command.js
 import { AddReviewerPRCommand } from './commands/pr/reviewers.add.command.js';
 import { RemoveReviewerPRCommand } from './commands/pr/reviewers.remove.command.js';
 import { ListReviewersPRCommand } from './commands/pr/reviewers.list.command.js';
+import { ChecksPRCommand } from './commands/pr/checks.command.js';
 
 // Config commands
 import { GetConfigCommand } from './commands/config/get.command.js';
@@ -92,6 +98,14 @@ export function bootstrap(): Container {
     );
     const axiosInstance = createApiClient(configService);
     return new UsersApi(undefined, undefined, axiosInstance);
+  });
+
+  container.register(ServiceTokens.CommitStatusesApi, () => {
+    const configService = container.resolve<ConfigService>(
+      ServiceTokens.ConfigService
+    );
+    const axiosInstance = createApiClient(configService);
+    return new CommitStatusesApi(undefined, undefined, axiosInstance);
   });
 
   container.register(ServiceTokens.ContextService, () => {
@@ -478,6 +492,19 @@ export function bootstrap(): Container {
       ServiceTokens.OutputService
     );
     return new ListReviewersPRCommand(pullrequestsApi, contextService, output);
+  });
+
+  container.register(ServiceTokens.ChecksPRCommand, () => {
+    const commitStatusesApi = container.resolve<CommitStatusesApi>(
+      ServiceTokens.CommitStatusesApi
+    );
+    const contextService = container.resolve<ContextService>(
+      ServiceTokens.ContextService
+    );
+    const output = container.resolve<OutputService>(
+      ServiceTokens.OutputService
+    );
+    return new ChecksPRCommand(commitStatusesApi, contextService, output);
   });
 
   // Register config commands

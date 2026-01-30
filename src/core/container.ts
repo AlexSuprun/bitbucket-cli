@@ -137,6 +137,7 @@ export const ServiceTokens = {
   PullrequestsApi: 'PullrequestsApi',
   RepositoriesApi: 'RepositoriesApi',
   UsersApi: 'UsersApi',
+  CommitStatusesApi: 'CommitStatusesApi',
 
   // Commands - Auth
   LoginCommand: 'LoginCommand',
@@ -163,6 +164,7 @@ export const ServiceTokens = {
   CheckoutPRCommand: 'CheckoutPRCommand',
   DiffPRCommand: 'DiffPRCommand',
   ActivityPRCommand: 'ActivityPRCommand',
+  ChecksPRCommand: 'ChecksPRCommand',
   CommentPRCommand: 'CommentPRCommand',
   ListCommentsPRCommand: 'ListCommentsPRCommand',
   EditCommentPRCommand: 'EditCommentPRCommand',
