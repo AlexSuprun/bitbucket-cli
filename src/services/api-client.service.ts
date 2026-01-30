@@ -20,6 +20,9 @@ export function createApiClient(configService: IConfigService): AxiosInstance {
   // Request interceptor to add Basic auth header
   instance.interceptors.request.use(
     async (config) => {
+      if (process.env.DEBUG === 'true') {
+        console.debug(`[HTTP] ${config.method?.toUpperCase()} ${config.url}`);
+      }
       const credentials = await configService.getCredentials();
       const authString = Buffer.from(`${credentials.username}:${credentials.apiToken}`).toString('base64');
       config.headers.Authorization = `Basic ${authString}`;
@@ -30,8 +33,16 @@ export function createApiClient(configService: IConfigService): AxiosInstance {
 
   // Response interceptor to transform axios errors into BBError
   instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      if (process.env.DEBUG === 'true') {
+        console.debug(`[HTTP] Response: ${response.status}`);
+      }
+      return response;
+    },
     (error: AxiosError) => {
+      if (process.env.DEBUG === 'true') {
+        console.debug(`[HTTP] Error:`, error.message);
+      }
       if (error.response) {
         const { status, data } = error.response;
         const message = extractErrorMessage(data) || error.message;
