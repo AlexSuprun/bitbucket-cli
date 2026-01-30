@@ -2,21 +2,21 @@
  * Test setup and utilities
  */
 
-import { beforeEach, afterEach } from "bun:test";
-import { Container } from "../src/core/container.js";
+import { beforeEach, afterEach } from 'bun:test';
+import { Container } from '../src/core/container.js';
 import type {
   IConfigService,
   IGitService,
   IContextService,
   IOutputService,
-} from "../src/core/interfaces/services.js";
-import type { BBError } from "../src/types/errors.js";
+} from '../src/core/interfaces/services.js';
+import type { BBError } from '../src/types/errors.js';
 import type {
   BBConfig,
   AuthCredentials,
   RepoContext,
   GlobalOptions,
-} from "../src/types/config.js";
+} from '../src/types/config.js';
 
 // Reset container before each test
 beforeEach(() => {
@@ -45,7 +45,7 @@ export function createMockConfigService(config: BBConfig = {}): IConfigService {
       if (!currentConfig.username || !currentConfig.apiToken) {
         throw {
           code: 1001,
-          message: "Auth required",
+          message: 'Auth required',
         } as BBError;
       }
       return {
@@ -60,23 +60,27 @@ export function createMockConfigService(config: BBConfig = {}): IConfigService {
     async clearConfig() {
       currentConfig = {};
     },
-    async getValue<K extends keyof BBConfig>(key: K): Promise<BBConfig[K] | undefined> {
+    async getValue<K extends keyof BBConfig>(
+      key: K
+    ): Promise<BBConfig[K] | undefined> {
       return currentConfig[key];
     },
     async setValue<K extends keyof BBConfig>(key: K, value: BBConfig[K]) {
       currentConfig[key] = value;
     },
     getConfigPath() {
-      return "/tmp/test-config/config.json";
+      return '/tmp/test-config/config.json';
     },
   };
 }
 
-export function createMockGitService(options: {
-  isRepo?: boolean;
-  currentBranch?: string;
-  remoteUrl?: string;
-} = {}): IGitService {
+export function createMockGitService(
+  options: {
+    isRepo?: boolean;
+    currentBranch?: string;
+    remoteUrl?: string;
+  } = {}
+): IGitService {
   return {
     async isRepository() {
       return options.isRepo ?? false;
@@ -94,13 +98,13 @@ export function createMockGitService(options: {
       // Mock implementation
     },
     async getCurrentBranch() {
-      return options.currentBranch ?? "main";
+      return options.currentBranch ?? 'main';
     },
     async getRemoteUrl() {
       if (options.remoteUrl) {
         return options.remoteUrl;
       }
-      throw { code: 3003, message: "No remote" } as BBError;
+      throw { code: 3003, message: 'No remote' } as BBError;
     },
   };
 }
@@ -114,7 +118,7 @@ export function createMockOutputService(): IOutputService & { logs: string[] } {
       logs.push(`json:${JSON.stringify(data)}`);
     },
     table(headers: string[], rows: string[][]) {
-      logs.push(`table:${headers.join(",")}`);
+      logs.push(`table:${headers.join(',')}`);
       logs.push(`table-rows:${JSON.stringify(rows)}`);
     },
     success(message: string) {
@@ -143,85 +147,93 @@ export function createMockOutputService(): IOutputService & { logs: string[] } {
  */
 
 // Import types from generated API
-import type {
-  Account,
-  Repository,
-  Pullrequest,
-} from "../src/generated/api.js";
+import type { Account, Repository, Pullrequest } from '../src/generated/api.js';
 
 export const mockUser: Account = {
-  type: "user",
-  uuid: "{user-uuid}",
-  username: "testuser",
-  display_name: "Test User",
-  account_id: "123456789",
+  type: 'user',
+  uuid: '{user-uuid}',
+  username: 'testuser',
+  display_name: 'Test User',
+  account_id: '123456789',
   links: {
-    html: { href: "https://bitbucket.org/testuser" },
-    avatar: { href: "https://avatar.bitbucket.org/testuser" },
-  } as unknown as import("../src/generated/api.js").AccountLinks,
+    html: { href: 'https://bitbucket.org/testuser' },
+    avatar: { href: 'https://avatar.bitbucket.org/testuser' },
+  } as unknown as import('../src/generated/api.js').AccountLinks,
 };
 
 export const mockRepository: Repository = {
-  type: "repository",
-  uuid: "{repo-uuid}",
-  full_name: "workspace/repo",
-  name: "repo",
-  slug: "repo",
-  description: "Test repository",
+  type: 'repository',
+  uuid: '{repo-uuid}',
+  full_name: 'workspace/repo',
+  name: 'repo',
+  slug: 'repo',
+  description: 'Test repository',
   is_private: true,
-  created_on: "2024-01-01T00:00:00.000Z",
-  updated_on: "2024-01-02T00:00:00.000Z",
+  created_on: '2024-01-01T00:00:00.000Z',
+  updated_on: '2024-01-02T00:00:00.000Z',
   links: {
-    html: { href: "https://bitbucket.org/workspace/repo" },
+    html: { href: 'https://bitbucket.org/workspace/repo' },
     clone: [
-      { name: "ssh", href: "git@bitbucket.org:workspace/repo.git" },
-      { name: "https", href: "https://bitbucket.org/workspace/repo.git" },
+      { name: 'ssh', href: 'git@bitbucket.org:workspace/repo.git' },
+      { name: 'https', href: 'https://bitbucket.org/workspace/repo.git' },
     ],
-    avatar: { href: "https://avatar.bitbucket.org/repo" },
-  } as unknown as import("../src/generated/api.js").RepositoryLinks,
+    avatar: { href: 'https://avatar.bitbucket.org/repo' },
+  } as unknown as import('../src/generated/api.js').RepositoryLinks,
   owner: mockUser,
   workspace: {
-    type: "workspace",
-    uuid: "{workspace-uuid}",
-    slug: "workspace",
-    name: "Workspace",
+    type: 'workspace',
+    uuid: '{workspace-uuid}',
+    slug: 'workspace',
+    name: 'Workspace',
     links: {
-      html: { href: "https://bitbucket.org/workspace" },
-      avatar: { href: "https://avatar.bitbucket.org/workspace" },
-    } as unknown as import("../src/generated/api.js").WorkspaceLinks,
+      html: { href: 'https://bitbucket.org/workspace' },
+      avatar: { href: 'https://avatar.bitbucket.org/workspace' },
+    } as unknown as import('../src/generated/api.js').WorkspaceLinks,
   },
 };
 
 export const mockPullRequest: Pullrequest = {
-  type: "pullrequest",
+  type: 'pullrequest',
   id: 1,
-  title: "Test PR",
-  description: "Test description",
-  state: "OPEN",
+  title: 'Test PR',
+  description: 'Test description',
+  state: 'OPEN',
   draft: false,
   author: mockUser,
   source: {
-    branch: { name: "feature-branch" },
-    repository: { full_name: "workspace/repo" },
-    commit: { hash: "abc123" },
-  } as unknown as import("../src/generated/api.js").PullrequestSource,
+    branch: { name: 'feature-branch' },
+    repository: { full_name: 'workspace/repo' },
+    commit: { hash: 'abc123' },
+  } as unknown as import('../src/generated/api.js').PullrequestSource,
   destination: {
-    branch: { name: "main" },
-    repository: { full_name: "workspace/repo" },
-    commit: { hash: "def456" },
-  } as unknown as import("../src/generated/api.js").PullrequestDestination,
-  created_on: "2024-01-01T00:00:00.000Z",
-  updated_on: "2024-01-02T00:00:00.000Z",
+    branch: { name: 'main' },
+    repository: { full_name: 'workspace/repo' },
+    commit: { hash: 'def456' },
+  } as unknown as import('../src/generated/api.js').PullrequestDestination,
+  created_on: '2024-01-01T00:00:00.000Z',
+  updated_on: '2024-01-02T00:00:00.000Z',
   close_source_branch: false,
   links: {
-    html: { href: "https://bitbucket.org/workspace/repo/pull-requests/1" },
-    diff: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/diff" },
-    commits: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/commits" },
-    comments: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/comments" },
-    approve: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/approve" },
-    decline: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/decline" },
-    merge: { href: "https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/merge" },
-  } as unknown as import("../src/generated/api.js").PullrequestLinks,
+    html: { href: 'https://bitbucket.org/workspace/repo/pull-requests/1' },
+    diff: {
+      href: 'https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/diff',
+    },
+    commits: {
+      href: 'https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/commits',
+    },
+    comments: {
+      href: 'https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/comments',
+    },
+    approve: {
+      href: 'https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/approve',
+    },
+    decline: {
+      href: 'https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/decline',
+    },
+    merge: {
+      href: 'https://api.bitbucket.org/2.0/repositories/workspace/repo/pullrequests/1/merge',
+    },
+  } as unknown as import('../src/generated/api.js').PullrequestLinks,
   participants: [],
   reviewers: [],
 };
@@ -229,7 +241,7 @@ export const mockPullRequest: Pullrequest = {
 export const mockApproval = {
   approved: true,
   user: mockUser,
-  date: "2024-01-01T00:00:00.000Z",
+  date: '2024-01-01T00:00:00.000Z',
 };
 
 export const mockDiff = `diff --git a/README.md b/README.md
@@ -241,8 +253,8 @@ index 123456..789abc 100644
 +New content`;
 
 export const mockDiffStat = {
-  old: { path: "README.md", type: "commit_file" },
-  new: { path: "README.md", type: "commit_file" },
+  old: { path: 'README.md', type: 'commit_file' },
+  new: { path: 'README.md', type: 'commit_file' },
   lines_added: 1,
   lines_removed: 1,
 };

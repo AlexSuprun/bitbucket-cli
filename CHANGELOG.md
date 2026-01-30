@@ -9,7 +9,6 @@
   This is a significant internal refactoring that migrates the CLI from manual API types to a fully generated axios-based API client:
 
   **Changes:**
-
   - Switch OpenAPI generator from `typescript-fetch` to `typescript-axios`
   - Generate API client from Bitbucket OpenAPI spec (54,302 lines of generated code)
   - Remove manual type definitions (`src/types/api.ts`)
@@ -22,7 +21,6 @@
   - Update documentation (CONTRIBUTING.md, AGENTS.md)
 
   **Technical Details:**
-
   - Collections returned as `Set<T>` are converted to arrays using `Array.from()`
   - API request bodies include required `type` fields
   - Uses axios interceptors for authentication and error handling
@@ -49,7 +47,6 @@
 - [#61](https://github.com/0pilatos0/bitbucket-cli/pull/61) [`b17b3fe`](https://github.com/0pilatos0/bitbucket-cli/commit/b17b3fe77e592fdae7f5f43274cb619a2f625c2b) Thanks [@John](https://github.com/John)! - Enhance `bb pr view` command with additional PR metadata
 
   The `bb pr view` command now displays more comprehensive pull request information:
-
   - **Closer/Merger information**: Shows who closed or merged the PR (when not OPEN)
   - **Merge commit hash**: Displays the merge commit for merged PRs
   - **Close source branch indicator**: Shows whether the source branch will be closed on merge
@@ -77,7 +74,6 @@
 - [#67](https://github.com/0pilatos0/bitbucket-cli/pull/67) [`03edd17`](https://github.com/0pilatos0/bitbucket-cli/commit/03edd17750d3abd4e15dea6ffaa9f30f903c609e) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add PR Reviewers Management commands
 
   New commands for managing reviewers on pull requests to enable reviewer assignment and management from CLI:
-
   - **`bb pr reviewers add <id> <username>`** - Add a reviewer to a pull request by username
   - **`bb pr reviewers remove <id> <username>`** - Remove a reviewer from a pull request by username
   - **`bb pr reviewers list <id>`** - List all reviewers on a pull request
@@ -96,7 +92,6 @@
   ```
 
   Features:
-
   - Supports `--json` flag for programmatic consumption
   - Automatically looks up user UUID from username via `/users/{username}` endpoint
   - Uses UUID for all reviewer comparisons (not deprecated username field)
@@ -108,7 +103,6 @@
 ### Patch Changes
 
 - [#63](https://github.com/0pilatos0/bitbucket-cli/pull/63) [`a5c96e8`](https://github.com/0pilatos0/bitbucket-cli/commit/a5c96e8e85839ace0544b23844df456b931dafaa) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add Bun runtime check and update documentation
-
   - Added runtime check in `src/index.ts` to provide clear error message when CLI is run with Node.js instead of Bun
   - Updated `package.json` engines field from `node: ">=20"` to `bun: ">=1.0"`
   - Updated all documentation to clarify that Bun runtime is required to execute the CLI
@@ -116,7 +110,6 @@
   - Updated troubleshooting guide to check `bun --version` instead of `node --version`
 
 - [#65](https://github.com/0pilatos0/bitbucket-cli/pull/65) [`6e54f6b`](https://github.com/0pilatos0/bitbucket-cli/commit/6e54f6b544793aeadd945a29b21a34f21d5cb526) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix PR comments list showing "Unknown" author and empty content for deleted comments
-
   - Fixed author field mapping: API returns user data under `user` field (not `author`), and uses `nickname` instead of `username`
   - Deleted comments now display "[deleted]" instead of blank content
 
@@ -141,7 +134,6 @@
 - [#52](https://github.com/0pilatos0/bitbucket-cli/pull/52) [`5e66281`](https://github.com/0pilatos0/bitbucket-cli/commit/5e66281d9f94b61d53f399084aa02e9a4aaab05e) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add PR comments management feature (issue #44)
 
   Implemented commands:
-
   - `bb pr comments list <id>` - List comments on a PR
   - `bb pr comments add <id> <message>` - Add a comment to a PR
   - `bb pr comments edit <comment-id> <message>` - Edit a comment
@@ -152,7 +144,6 @@
 - [#38](https://github.com/0pilatos0/bitbucket-cli/pull/38) [`58ce559`](https://github.com/0pilatos0/bitbucket-cli/commit/58ce559b93d93e2ddac5dcae4622b28f40775d55) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add AI Agent Integration guide for Claude Code
 
   New documentation at `/guides/ai-agents/` that helps users set up a Claude Code skill for the Bitbucket CLI. The guide includes:
-
   - Complete, copy-paste ready skill file
   - Explanation of how skills work (frontmatter, allowed-tools, instructions)
   - Example conversations showing natural language interactions
@@ -162,7 +153,6 @@
 - [#50](https://github.com/0pilatos0/bitbucket-cli/pull/50) [`7f1458a`](https://github.com/0pilatos0/bitbucket-cli/commit/7f1458a1c979a8dfb742603ce53c2b7b9dd6d452) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix approve/decline PR commands failing with Bad Request error
 
   Bug fix for issue #41:
-
   - Fixed `approve()` method to send empty JSON object `{}` as request body
   - Fixed `decline()` method to send empty JSON object `{}` as request body
   - Enhanced mock HTTP client to capture and verify request bodies in tests
@@ -175,7 +165,6 @@
   The issue was that command was requesting \`pagelen=100\` which exceeds Bitbucket Cloud's maximum of 50 for pull requests.
 
   **Changes:**
-
   - Added \`src/constants.ts\` with API pagination limits
   - Added validation to \`PullRequestRepository.list()\` to cap limit at 50
   - Fixed \`diff.command.ts\` to use \`DEFAULT_PAGELEN.PULL_REQUESTS\` (25)
@@ -183,7 +172,6 @@
   - Added tests for pagelen validation
 
   **Testing:**
-
   - All 432 tests pass
   - TypeScript linter passes
 
@@ -192,7 +180,6 @@
 - [#39](https://github.com/0pilatos0/bitbucket-cli/pull/39) [`7d1ad4e`](https://github.com/0pilatos0/bitbucket-cli/commit/7d1ad4ebfb6b9df8f18dcd5a3aefb7fb1355fdd6) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add comprehensive test coverage for API client, completion command, and base command
 
   Improvements to test infrastructure:
-
   - Added `tests/api/client.test.ts` with 397 lines of tests for the API client
   - Added `tests/commands/completion.test.ts` with 179 lines of completion command tests
   - Added `tests/core/base-command.test.ts` with 280 lines of base command tests
@@ -207,7 +194,6 @@
 ### Minor Changes
 
 - [#36](https://github.com/0pilatos0/bitbucket-cli/pull/36) [`c470d86`](https://github.com/0pilatos0/bitbucket-cli/commit/c470d86ac90a8b80101a6d8a2e32e398b27ea1e9) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add `bb pr edit` command to edit pull request title and description
-
   - Update title with `--title` / `-t` flag
   - Update description with `--body` / `-b` flag
   - Read description from file with `--body-file` / `-F` flag
@@ -227,7 +213,6 @@
   As of September 9, 2025, Bitbucket has deprecated app passwords in favor of API tokens. All existing app passwords will be disabled on June 9, 2026.
 
   ## Breaking Changes
-
   - Configuration field `appPassword` renamed to `apiToken`
   - Environment variable `BB_APP_PASSWORD` renamed to `BB_API_TOKEN`
   - All references to "app password" updated to "API token" in docs and CLI output
@@ -235,14 +220,12 @@
   ## Migration Guide
 
   After upgrading, users will need to:
-
   1. Create a new API token at https://bitbucket.org/account/settings/api-tokens/
   2. Re-authenticate using `bb auth login -u your-username -p your-api-token`
 
   The authentication mechanism (HTTP Basic Auth) remains unchanged - only the terminology and configuration field names have changed.
 
   ## Documentation Updates
-
   - Updated authentication guide with API token creation instructions
   - Updated all command documentation references
   - Added deprecation notices about app passwords
@@ -254,7 +237,6 @@
   Implements issue #20 by adding a new `bb pr diff` command that allows users to view pull request diffs directly from the command line without opening the web interface.
 
   Features:
-
   - View full unified diff for a specified PR or current branch
   - `--stat` flag to show diffstat (files changed, insertions, deletions)
   - `--name-only` flag to show only names of changed files
@@ -267,7 +249,6 @@
 ### Patch Changes
 
 - [#26](https://github.com/0pilatos0/bitbucket-cli/pull/26) [`d3e14e2`](https://github.com/0pilatos0/bitbucket-cli/commit/d3e14e2820d3da314dd4d7dcddbd33a00a67ae8c) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Comprehensive documentation improvements addressing #25
-
   - Add missing global options (--workspace, --repo, --json) to all command documentation
   - Fix config key naming inconsistency (defaultWorkspace → workspace)
   - Document all available config keys (username, appPassword, workspace, repo)
@@ -290,7 +271,6 @@
 ### Patch Changes
 
 - [#18](https://github.com/0pilatos0/bitbucket-cli/pull/18) [`e7970f0`](https://github.com/0pilatos0/bitbucket-cli/commit/e7970f07b676d66a975e9d02970f3446d02fd182) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add npm trusted publisher workflow for secure automated releases
-
   - New `publish.yml` workflow triggered on GitHub release events
   - Uses OIDC trusted publishing (no NPM_TOKEN secret required)
   - Improved security: no long-lived tokens needed for npm publishing
@@ -300,7 +280,6 @@
 ### Minor Changes
 
 - [#6](https://github.com/0pilatos0/bitbucket-cli/pull/6) [`7201f22`](https://github.com/0pilatos0/bitbucket-cli/commit/7201f2214109801f6de3921a87955123aa08a4cb) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add shell completion support for bash, zsh, and fish
-
   - New `bb completion install` command to set up tab completion
   - New `bb completion uninstall` command to remove completions
   - Completes commands, subcommands, and options
@@ -309,13 +288,11 @@
 ### Patch Changes
 
 - [#12](https://github.com/0pilatos0/bitbucket-cli/pull/12) [`852f0a3`](https://github.com/0pilatos0/bitbucket-cli/commit/852f0a34d36995f7b59aef8f3dadb07c800afb3d) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Improve login command feedback on authentication failure
-
   - Display error message when authentication fails instead of silently exiting
   - Users now see "Authentication failed: <reason>" when credentials are invalid
   - Helps users debug issues with invalid or expired tokens
 
 - [#3](https://github.com/0pilatos0/bitbucket-cli/pull/3) [`f3a85cc`](https://github.com/0pilatos0/bitbucket-cli/commit/f3a85cc011f271c6a7db98bdb82e61bac120d707) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add contribution guidelines and changeset enforcement
-
   - Added CONTRIBUTING.md with development setup, workflow, and release process
   - Added GitHub Action to require changesets on PRs (skips docs-only changes)
 
@@ -326,7 +303,6 @@
   when all 344 tests passed. This fix skips setting the exit code when `NODE_ENV=test`.
 
 - [#8](https://github.com/0pilatos0/bitbucket-cli/pull/8) [`c0cd7f0`](https://github.com/0pilatos0/bitbucket-cli/commit/c0cd7f0d8d6ec57bd79faeaefa435d6f96623f14) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix workspace option conflict between global and subcommand options
-
   - Global `-w/--workspace` and `-r/--repo` options now work correctly with all subcommands
   - Added `withGlobalOptions` helper to properly merge CLI options
   - Fixes issue where `bb repo list -w workspace` would fail with "No workspace specified"
@@ -336,7 +312,6 @@
 ### Minor Changes
 
 - [`0da57d4`](https://github.com/0pilatos0/bitbucket-cli/commit/0da57d4f65ef1b4fd335c1c0b781579364d22a1f) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Initial release with full CLI functionality
-
   - Authentication: login, logout, status, token commands
   - Repository management: clone, create, list, view, delete
   - Pull request operations: create, list, view, merge, approve, decline, checkout

@@ -2,19 +2,25 @@
  * List reviewers on PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface ListReviewersPROptions extends GlobalOptions {
   id: string;
 }
 
-export class ListReviewersPRCommand extends BaseCommand<ListReviewersPROptions, void> {
-  public readonly name = "reviewers.list";
-  public readonly description = "List reviewers on a pull request";
+export class ListReviewersPRCommand extends BaseCommand<
+  ListReviewersPROptions,
+  void
+> {
+  public readonly name = 'reviewers.list';
+  public readonly description = 'List reviewers on a pull request';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -36,11 +42,14 @@ export class ListReviewersPRCommand extends BaseCommand<ListReviewersPROptions, 
     const prId = parseInt(options.id, 10);
 
     try {
-      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-      });
+      const response =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            pullRequestId: prId,
+          }
+        );
 
       const pr = response.data;
       const reviewers = pr.reviewers ?? [];
@@ -48,11 +57,14 @@ export class ListReviewersPRCommand extends BaseCommand<ListReviewersPROptions, 
       if (context.globalOptions.json) {
         this.output.json(reviewers);
       } else if (reviewers.length === 0) {
-        this.output.info("No reviewers assigned to this pull request");
+        this.output.info('No reviewers assigned to this pull request');
       } else {
         this.output.table(
-          ["Display Name", "Account ID"],
-          reviewers.map((r) => [r.display_name ?? "Unknown", r.account_id ?? ""])
+          ['Display Name', 'Account ID'],
+          reviewers.map((r) => [
+            r.display_name ?? 'Unknown',
+            r.account_id ?? '',
+          ])
         );
       }
     } catch (error) {

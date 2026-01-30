@@ -2,7 +2,7 @@
  * Command interfaces for the command pattern
  */
 
-import type { GlobalOptions } from "../../types/config.js";
+import type { GlobalOptions } from '../../types/config.js';
 
 /**
  * Base command context passed to all commands

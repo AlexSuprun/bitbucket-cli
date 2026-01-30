@@ -1,6 +1,6 @@
-import { getRemoteUrl, isGitRepository } from "./git.js";
-import { getConfig } from "./config.js";
-import type { RepoContext, GlobalOptions } from "../types/index.js";
+import { getRemoteUrl, isGitRepository } from './git.js';
+import { getConfig } from './config.js';
+import type { RepoContext, GlobalOptions } from '../types/index.js';
 
 /**
  * Parse Bitbucket repository URL to extract workspace and repo slug
@@ -103,8 +103,8 @@ export async function requireRepoContext(
   const context = await getRepoContext(options);
   if (!context) {
     console.error(
-      "Could not determine repository. Use --workspace and --repo options, " +
-        "or run this command from within a Bitbucket repository."
+      'Could not determine repository. Use --workspace and --repo options, ' +
+        'or run this command from within a Bitbucket repository.'
     );
     process.exit(1);
   }

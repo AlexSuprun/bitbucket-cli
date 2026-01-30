@@ -2,14 +2,14 @@
  * Uninstall completion command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IOutputService } from "../../core/interfaces/services.js";
-import tabtab from "tabtab";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type { IOutputService } from '../../core/interfaces/services.js';
+import tabtab from 'tabtab';
 
 export class UninstallCompletionCommand extends BaseCommand<void, void> {
-  public readonly name = "uninstall";
-  public readonly description = "Uninstall shell completions";
+  public readonly name = 'uninstall';
+  public readonly description = 'Uninstall shell completions';
 
   constructor(output: IOutputService) {
     super(output);
@@ -21,9 +21,9 @@ export class UninstallCompletionCommand extends BaseCommand<void, void> {
   ): Promise<void> {
     try {
       await tabtab.uninstall({
-        name: "bb",
+        name: 'bb',
       });
-      this.output.success("Shell completions uninstalled successfully!");
+      this.output.success('Shell completions uninstalled successfully!');
     } catch (error) {
       this.output.error(`Failed to uninstall completions: ${error}`);
       throw error;

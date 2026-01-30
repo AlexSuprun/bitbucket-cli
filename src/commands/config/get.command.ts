@@ -2,16 +2,22 @@
  * Get config command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
-import { isReadableConfigKey, type ReadableConfigKey } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IConfigService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import {
+  isReadableConfigKey,
+  type ReadableConfigKey,
+} from '../../types/config.js';
 
 export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
-  public readonly name = "get";
-  public readonly description = "Get a configuration value";
+  public readonly name = 'get';
+  public readonly description = 'Get a configuration value';
 
-  private static readonly HIDDEN_KEYS = ["apiToken"];
+  private static readonly HIDDEN_KEYS = ['apiToken'];
 
   constructor(
     private readonly configService: IConfigService,
@@ -47,6 +53,6 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
     const value = await this.configService.getValue(key as ReadableConfigKey);
 
     // Output the value (or empty string if undefined)
-    this.output.text(String(value || ""));
+    this.output.text(String(value || ''));
   }
 }

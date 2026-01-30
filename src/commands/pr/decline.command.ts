@@ -2,17 +2,23 @@
  * Decline PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface DeclinePROptions extends GlobalOptions {}
 
-export class DeclinePRCommand extends BaseCommand<{ id: string } & DeclinePROptions, void> {
-  public readonly name = "decline";
-  public readonly description = "Decline a pull request";
+export class DeclinePRCommand extends BaseCommand<
+  { id: string } & DeclinePROptions,
+  void
+> {
+  public readonly name = 'decline';
+  public readonly description = 'Decline a pull request';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -34,11 +40,14 @@ export class DeclinePRCommand extends BaseCommand<{ id: string } & DeclinePROpti
     const prId = parseInt(options.id, 10);
 
     try {
-      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDeclinePost({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-      });
+      const response =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDeclinePost(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            pullRequestId: prId,
+          }
+        );
 
       const pr = response.data;
 

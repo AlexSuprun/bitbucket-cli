@@ -2,11 +2,17 @@
  * Merge PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi, PullrequestMergeParametersMergeStrategyEnum } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type {
+  PullrequestsApi,
+  PullrequestMergeParametersMergeStrategyEnum,
+} from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface MergePROptions extends GlobalOptions {
   message?: string;
@@ -14,9 +20,12 @@ export interface MergePROptions extends GlobalOptions {
   strategy?: string;
 }
 
-export class MergePRCommand extends BaseCommand<{ id: string } & MergePROptions, void> {
-  public readonly name = "merge";
-  public readonly description = "Merge a pull request";
+export class MergePRCommand extends BaseCommand<
+  { id: string } & MergePROptions,
+  void
+> {
+  public readonly name = 'merge';
+  public readonly description = 'Merge a pull request';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -38,12 +47,12 @@ export class MergePRCommand extends BaseCommand<{ id: string } & MergePROptions,
     const prId = parseInt(options.id, 10);
 
     const request: {
-      type: "pullrequest_merge_parameters";
+      type: 'pullrequest_merge_parameters';
       message?: string;
       close_source_branch?: boolean;
       merge_strategy?: PullrequestMergeParametersMergeStrategyEnum;
     } = {
-      type: "pullrequest_merge_parameters",
+      type: 'pullrequest_merge_parameters',
     };
 
     if (options.message) {
@@ -55,16 +64,20 @@ export class MergePRCommand extends BaseCommand<{ id: string } & MergePROptions,
     }
 
     if (options.strategy) {
-      request.merge_strategy = options.strategy as PullrequestMergeParametersMergeStrategyEnum;
+      request.merge_strategy =
+        options.strategy as PullrequestMergeParametersMergeStrategyEnum;
     }
 
     try {
-      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-        body: request,
-      });
+      const response =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            pullRequestId: prId,
+            body: request,
+          }
+        );
 
       const pr = response.data;
 

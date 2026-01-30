@@ -2,17 +2,24 @@
  * Clone command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IGitService, IConfigService, IOutputService } from "../../core/interfaces/services.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IGitService,
+  IConfigService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
 
 export interface CloneOptions {
   directory?: string;
 }
 
-export class CloneCommand extends BaseCommand<{ repository: string } & CloneOptions, void> {
-  public readonly name = "clone";
-  public readonly description = "Clone a Bitbucket repository";
+export class CloneCommand extends BaseCommand<
+  { repository: string } & CloneOptions,
+  void
+> {
+  public readonly name = 'clone';
+  public readonly description = 'Clone a Bitbucket repository';
 
   constructor(
     private readonly gitService: IGitService,
@@ -36,11 +43,11 @@ export class CloneCommand extends BaseCommand<{ repository: string } & CloneOpti
   }
 
   private async resolveRepositoryUrl(repository: string): Promise<string> {
-    if (repository.includes("://") || repository.startsWith("git@")) {
+    if (repository.includes('://') || repository.startsWith('git@')) {
       return repository;
     }
 
-    const parts = repository.split("/");
+    const parts = repository.split('/');
 
     let workspace: string;
     let repoSlug: string;
@@ -50,7 +57,7 @@ export class CloneCommand extends BaseCommand<{ repository: string } & CloneOpti
 
       if (!config.defaultWorkspace) {
         throw new Error(
-          "No workspace specified. Use workspace/repo format or set a default workspace."
+          'No workspace specified. Use workspace/repo format or set a default workspace.'
         );
       }
 
@@ -61,7 +68,7 @@ export class CloneCommand extends BaseCommand<{ repository: string } & CloneOpti
       repoSlug = parts[1];
     } else {
       throw new Error(
-        "Invalid repository format. Use workspace/repo or a full URL."
+        'Invalid repository format. Use workspace/repo or a full URL.'
       );
     }
 
@@ -69,8 +76,8 @@ export class CloneCommand extends BaseCommand<{ repository: string } & CloneOpti
   }
 
   private extractRepoName(repository: string): string {
-    const parts = repository.split("/");
+    const parts = repository.split('/');
     const lastPart = parts[parts.length - 1];
-    return lastPart.replace(".git", "");
+    return lastPart.replace('.git', '');
   }
 }

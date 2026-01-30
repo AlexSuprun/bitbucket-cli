@@ -2,13 +2,16 @@
  * Token command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IConfigService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
 
 export class TokenCommand extends BaseCommand<void, void> {
-  public readonly name = "token";
-  public readonly description = "Print the current access token";
+  public readonly name = 'token';
+  public readonly description = 'Print the current access token';
 
   constructor(
     private readonly configService: IConfigService,
@@ -29,7 +32,9 @@ export class TokenCommand extends BaseCommand<void, void> {
       throw error;
     }
 
-    const token = Buffer.from(`${credentials.username}:${credentials.apiToken}`).toString("base64");
+    const token = Buffer.from(
+      `${credentials.username}:${credentials.apiToken}`
+    ).toString('base64');
 
     // Always output the raw token (not JSON formatted)
     this.output.text(token);

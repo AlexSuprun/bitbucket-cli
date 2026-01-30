@@ -81,7 +81,8 @@ export class ConfigService implements IConfigService {
     if (!username || !apiToken) {
       throw new BBError({
         code: ErrorCode.AUTH_REQUIRED,
-        message: "Authentication required. Run 'bb auth login' to authenticate.",
+        message:
+          "Authentication required. Run 'bb auth login' to authenticate.",
       });
     }
 

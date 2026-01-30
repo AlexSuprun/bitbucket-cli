@@ -2,19 +2,25 @@
  * Delete repository command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { RepositoriesApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { RepositoriesApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface DeleteRepoOptions extends GlobalOptions {
   yes?: boolean;
 }
 
-export class DeleteRepoCommand extends BaseCommand<{ repository: string } & DeleteRepoOptions, void> {
-  public readonly name = "delete";
-  public readonly description = "Delete a repository";
+export class DeleteRepoCommand extends BaseCommand<
+  { repository: string } & DeleteRepoOptions,
+  void
+> {
+  public readonly name = 'delete';
+  public readonly description = 'Delete a repository';
 
   constructor(
     private readonly repositoriesApi: RepositoriesApi,
@@ -31,7 +37,7 @@ export class DeleteRepoCommand extends BaseCommand<{ repository: string } & Dele
     const { repository, yes } = options;
 
     let contextOptions = { ...context.globalOptions, ...options };
-    const parts = repository.split("/");
+    const parts = repository.split('/');
 
     if (parts.length === 2) {
       contextOptions.workspace = parts[0];
@@ -40,15 +46,16 @@ export class DeleteRepoCommand extends BaseCommand<{ repository: string } & Dele
       contextOptions.repo = repository;
     }
 
-    const repoContext = await this.contextService.requireRepoContext(contextOptions);
+    const repoContext =
+      await this.contextService.requireRepoContext(contextOptions);
 
     if (!yes) {
       const error = new Error(
         `This will permanently delete ${repoContext.workspace}/${repoContext.repoSlug}.\n` +
-          "Use --yes to confirm deletion."
+          'Use --yes to confirm deletion.'
       );
       this.output.error(error.message);
-      if (process.env.NODE_ENV !== "test") {
+      if (process.env.NODE_ENV !== 'test') {
         process.exitCode = 1;
       }
       throw error;
@@ -60,7 +67,9 @@ export class DeleteRepoCommand extends BaseCommand<{ repository: string } & Dele
         repoSlug: repoContext.repoSlug,
       });
 
-      this.output.success(`Deleted repository ${repoContext.workspace}/${repoContext.repoSlug}`);
+      this.output.success(
+        `Deleted repository ${repoContext.workspace}/${repoContext.repoSlug}`
+      );
     } catch (error) {
       this.handleError(error, context);
       throw error;

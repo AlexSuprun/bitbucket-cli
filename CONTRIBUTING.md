@@ -5,12 +5,14 @@ Thanks for your interest in contributing! This guide will help you get started.
 ## Development Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/0pilatos0/bitbucket-cli.git
    cd bitbucket-cli
    ```
 
 2. **Install dependencies**
+
    ```bash
    bun install
    ```
@@ -22,12 +24,12 @@ Thanks for your interest in contributing! This guide will help you get started.
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `bun run dev` | Run CLI in development mode |
-| `bun run build` | Build for production |
-| `bun run test` | Run tests |
-| `bun run lint` | Type-check with TypeScript |
+| Command         | Description                 |
+| --------------- | --------------------------- |
+| `bun run dev`   | Run CLI in development mode |
+| `bun run build` | Build for production        |
+| `bun run test`  | Run tests                   |
+| `bun run lint`  | Type-check with TypeScript  |
 
 ## Making Changes
 
@@ -55,6 +57,7 @@ bun changeset
 ```
 
 This will prompt you to:
+
 1. Select the type of change (patch, minor, major)
 2. Write a summary of your changes
 
@@ -69,6 +72,7 @@ A changeset file will be created in `.changeset/` - commit this with your PR.
 #### Skipping changesets
 
 Only skip changesets for changes that don't affect users:
+
 - CI/workflow changes
 - README updates
 - Test-only changes

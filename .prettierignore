@@ -1,0 +1,41 @@
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Generated API code (auto-generated from OpenAPI spec)
+src/generated/
+
+# Lock files
+bun.lock
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Coverage reports
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docs (separate project)
+docs/
+
+# Changeset files (markdown content)
+.changeset/*.md
+!.changeset/README.md
+
+# Git
+.git/

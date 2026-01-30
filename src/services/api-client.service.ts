@@ -13,7 +13,7 @@ export function createApiClient(configService: IConfigService): AxiosInstance {
     baseURL: BASE_URL,
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
     },
   });
 
@@ -24,7 +24,9 @@ export function createApiClient(configService: IConfigService): AxiosInstance {
         console.debug(`[HTTP] ${config.method?.toUpperCase()} ${config.url}`);
       }
       const credentials = await configService.getCredentials();
-      const authString = Buffer.from(`${credentials.username}:${credentials.apiToken}`).toString('base64');
+      const authString = Buffer.from(
+        `${credentials.username}:${credentials.apiToken}`
+      ).toString('base64');
       config.headers.Authorization = `Basic ${authString}`;
       return config;
     },
@@ -36,7 +38,10 @@ export function createApiClient(configService: IConfigService): AxiosInstance {
     (response) => {
       if (process.env.DEBUG === 'true') {
         console.debug(`[HTTP] Response: ${response.status}`);
-        console.debug(`[HTTP] Response Body:`, JSON.stringify(response.data, null, 2));
+        console.debug(
+          `[HTTP] Response Body:`,
+          JSON.stringify(response.data, null, 2)
+        );
       }
       return response;
     },
@@ -44,7 +49,10 @@ export function createApiClient(configService: IConfigService): AxiosInstance {
       if (process.env.DEBUG === 'true') {
         console.debug(`[HTTP] Error:`, error.message);
         if (error.response) {
-          console.debug(`[HTTP] Error Response Body:`, JSON.stringify(error.response.data, null, 2));
+          console.debug(
+            `[HTTP] Error Response Body:`,
+            JSON.stringify(error.response.data, null, 2)
+          );
         }
       }
       if (error.response) {

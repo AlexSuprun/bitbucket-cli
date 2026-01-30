@@ -2,13 +2,14 @@
  * Base command class with common functionality
  */
 
-import type { ICommand, CommandContext } from "./interfaces/commands.js";
-import type { IOutputService } from "./interfaces/services.js";
-import { BBError, ErrorCode } from "../types/errors.js";
+import type { ICommand, CommandContext } from './interfaces/commands.js';
+import type { IOutputService } from './interfaces/services.js';
+import { BBError, ErrorCode } from '../types/errors.js';
 
-export abstract class BaseCommand<TOptions = unknown, TResult = void>
-  implements ICommand<TOptions, TResult>
-{
+export abstract class BaseCommand<
+  TOptions = unknown,
+  TResult = void,
+> implements ICommand<TOptions, TResult> {
   public abstract readonly name: string;
   public abstract readonly description: string;
 
@@ -30,7 +31,7 @@ export abstract class BaseCommand<TOptions = unknown, TResult = void>
     }
     // Only set exit code in production - during tests this causes false failures
     // because the exit code persists across test files
-    if (process.env.NODE_ENV !== "test") {
+    if (process.env.NODE_ENV !== 'test') {
       process.exitCode = 1;
     }
   }
@@ -43,7 +44,7 @@ export abstract class BaseCommand<TOptions = unknown, TResult = void>
     name: string,
     message?: string
   ): T {
-    if (value === undefined || value === null || value === "") {
+    if (value === undefined || value === null || value === '') {
       throw new BBError({
         code: ErrorCode.VALIDATION_REQUIRED,
         message: message || `Option --${name} is required`,

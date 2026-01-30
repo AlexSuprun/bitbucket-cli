@@ -1,4 +1,4 @@
-declare module "tabtab" {
+declare module 'tabtab' {
   interface TabtabEnv {
     complete: boolean;
     words: number;

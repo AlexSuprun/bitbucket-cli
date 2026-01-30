@@ -2,11 +2,14 @@
  * Delete comment on PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface DeleteCommentPROptions extends GlobalOptions {}
 
@@ -14,8 +17,8 @@ export class DeleteCommentPRCommand extends BaseCommand<
   { prId: string; commentId: string } & DeleteCommentPROptions,
   void
 > {
-  public readonly name = "delete";
-  public readonly description = "Delete a comment on a pull request";
+  public readonly name = 'delete';
+  public readonly description = 'Delete a comment on a pull request';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -38,16 +41,16 @@ export class DeleteCommentPRCommand extends BaseCommand<
     const commentId = parseInt(options.commentId, 10);
 
     try {
-      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdDelete({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-        commentId: commentId,
-      });
-
-      this.output.success(
-        `Deleted comment #${commentId} from PR #${prId}`
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdDelete(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          commentId: commentId,
+        }
       );
+
+      this.output.success(`Deleted comment #${commentId} from PR #${prId}`);
     } catch (error) {
       this.handleError(error, context);
       throw error;

@@ -2,17 +2,23 @@
  * Approve PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface ApprovePROptions extends GlobalOptions {}
 
-export class ApprovePRCommand extends BaseCommand<{ id: string } & ApprovePROptions, void> {
-  public readonly name = "approve";
-  public readonly description = "Approve a pull request";
+export class ApprovePRCommand extends BaseCommand<
+  { id: string } & ApprovePROptions,
+  void
+> {
+  public readonly name = 'approve';
+  public readonly description = 'Approve a pull request';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -34,11 +40,13 @@ export class ApprovePRCommand extends BaseCommand<{ id: string } & ApprovePROpti
     const prId = parseInt(options.id, 10);
 
     try {
-      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-      });
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
       this.output.success(`Approved pull request #${prId}`);
     } catch (error) {

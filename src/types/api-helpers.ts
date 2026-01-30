@@ -9,7 +9,7 @@ import type {
   Account,
   PullrequestComment,
   PullrequestMergeParameters,
-} from "../generated/api.js";
+} from '../generated/api.js';
 
 /**
  * Helper to convert Set to Array
@@ -23,30 +23,32 @@ export function toArray<T>(set: Set<T> | T[] | undefined): T[] {
 /**
  * Create a Pullrequest object with required type field
  */
-export function createPullrequest(data: Omit<Pullrequest, "type">): Pullrequest {
+export function createPullrequest(
+  data: Omit<Pullrequest, 'type'>
+): Pullrequest {
   return {
     ...data,
-    type: "pullrequest",
+    type: 'pullrequest',
   } as Pullrequest;
 }
 
 /**
  * Create a Repository object with required type field
  */
-export function createRepository(data: Omit<Repository, "type">): Repository {
+export function createRepository(data: Omit<Repository, 'type'>): Repository {
   return {
     ...data,
-    type: "repository",
+    type: 'repository',
   } as Repository;
 }
 
 /**
  * Create an Account object with required type field
  */
-export function createAccount(data: Omit<Account, "type">): Account {
+export function createAccount(data: Omit<Account, 'type'>): Account {
   return {
     ...data,
-    type: "user",
+    type: 'user',
   } as Account;
 }
 
@@ -54,11 +56,11 @@ export function createAccount(data: Omit<Account, "type">): Account {
  * Create a PullrequestComment object with required type field
  */
 export function createPullrequestComment(
-  data: Omit<PullrequestComment, "type">
+  data: Omit<PullrequestComment, 'type'>
 ): PullrequestComment {
   return {
     ...data,
-    type: "pullrequest_comment",
+    type: 'pullrequest_comment',
   } as PullrequestComment;
 }
 
@@ -66,11 +68,11 @@ export function createPullrequestComment(
  * Create a PullrequestMergeParameters object with required type field
  */
 export function createPullrequestMergeParameters(
-  data: Omit<PullrequestMergeParameters, "type">
+  data: Omit<PullrequestMergeParameters, 'type'>
 ): PullrequestMergeParameters {
   return {
     ...data,
-    type: "pullrequest_merge_parameters",
+    type: 'pullrequest_merge_parameters',
   } as PullrequestMergeParameters;
 }
 
@@ -89,7 +91,10 @@ export interface PaginatedResponse<T> {
 /**
  * Safely access link href from object type
  */
-export function getLinkHref(links: object | undefined, key: string): string | undefined {
+export function getLinkHref(
+  links: object | undefined,
+  key: string
+): string | undefined {
   if (!links) return undefined;
   const l = links as Record<string, { href?: string } | undefined>;
   return l[key]?.href;
@@ -98,19 +103,24 @@ export function getLinkHref(links: object | undefined, key: string): string | un
 /**
  * Safely access clone links
  */
-export function getCloneLinks(links: object | undefined): Array<{ name: string; href: string }> {
+export function getCloneLinks(
+  links: object | undefined
+): Array<{ name: string; href: string }> {
   if (!links) return [];
   const l = links as Record<string, unknown>;
   const clone = l.clone;
   if (!clone) return [];
-  if (Array.isArray(clone)) return clone as Array<{ name: string; href: string }>;
+  if (Array.isArray(clone))
+    return clone as Array<{ name: string; href: string }>;
   return [];
 }
 
 /**
  * Safely access branch name from source/destination
  */
-export function getBranchName(sourceOrDest: object | undefined): string | undefined {
+export function getBranchName(
+  sourceOrDest: object | undefined
+): string | undefined {
   if (!sourceOrDest) return undefined;
   const s = sourceOrDest as Record<string, unknown>;
   const branch = s.branch as Record<string, string> | undefined;

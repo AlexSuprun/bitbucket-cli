@@ -2,17 +2,24 @@
  * Checkout PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IGitService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IGitService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface CheckoutPROptions extends GlobalOptions {}
 
-export class CheckoutPRCommand extends BaseCommand<{ id: string } & CheckoutPROptions, void> {
-  public readonly name = "checkout";
-  public readonly description = "Checkout a pull request locally";
+export class CheckoutPRCommand extends BaseCommand<
+  { id: string } & CheckoutPROptions,
+  void
+> {
+  public readonly name = 'checkout';
+  public readonly description = 'Checkout a pull request locally';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -35,11 +42,14 @@ export class CheckoutPRCommand extends BaseCommand<{ id: string } & CheckoutPROp
     const prId = parseInt(options.id, 10);
 
     try {
-      const prResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-      });
+      const prResponse =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            pullRequestId: prId,
+          }
+        );
 
       const pr = prResponse.data;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,7 +57,7 @@ export class CheckoutPRCommand extends BaseCommand<{ id: string } & CheckoutPROp
       const localBranchName = `pr-${prId}`;
 
       if (!branchName) {
-        throw new Error("Pull request source branch not found");
+        throw new Error('Pull request source branch not found');
       }
 
       await this.gitService.fetch();

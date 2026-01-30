@@ -2,10 +2,13 @@
  * List repositories command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
-import type { RepositoriesApi } from "../../generated/api.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IConfigService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { RepositoriesApi } from '../../generated/api.js';
 
 export interface ListReposOptions {
   workspace?: string;
@@ -13,8 +16,8 @@ export interface ListReposOptions {
 }
 
 export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
-  public readonly name = "list";
-  public readonly description = "List repositories";
+  public readonly name = 'list';
+  public readonly description = 'List repositories';
 
   constructor(
     private readonly repositoriesApi: RepositoriesApi,
@@ -29,7 +32,7 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
     context: CommandContext
   ): Promise<void> {
     const workspace = await this.resolveWorkspace(options.workspace);
-    const limit = parseInt(options.limit || "25", 10);
+    const limit = parseInt(options.limit || '25', 10);
 
     try {
       const response = await this.repositoriesApi.repositoriesWorkspaceGet({
@@ -39,17 +42,17 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
       const repos = Array.from(response.data.values ?? []).slice(0, limit);
 
       if (repos.length === 0) {
-        this.output.text("No repositories found");
+        this.output.text('No repositories found');
         return;
       }
 
       const rows = repos.map((repo) => [
-        repo.full_name ?? "",
-        repo.is_private ? "private" : "public",
-        (repo.description || "").substring(0, 50),
+        repo.full_name ?? '',
+        repo.is_private ? 'private' : 'public',
+        (repo.description || '').substring(0, 50),
       ]);
 
-      this.output.table(["REPOSITORY", "VISIBILITY", "DESCRIPTION"], rows);
+      this.output.table(['REPOSITORY', 'VISIBILITY', 'DESCRIPTION'], rows);
     } catch (error) {
       this.handleError(error, context);
       throw error;
@@ -65,7 +68,7 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
 
     if (!config.defaultWorkspace) {
       throw new Error(
-        "No workspace specified. Use --workspace option or set a default workspace."
+        'No workspace specified. Use --workspace option or set a default workspace.'
       );
     }
 

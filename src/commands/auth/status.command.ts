@@ -2,14 +2,14 @@
  * Status command implementation
  */
 
-import chalk from "chalk";
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
+import chalk from 'chalk';
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
   IConfigService,
   IOutputService,
-} from "../../core/interfaces/services.js";
-import type { UsersApi } from "../../generated/api.js";
+} from '../../core/interfaces/services.js';
+import type { UsersApi } from '../../generated/api.js';
 
 export interface AuthStatus {
   authenticated: boolean;
@@ -22,8 +22,8 @@ export interface AuthStatus {
 }
 
 export class StatusCommand extends BaseCommand<void, void> {
-  public readonly name = "status";
-  public readonly description = "Show authentication status";
+  public readonly name = 'status';
+  public readonly description = 'Show authentication status';
 
   constructor(
     private readonly configService: IConfigService,
@@ -33,16 +33,13 @@ export class StatusCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(
-    _options: void,
-    context: CommandContext
-  ): Promise<void> {
+  public async execute(_options: void, context: CommandContext): Promise<void> {
     const config = await this.configService.getConfig();
 
     // Check if credentials exist
     if (!config.username || !config.apiToken) {
-      this.output.info("Not logged in");
-      this.output.text(`Run ${chalk.cyan("bb auth login")} to authenticate.`);
+      this.output.info('Not logged in');
+      this.output.text(`Run ${chalk.cyan('bb auth login')} to authenticate.`);
       return;
     }
 
@@ -51,17 +48,21 @@ export class StatusCommand extends BaseCommand<void, void> {
       const response = await this.usersApi.userGet();
       const user = response.data;
 
-      this.output.success("Logged in to Bitbucket");
+      this.output.success('Logged in to Bitbucket');
       this.output.text(`  Username: ${chalk.cyan(user.username)}`);
       this.output.text(`  Display name: ${user.display_name}`);
       this.output.text(`  Account ID: ${user.account_id}`);
 
       if (config.defaultWorkspace) {
-        this.output.text(`  Default workspace: ${chalk.cyan(config.defaultWorkspace)}`);
+        this.output.text(
+          `  Default workspace: ${chalk.cyan(config.defaultWorkspace)}`
+        );
       }
     } catch (error) {
-      this.output.error("Authentication is invalid or expired");
-      this.output.text(`Run ${chalk.cyan("bb auth login")} to re-authenticate.`);
+      this.output.error('Authentication is invalid or expired');
+      this.output.text(
+        `Run ${chalk.cyan('bb auth login')} to re-authenticate.`
+      );
       throw error;
     }
   }

@@ -2,11 +2,14 @@
  * Create repository command implementation
  */
 
-import chalk from "chalk";
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
-import type { RepositoriesApi } from "../../generated/api.js";
+import chalk from 'chalk';
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IConfigService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { RepositoriesApi } from '../../generated/api.js';
 
 export interface CreateRepoOptions {
   workspace?: string;
@@ -16,9 +19,12 @@ export interface CreateRepoOptions {
   project?: string;
 }
 
-export class CreateRepoCommand extends BaseCommand<{ name: string } & CreateRepoOptions, void> {
-  public readonly name = "create";
-  public readonly description = "Create a new repository";
+export class CreateRepoCommand extends BaseCommand<
+  { name: string } & CreateRepoOptions,
+  void
+> {
+  public readonly name = 'create';
+  public readonly description = 'Create a new repository';
 
   constructor(
     private readonly repositoriesApi: RepositoriesApi,
@@ -38,15 +44,15 @@ export class CreateRepoCommand extends BaseCommand<{ name: string } & CreateRepo
     const workspace = await this.resolveWorkspace(options.workspace);
 
     const request: {
-      type: "repository";
-      scm: "git";
+      type: 'repository';
+      scm: 'git';
       name: string;
       is_private: boolean;
       description?: string;
-      project?: { type: "project"; key: string };
+      project?: { type: 'project'; key: string };
     } = {
-      type: "repository",
-      scm: "git",
+      type: 'repository',
+      scm: 'git',
       name,
       is_private: !isPublic,
     };
@@ -56,26 +62,31 @@ export class CreateRepoCommand extends BaseCommand<{ name: string } & CreateRepo
     }
 
     if (project) {
-      request.project = { type: "project", key: project };
+      request.project = { type: 'project', key: project };
     }
 
     try {
-      const response = await this.repositoriesApi.repositoriesWorkspaceRepoSlugPost({
-        workspace,
-        repoSlug: name,
-        body: request,
-      });
+      const response =
+        await this.repositoriesApi.repositoriesWorkspaceRepoSlugPost({
+          workspace,
+          repoSlug: name,
+          body: request,
+        });
 
       const repo = response.data;
 
       this.output.success(`Created repository ${repo.full_name}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this.output.text(`  ${chalk.dim("URL:")} ${(repo.links as any)?.html?.href}`);
+      this.output.text(
+        `  ${chalk.dim('URL:')} ${(repo.links as any)?.html?.href}`
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sshClone = Array.from((repo.links as any)?.clone ?? []).find((c: any) => c.name === "ssh") as { href?: string } | undefined;
+      const sshClone = Array.from((repo.links as any)?.clone ?? []).find(
+        (c: any) => c.name === 'ssh'
+      ) as { href?: string } | undefined;
       if (sshClone?.href) {
-        this.output.text(`  ${chalk.dim("Clone:")} git clone ${sshClone.href}`);
+        this.output.text(`  ${chalk.dim('Clone:')} git clone ${sshClone.href}`);
       }
     } catch (error) {
       this.handleError(error, context);
@@ -92,7 +103,7 @@ export class CreateRepoCommand extends BaseCommand<{ name: string } & CreateRepo
 
     if (!config.defaultWorkspace) {
       throw new Error(
-        "No workspace specified. Use --workspace option or set a default workspace."
+        'No workspace specified. Use --workspace option or set a default workspace.'
       );
     }
 

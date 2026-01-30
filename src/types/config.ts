@@ -27,13 +27,29 @@ export interface GlobalOptions {
   repo?: string;
 }
 
-export const CONFIG_KEYS = ["username", "apiToken", "defaultWorkspace", "lastVersionCheck", "skipVersionCheck", "versionCheckInterval"] as const;
+export const CONFIG_KEYS = [
+  'username',
+  'apiToken',
+  'defaultWorkspace',
+  'lastVersionCheck',
+  'skipVersionCheck',
+  'versionCheckInterval',
+] as const;
 export type ConfigKey = (typeof CONFIG_KEYS)[number];
 
-export const SETTABLE_CONFIG_KEYS = ["defaultWorkspace", "skipVersionCheck", "versionCheckInterval"] as const;
+export const SETTABLE_CONFIG_KEYS = [
+  'defaultWorkspace',
+  'skipVersionCheck',
+  'versionCheckInterval',
+] as const;
 export type SettableConfigKey = (typeof SETTABLE_CONFIG_KEYS)[number];
 
-export const READABLE_CONFIG_KEYS = ["username", "defaultWorkspace", "skipVersionCheck", "versionCheckInterval"] as const;
+export const READABLE_CONFIG_KEYS = [
+  'username',
+  'defaultWorkspace',
+  'skipVersionCheck',
+  'versionCheckInterval',
+] as const;
 export type ReadableConfigKey = (typeof READABLE_CONFIG_KEYS)[number];
 
 export function isValidConfigKey(key: string): key is ConfigKey {

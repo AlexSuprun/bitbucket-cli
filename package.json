@@ -30,6 +30,8 @@
     "build": "bun build src/index.ts --outdir dist --target bun",
     "test": "bun test",
     "lint": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "generate:api": "openapi-generator-cli generate",
     "docs:dev": "cd docs && bun run dev",
     "docs:build": "cd docs && bun run build",
@@ -37,6 +39,9 @@
     "version": "changeset version",
     "release": "bun run build && changeset publish",
     "prepublishOnly": "bun run build"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "bun run format:check"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -51,7 +56,9 @@
     "@types/bun": "latest",
     "@types/node": "^25.1.0",
     "favicons": "^7.2.0",
+    "prettier": "^3.8.1",
     "sharp": "^0.34.5",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.9.3"
   }
 }

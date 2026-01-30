@@ -2,28 +2,32 @@
  * PR diff command implementation
  */
 
-import chalk from "chalk";
-import { exec } from "child_process";
-import { promisify } from "util";
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService, IGitService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import chalk from 'chalk';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+  IGitService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 const execAsync = promisify(exec);
 
 export interface DiffPROptions extends GlobalOptions {
   id?: string;
-  color?: "auto" | "always" | "never";
+  color?: 'auto' | 'always' | 'never';
   nameOnly?: boolean;
   stat?: boolean;
   web?: boolean;
 }
 
 export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
-  public readonly name = "diff";
-  public readonly description = "View pull request diff";
+  public readonly name = 'diff';
+  public readonly description = 'View pull request diff';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -47,16 +51,19 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     if (options.id) {
       prId = parseInt(options.id, 10);
       if (isNaN(prId)) {
-        throw new Error("Invalid PR ID");
+        throw new Error('Invalid PR ID');
       }
     } else {
       const currentBranch = await this.gitService.getCurrentBranch();
-      
-      const prsResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        state: "OPEN",
-      });
+
+      const prsResponse =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            state: 'OPEN',
+          }
+        );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pr = Array.from(prsResponse.data.values ?? []).find(
@@ -64,28 +71,33 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
       );
 
       if (!pr) {
-        throw new Error(`No open pull request found for branch "${currentBranch}"`);
+        throw new Error(
+          `No open pull request found for branch "${currentBranch}"`
+        );
       }
 
       prId = pr.id!;
     }
 
     if (options.web) {
-      const prResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-      });
+      const prResponse =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            pullRequestId: prId,
+          }
+        );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const diffUrl = (prResponse.data.links as any)?.diff?.href;
       if (!diffUrl) {
-        throw new Error("Could not get diff URL");
+        throw new Error('Could not get diff URL');
       }
-      
+
       const webUrl = diffUrl.replace(
         /api\.bitbucket\.org\/2\.0\/repositories\/(.*?)\/pullrequests\/(\d+)\/diff/,
-        "bitbucket.org/$1/pull-requests/$2/diff"
+        'bitbucket.org/$1/pull-requests/$2/diff'
       );
 
       await this.openInBrowser(webUrl, context);
@@ -93,19 +105,38 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     }
 
     if (options.stat) {
-      await this.showStat(repoContext.workspace, repoContext.repoSlug, prId, context);
+      await this.showStat(
+        repoContext.workspace,
+        repoContext.repoSlug,
+        prId,
+        context
+      );
       return;
     }
 
     if (options.nameOnly) {
-      await this.showNameOnly(repoContext.workspace, repoContext.repoSlug, prId, context);
+      await this.showNameOnly(
+        repoContext.workspace,
+        repoContext.repoSlug,
+        prId,
+        context
+      );
       return;
     }
 
-    await this.showDiff(repoContext.workspace, repoContext.repoSlug, prId, options, context);
+    await this.showDiff(
+      repoContext.workspace,
+      repoContext.repoSlug,
+      prId,
+      options,
+      context
+    );
   }
 
-  private async openInBrowser(url: string, context: CommandContext): Promise<void> {
+  private async openInBrowser(
+    url: string,
+    context: CommandContext
+  ): Promise<void> {
     if (context.globalOptions.json) {
       this.output.json({ url });
       return;
@@ -116,9 +147,9 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     const platform = process.platform;
     let command: string;
 
-    if (platform === "darwin") {
+    if (platform === 'darwin') {
       command = `open "${url}"`;
-    } else if (platform === "win32") {
+    } else if (platform === 'win32') {
       command = `start "" "${url}"`;
     } else {
       command = `xdg-open "${url}"`;
@@ -133,17 +164,20 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     prId: number,
     context: CommandContext
   ): Promise<void> {
-    const diffstatResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffstatGet({
-      workspace,
-      repoSlug,
-      pullRequestId: prId,
-    });
+    const diffstatResponse =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffstatGet(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const diffstat = diffstatResponse.data as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const files = Array.from(diffstat.values ?? []).map((file: any) => {
-      const path = file.new?.path || file.old?.path || "unknown";
+      const path = file.new?.path || file.old?.path || 'unknown';
       return {
         path,
         additions: file.lines_added ?? 0,
@@ -151,23 +185,41 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
       };
     });
 
-    const totalAdditions = files.reduce((sum: number, f: typeof files[0]) => sum + f.additions, 0);
-    const totalDeletions = files.reduce((sum: number, f: typeof files[0]) => sum + f.deletions, 0);
+    const totalAdditions = files.reduce(
+      (sum: number, f: (typeof files)[0]) => sum + f.additions,
+      0
+    );
+    const totalDeletions = files.reduce(
+      (sum: number, f: (typeof files)[0]) => sum + f.deletions,
+      0
+    );
     const filesChanged = files.length;
 
     for (const file of files) {
-      const additions = file.additions > 0 ? chalk.green(`+${file.additions}`) : "";
-      const deletions = file.deletions > 0 ? chalk.red(`-${file.deletions}`) : "";
-      const stats = [additions, deletions].filter(Boolean).join(" ");
-      this.output.text(`${file.path} ${stats ? `| ${stats}` : ""}`);
+      const additions =
+        file.additions > 0 ? chalk.green(`+${file.additions}`) : '';
+      const deletions =
+        file.deletions > 0 ? chalk.red(`-${file.deletions}`) : '';
+      const stats = [additions, deletions].filter(Boolean).join(' ');
+      this.output.text(`${file.path} ${stats ? `| ${stats}` : ''}`);
     }
 
-    this.output.text("");
+    this.output.text('');
     const summary = [
-      `${filesChanged} file${filesChanged !== 1 ? "s" : ""} changed`,
-      totalAdditions > 0 ? chalk.green(`${totalAdditions} insertion${totalAdditions !== 1 ? "s" : ""}(+)`) : null,
-      totalDeletions > 0 ? chalk.red(`${totalDeletions} deletion${totalDeletions !== 1 ? "s" : ""}(-)`) : null,
-    ].filter(Boolean).join(", ");
+      `${filesChanged} file${filesChanged !== 1 ? 's' : ''} changed`,
+      totalAdditions > 0
+        ? chalk.green(
+            `${totalAdditions} insertion${totalAdditions !== 1 ? 's' : ''}(+)`
+          )
+        : null,
+      totalDeletions > 0
+        ? chalk.red(
+            `${totalDeletions} deletion${totalDeletions !== 1 ? 's' : ''}(-)`
+          )
+        : null,
+    ]
+      .filter(Boolean)
+      .join(', ');
 
     this.output.text(summary);
   }
@@ -178,16 +230,21 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     prId: number,
     context: CommandContext
   ): Promise<void> {
-    const diffstatResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffstatGet({
-      workspace,
-      repoSlug,
-      pullRequestId: prId,
-    });
+    const diffstatResponse =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffstatGet(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const diffstat = diffstatResponse.data as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fileNames = Array.from(diffstat.values ?? []).map((file: any) => file.new?.path || file.old?.path || "unknown");
+    const fileNames = Array.from(diffstat.values ?? []).map(
+      (file: any) => file.new?.path || file.old?.path || 'unknown'
+    );
 
     for (const fileName of fileNames) {
       this.output.text(fileName);
@@ -201,43 +258,52 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     options: DiffPROptions,
     context: CommandContext
   ): Promise<void> {
-    const diffResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffGet({
-      workspace,
-      repoSlug,
-      pullRequestId: prId,
-    });
+    const diffResponse =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffGet(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
     const diff = diffResponse.data;
 
     const shouldColorize = this.shouldColorize(options.color);
-    const colorizedDiff = shouldColorize ? this.colorizeDiff(String(diff)) : String(diff);
+    const colorizedDiff = shouldColorize
+      ? this.colorizeDiff(String(diff))
+      : String(diff);
     this.output.text(colorizedDiff);
   }
 
-  private shouldColorize(colorOption?: "auto" | "always" | "never"): boolean {
-    if (!colorOption || colorOption === "auto") {
+  private shouldColorize(colorOption?: 'auto' | 'always' | 'never'): boolean {
+    if (!colorOption || colorOption === 'auto') {
       return process.stdout.isTTY ?? false;
     }
-    return colorOption === "always";
+    return colorOption === 'always';
   }
 
   private colorizeDiff(diff: string): string {
-    const lines = diff.split("\n");
+    const lines = diff.split('\n');
     return lines
       .map((line) => {
-        if (line.startsWith("+") && !line.startsWith("+++")) {
+        if (line.startsWith('+') && !line.startsWith('+++')) {
           return chalk.green(line);
-        } else if (line.startsWith("-") && !line.startsWith("---")) {
+        } else if (line.startsWith('-') && !line.startsWith('---')) {
           return chalk.red(line);
-        } else if (line.startsWith("@@")) {
+        } else if (line.startsWith('@@')) {
           return chalk.cyan(line);
-        } else if (line.startsWith("diff --git")) {
+        } else if (line.startsWith('diff --git')) {
           return chalk.bold(line);
-        } else if (line.startsWith("index ") || line.startsWith("---") || line.startsWith("+++")) {
+        } else if (
+          line.startsWith('index ') ||
+          line.startsWith('---') ||
+          line.startsWith('+++')
+        ) {
           return chalk.dim(line);
         }
         return line;
       })
-      .join("\n");
+      .join('\n');
   }
 }

@@ -2,20 +2,26 @@
  * Add reviewer to PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi, UsersApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi, UsersApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface AddReviewerPROptions extends GlobalOptions {
   id: string;
   username: string;
 }
 
-export class AddReviewerPRCommand extends BaseCommand<AddReviewerPROptions, void> {
-  public readonly name = "reviewers.add";
-  public readonly description = "Add a reviewer to a pull request";
+export class AddReviewerPRCommand extends BaseCommand<
+  AddReviewerPROptions,
+  void
+> {
+  public readonly name = 'reviewers.add';
+  public readonly description = 'Add a reviewer to a pull request';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -45,33 +51,42 @@ export class AddReviewerPRCommand extends BaseCommand<AddReviewerPROptions, void
       const user = userResponse.data;
 
       // Get current PR to see existing reviewers
-      const prResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-      });
+      const prResponse =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            pullRequestId: prId,
+          }
+        );
       const pr = prResponse.data;
 
       // Build list of reviewers (existing + new)
       const existingReviewers = pr.reviewers ? Array.from(pr.reviewers) : [];
-      const reviewerUuids = existingReviewers.map((r) => (r as { uuid?: string }).uuid).filter(Boolean);
+      const reviewerUuids = existingReviewers
+        .map((r) => (r as { uuid?: string }).uuid)
+        .filter(Boolean);
 
       if (!reviewerUuids.includes(user.uuid)) {
         reviewerUuids.push(user.uuid);
       }
 
       // Update PR with new reviewers list
-      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-        body: {
-          type: "pullrequest",
-          reviewers: reviewerUuids.map((uuid) => ({ uuid })),
-        } as unknown as import("../../generated/api.js").Pullrequest,
-      });
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          body: {
+            type: 'pullrequest',
+            reviewers: reviewerUuids.map((uuid) => ({ uuid })),
+          } as unknown as import('../../generated/api.js').Pullrequest,
+        }
+      );
 
-      this.output.success(`Added ${options.username} as reviewer to pull request #${prId}`);
+      this.output.success(
+        `Added ${options.username} as reviewer to pull request #${prId}`
+      );
     } catch (error) {
       this.handleError(error, context);
       throw error;

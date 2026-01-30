@@ -2,16 +2,25 @@
  * Set config command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
-import { isSettableConfigKey, type SettableConfigKey } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IConfigService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import {
+  isSettableConfigKey,
+  type SettableConfigKey,
+} from '../../types/config.js';
 
-export class SetConfigCommand extends BaseCommand<{ key: string; value: string }, void> {
-  public readonly name = "set";
-  public readonly description = "Set a configuration value";
+export class SetConfigCommand extends BaseCommand<
+  { key: string; value: string },
+  void
+> {
+  public readonly name = 'set';
+  public readonly description = 'Set a configuration value';
 
-  private static readonly PROTECTED_KEYS = ["username", "apiToken"];
+  private static readonly PROTECTED_KEYS = ['username', 'apiToken'];
 
   constructor(
     private readonly configService: IConfigService,

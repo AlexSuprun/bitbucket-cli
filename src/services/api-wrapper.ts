@@ -3,7 +3,7 @@
  * Handles Set->Array conversion, pagination, and other quirks
  */
 
-import type { AxiosInstance } from "axios";
+import type { AxiosInstance } from 'axios';
 import type {
   PullrequestsApi,
   RepositoriesApi,
@@ -13,7 +13,7 @@ import type {
   Account,
   PullrequestComment,
   PullrequestMergeParameters,
-} from "../generated/api.js";
+} from '../generated/api.js';
 
 /**
  * Convert Set to Array safely
@@ -75,28 +75,30 @@ export function getBranchName(ref: object | undefined): string | undefined {
  * Factory functions for creating API objects with proper type fields
  */
 export const factories = {
-  pullrequest(data: Omit<Pullrequest, "type">): Pullrequest {
-    return { ...data, type: "pullrequest" } as Pullrequest;
+  pullrequest(data: Omit<Pullrequest, 'type'>): Pullrequest {
+    return { ...data, type: 'pullrequest' } as Pullrequest;
   },
 
-  repository(data: Omit<Repository, "type">): Repository {
-    return { ...data, type: "repository" } as Repository;
+  repository(data: Omit<Repository, 'type'>): Repository {
+    return { ...data, type: 'repository' } as Repository;
   },
 
-  account(data: Omit<Account, "type">): Account {
-    return { ...data, type: "user" } as Account;
+  account(data: Omit<Account, 'type'>): Account {
+    return { ...data, type: 'user' } as Account;
   },
 
-  pullrequestComment(data: Omit<PullrequestComment, "type">): PullrequestComment {
-    return { ...data, type: "pullrequest_comment" } as PullrequestComment;
+  pullrequestComment(
+    data: Omit<PullrequestComment, 'type'>
+  ): PullrequestComment {
+    return { ...data, type: 'pullrequest_comment' } as PullrequestComment;
   },
 
   pullrequestMergeParameters(
-    data: Omit<PullrequestMergeParameters, "type">
+    data: Omit<PullrequestMergeParameters, 'type'>
   ): PullrequestMergeParameters {
     return {
       ...data,
-      type: "pullrequest_merge_parameters",
+      type: 'pullrequest_merge_parameters',
     } as PullrequestMergeParameters;
   },
 };
@@ -113,16 +115,19 @@ export class PullrequestsApiWrapper {
   async list(
     workspace: string,
     repoSlug: string,
-    state?: "OPEN" | "MERGED" | "DECLINED" | "SUPERSEDED"
+    state?: 'OPEN' | 'MERGED' | 'DECLINED' | 'SUPERSEDED'
   ): Promise<PaginatedResponse<Pullrequest>> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsGet({
-      workspace,
-      repoSlug,
-      state,
-    });
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsGet({
+        workspace,
+        repoSlug,
+        state,
+      });
     const data = response.data;
     return {
-      values: toArray(data.values as Set<Pullrequest> | Pullrequest[] | undefined),
+      values: toArray(
+        data.values as Set<Pullrequest> | Pullrequest[] | undefined
+      ),
       pagelen: data.pagelen,
       size: data.size,
       page: data.page,
@@ -134,12 +139,17 @@ export class PullrequestsApiWrapper {
   /**
    * Get a single pull request
    */
-  async get(workspace: string, repoSlug: string, pullRequestId: number): Promise<Pullrequest> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
-      workspace,
-      repoSlug,
-      pullRequestId,
-    });
+  async get(
+    workspace: string,
+    repoSlug: string,
+    pullRequestId: number
+  ): Promise<Pullrequest> {
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
+        workspace,
+        repoSlug,
+        pullRequestId,
+      });
     return response.data;
   }
 
@@ -149,13 +159,14 @@ export class PullrequestsApiWrapper {
   async create(
     workspace: string,
     repoSlug: string,
-    data: Omit<Pullrequest, "type">
+    data: Omit<Pullrequest, 'type'>
   ): Promise<Pullrequest> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPost({
-      workspace,
-      repoSlug,
-      body: factories.pullrequest(data),
-    });
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPost({
+        workspace,
+        repoSlug,
+        body: factories.pullrequest(data),
+      });
     return response.data;
   }
 
@@ -166,14 +177,15 @@ export class PullrequestsApiWrapper {
     workspace: string,
     repoSlug: string,
     pullRequestId: number,
-    data: Omit<Pullrequest, "type">
+    data: Omit<Pullrequest, 'type'>
   ): Promise<Pullrequest> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut({
-      workspace,
-      repoSlug,
-      pullRequestId,
-      body: factories.pullrequest(data),
-    });
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut({
+        workspace,
+        repoSlug,
+        pullRequestId,
+        body: factories.pullrequest(data),
+      });
     return response.data;
   }
 
@@ -184,37 +196,53 @@ export class PullrequestsApiWrapper {
     workspace: string,
     repoSlug: string,
     pullRequestId: number,
-    data?: Omit<PullrequestMergeParameters, "type">
+    data?: Omit<PullrequestMergeParameters, 'type'>
   ): Promise<Pullrequest> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost({
-      workspace,
-      repoSlug,
-      pullRequestId,
-      body: data ? factories.pullrequestMergeParameters(data) : undefined,
-    });
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId,
+          body: data ? factories.pullrequestMergeParameters(data) : undefined,
+        }
+      );
     return response.data;
   }
 
   /**
    * Approve a pull request
    */
-  async approve(workspace: string, repoSlug: string, pullRequestId: number): Promise<void> {
-    await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost({
-      workspace,
-      repoSlug,
-      pullRequestId,
-    });
+  async approve(
+    workspace: string,
+    repoSlug: string,
+    pullRequestId: number
+  ): Promise<void> {
+    await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost(
+      {
+        workspace,
+        repoSlug,
+        pullRequestId,
+      }
+    );
   }
 
   /**
    * Decline a pull request
    */
-  async decline(workspace: string, repoSlug: string, pullRequestId: number): Promise<Pullrequest> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDeclinePost({
-      workspace,
-      repoSlug,
-      pullRequestId,
-    });
+  async decline(
+    workspace: string,
+    repoSlug: string,
+    pullRequestId: number
+  ): Promise<Pullrequest> {
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDeclinePost(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId,
+        }
+      );
     return response.data;
   }
 
@@ -226,14 +254,22 @@ export class PullrequestsApiWrapper {
     repoSlug: string,
     pullRequestId: number
   ): Promise<PaginatedResponse<PullrequestComment>> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsGet({
-      workspace,
-      repoSlug,
-      pullRequestId,
-    });
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsGet(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId,
+        }
+      );
     const data = response.data;
     return {
-      values: toArray(data.values as Set<PullrequestComment> | PullrequestComment[] | undefined),
+      values: toArray(
+        data.values as
+          | Set<PullrequestComment>
+          | PullrequestComment[]
+          | undefined
+      ),
       pagelen: data.pagelen,
       size: data.size,
       page: data.page,
@@ -251,14 +287,17 @@ export class PullrequestsApiWrapper {
     pullRequestId: number,
     content: string
   ): Promise<PullrequestComment> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsPost({
-      workspace,
-      repoSlug,
-      pullRequestId,
-      body: factories.pullrequestComment({
-        content: { raw: content },
-      }),
-    });
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsPost(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId,
+          body: factories.pullrequestComment({
+            content: { raw: content },
+          }),
+        }
+      );
     return response.data;
   }
 
@@ -272,15 +311,18 @@ export class PullrequestsApiWrapper {
     commentId: number,
     content: string
   ): Promise<PullrequestComment> {
-    const response = await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdPut({
-      workspace,
-      repoSlug,
-      pullRequestId,
-      commentId,
-      body: factories.pullrequestComment({
-        content: { raw: content },
-      }),
-    });
+    const response =
+      await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdPut(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId,
+          commentId,
+          body: factories.pullrequestComment({
+            content: { raw: content },
+          }),
+        }
+      );
     return response.data;
   }
 
@@ -293,12 +335,14 @@ export class PullrequestsApiWrapper {
     pullRequestId: number,
     commentId: number
   ): Promise<void> {
-    await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdDelete({
-      workspace,
-      repoSlug,
-      pullRequestId,
-      commentId,
-    });
+    await this.api.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdDelete(
+      {
+        workspace,
+        repoSlug,
+        pullRequestId,
+        commentId,
+      }
+    );
   }
 }
 
@@ -317,7 +361,9 @@ export class RepositoriesApiWrapper {
     });
     const data = response.data;
     return {
-      values: toArray(data.values as Set<Repository> | Repository[] | undefined),
+      values: toArray(
+        data.values as Set<Repository> | Repository[] | undefined
+      ),
       pagelen: data.pagelen,
       size: data.size,
       page: data.page,
@@ -342,11 +388,11 @@ export class RepositoriesApiWrapper {
    */
   async create(
     workspace: string,
-    data: Omit<Repository, "type" | "links">
+    data: Omit<Repository, 'type' | 'links'>
   ): Promise<Repository> {
     const response = await this.api.repositoriesWorkspaceRepoSlugPost({
       workspace,
-      repoSlug: (data as { name?: string }).name || "",
+      repoSlug: (data as { name?: string }).name || '',
       body: factories.repository(data),
     });
     return response.data;

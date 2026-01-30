@@ -2,17 +2,17 @@
  * Auth command tests
  */
 
-import { describe, it, expect } from "bun:test";
-import { LoginCommand } from "../../src/commands/auth/login.command.js";
-import { LogoutCommand } from "../../src/commands/auth/logout.command.js";
-import { StatusCommand } from "../../src/commands/auth/status.command.js";
-import { TokenCommand } from "../../src/commands/auth/token.command.js";
+import { describe, it, expect } from 'bun:test';
+import { LoginCommand } from '../../src/commands/auth/login.command.js';
+import { LogoutCommand } from '../../src/commands/auth/logout.command.js';
+import { StatusCommand } from '../../src/commands/auth/status.command.js';
+import { TokenCommand } from '../../src/commands/auth/token.command.js';
 import {
   createMockConfigService,
   createMockOutputService,
   mockUser,
-} from "../setup.js";
-import type { UsersApi } from "../../src/generated/api.js";
+} from '../setup.js';
+import type { UsersApi } from '../../src/generated/api.js';
 
 // Helper to create mock UsersApi
 function createMockUsersApi(user = mockUser): UsersApi {
@@ -29,8 +29,8 @@ function createMockUsersApiError(message: string): UsersApi {
   } as unknown as UsersApi;
 }
 
-describe("LoginCommand", () => {
-  it("should fail when username is not provided", async () => {
+describe('LoginCommand', () => {
+  it('should fail when username is not provided', async () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
     const usersApi = createMockUsersApi();
@@ -38,11 +38,11 @@ describe("LoginCommand", () => {
     const command = new LoginCommand(configService, usersApi, output);
 
     await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow(
-      "Username is required"
+      'Username is required'
     );
   });
 
-  it("should fail when password is not provided", async () => {
+  it('should fail when password is not provided', async () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
     const usersApi = createMockUsersApi();
@@ -50,37 +50,37 @@ describe("LoginCommand", () => {
     const command = new LoginCommand(configService, usersApi, output);
 
     await expect(
-      command.execute({ username: "test" }, { globalOptions: {} })
-    ).rejects.toThrow("API token is required");
+      command.execute({ username: 'test' }, { globalOptions: {} })
+    ).rejects.toThrow('API token is required');
   });
 
-  it("should store credentials and return user on success", async () => {
+  it('should store credentials and return user on success', async () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
     const usersApi = createMockUsersApi();
 
     const command = new LoginCommand(configService, usersApi, output);
     await command.execute(
-      { username: "testuser", password: "testpass" },
+      { username: 'testuser', password: 'testpass' },
       { globalOptions: {} }
     );
 
     // Verify credentials were stored
     const creds = await configService.getCredentials();
-    expect(creds.username).toBe("testuser");
-    expect(creds.apiToken).toBe("testpass");
+    expect(creds.username).toBe('testuser');
+    expect(creds.apiToken).toBe('testpass');
 
     expect(output.logs).toContain(
       `success:Logged in as ${mockUser.display_name} (${mockUser.username})`
     );
   });
 
-  it("should use environment variables for credentials", async () => {
+  it('should use environment variables for credentials', async () => {
     const originalUsername = process.env.BB_USERNAME;
     const originalPassword = process.env.BB_API_TOKEN;
 
-    process.env.BB_USERNAME = "envuser";
-    process.env.BB_API_TOKEN = "envpass";
+    process.env.BB_USERNAME = 'envuser';
+    process.env.BB_API_TOKEN = 'envpass';
 
     try {
       const configService = createMockConfigService();
@@ -91,30 +91,30 @@ describe("LoginCommand", () => {
       await command.execute({}, { globalOptions: {} });
 
       const creds = await configService.getCredentials();
-      expect(creds.username).toBe("envuser");
+      expect(creds.username).toBe('envuser');
     } finally {
       process.env.BB_USERNAME = originalUsername;
       process.env.BB_API_TOKEN = originalPassword;
     }
   });
 
-  it("should output error message when authentication fails", async () => {
+  it('should output error message when authentication fails', async () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
-    const usersApi = createMockUsersApiError("Invalid credentials");
+    const usersApi = createMockUsersApiError('Invalid credentials');
 
     const command = new LoginCommand(configService, usersApi, output);
 
     await expect(
       command.execute(
-        { username: "testuser", password: "badpassword" },
+        { username: 'testuser', password: 'badpassword' },
         { globalOptions: {} }
       )
-    ).rejects.toThrow("Invalid credentials");
+    ).rejects.toThrow('Invalid credentials');
 
     // Verify error message was output to user
     expect(output.logs).toContain(
-      "error:Authentication failed: Invalid credentials"
+      'error:Authentication failed: Invalid credentials'
     );
 
     // Verify credentials were cleared
@@ -124,11 +124,11 @@ describe("LoginCommand", () => {
   });
 });
 
-describe("LogoutCommand", () => {
-  it("should clear config on logout", async () => {
+describe('LogoutCommand', () => {
+  it('should clear config on logout', async () => {
     const configService = createMockConfigService({
-      username: "testuser",
-      apiToken: "testpass",
+      username: 'testuser',
+      apiToken: 'testpass',
     });
     const output = createMockOutputService();
 
@@ -140,12 +140,12 @@ describe("LogoutCommand", () => {
     expect(config.username).toBeUndefined();
     expect(config.apiToken).toBeUndefined();
 
-    expect(output.logs).toContain("success:Logged out of Bitbucket");
+    expect(output.logs).toContain('success:Logged out of Bitbucket');
   });
 });
 
-describe("StatusCommand", () => {
-  it("should show not logged in when no credentials", async () => {
+describe('StatusCommand', () => {
+  it('should show not logged in when no credentials', async () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
     const usersApi = createMockUsersApi();
@@ -153,13 +153,13 @@ describe("StatusCommand", () => {
     const command = new StatusCommand(configService, usersApi, output);
     await command.execute(undefined, { globalOptions: {} });
 
-    expect(output.logs.some((log) => log.includes("Not logged in"))).toBe(true);
+    expect(output.logs.some((log) => log.includes('Not logged in'))).toBe(true);
   });
 
-  it("should show logged in when credentials valid", async () => {
+  it('should show logged in when credentials valid', async () => {
     const configService = createMockConfigService({
-      username: "testuser",
-      apiToken: "testpass",
+      username: 'testuser',
+      apiToken: 'testpass',
     });
     const output = createMockOutputService();
     const usersApi = createMockUsersApi();
@@ -167,14 +167,14 @@ describe("StatusCommand", () => {
     const command = new StatusCommand(configService, usersApi, output);
     await command.execute(undefined, { globalOptions: {} });
 
-    expect(output.logs).toContain("success:Logged in to Bitbucket");
-    expect(output.logs.some((log) => log.includes("testuser"))).toBe(true);
+    expect(output.logs).toContain('success:Logged in to Bitbucket');
+    expect(output.logs.some((log) => log.includes('testuser'))).toBe(true);
   });
 
-  it("should show logged in when json flag is set", async () => {
+  it('should show logged in when json flag is set', async () => {
     const configService = createMockConfigService({
-      username: "testuser",
-      apiToken: "testpass",
+      username: 'testuser',
+      apiToken: 'testpass',
     });
     const output = createMockOutputService();
     const usersApi = createMockUsersApi();
@@ -183,26 +183,26 @@ describe("StatusCommand", () => {
     await command.execute(undefined, { globalOptions: { json: true } });
 
     // Command outputs text regardless of json flag
-    expect(output.logs).toContain("success:Logged in to Bitbucket");
+    expect(output.logs).toContain('success:Logged in to Bitbucket');
   });
 });
 
-describe("TokenCommand", () => {
-  it("should output base64 encoded token", async () => {
+describe('TokenCommand', () => {
+  it('should output base64 encoded token', async () => {
     const configService = createMockConfigService({
-      username: "testuser",
-      apiToken: "testpass",
+      username: 'testuser',
+      apiToken: 'testpass',
     });
     const output = createMockOutputService();
 
     const command = new TokenCommand(configService, output);
     await command.execute(undefined, { globalOptions: {} });
 
-    const expectedToken = Buffer.from("testuser:testpass").toString("base64");
+    const expectedToken = Buffer.from('testuser:testpass').toString('base64');
     expect(output.logs).toContain(`text:${expectedToken}`);
   });
 
-  it("should fail when not logged in", async () => {
+  it('should fail when not logged in', async () => {
     const configService = createMockConfigService();
     const output = createMockOutputService();
 

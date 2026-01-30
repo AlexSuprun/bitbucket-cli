@@ -1,14 +1,16 @@
 export class BBError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "BBError";
+    this.name = 'BBError';
   }
 }
 
 export class AuthError extends BBError {
-  constructor(message: string = "Authentication required. Run 'bb auth login' to authenticate.") {
+  constructor(
+    message: string = "Authentication required. Run 'bb auth login' to authenticate."
+  ) {
     super(message);
-    this.name = "AuthError";
+    this.name = 'AuthError';
   }
 }
 
@@ -18,7 +20,7 @@ export class APIError extends BBError {
 
   constructor(message: string, statusCode: number, response?: unknown) {
     super(message);
-    this.name = "APIError";
+    this.name = 'APIError';
     this.statusCode = statusCode;
     this.response = response;
   }
@@ -30,7 +32,7 @@ export class GitError extends BBError {
 
   constructor(message: string, command: string, exitCode: number) {
     super(message);
-    this.name = "GitError";
+    this.name = 'GitError';
     this.command = command;
     this.exitCode = exitCode;
   }
@@ -39,7 +41,7 @@ export class GitError extends BBError {
 export class ConfigError extends BBError {
   constructor(message: string) {
     super(message);
-    this.name = "ConfigError";
+    this.name = 'ConfigError';
   }
 }
 
@@ -49,7 +51,7 @@ export function handleError(error: unknown): never {
   } else if (error instanceof Error) {
     console.error(`Error: ${error.message}`);
   } else {
-    console.error("An unknown error occurred");
+    console.error('An unknown error occurred');
   }
   process.exit(1);
 }

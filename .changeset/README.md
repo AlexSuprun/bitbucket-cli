@@ -16,6 +16,7 @@ bun changeset
 ```
 
 This will prompt you to:
+
 1. Select the type of change (major, minor, patch)
 2. Write a summary of your changes
 
@@ -25,6 +26,7 @@ The changeset file will be committed with your PR.
 
 When changesets are merged to main, a "Version Packages" PR is automatically created.
 Merging that PR will:
+
 - Update the version in package.json
 - Update CHANGELOG.md
 - Publish to GitHub Packages

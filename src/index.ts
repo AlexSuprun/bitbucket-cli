@@ -9,6 +9,6 @@ if (typeof Bun === 'undefined') {
   process.exit(1);
 }
 
-import { cli } from "./cli.js";
+import { cli } from './cli.js';
 
 cli.parse(process.argv);

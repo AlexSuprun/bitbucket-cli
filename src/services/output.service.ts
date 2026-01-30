@@ -2,8 +2,8 @@
  * Output service for formatted console output
  */
 
-import chalk from "chalk";
-import type { IOutputService } from "../core/interfaces/services.js";
+import chalk from 'chalk';
+import type { IOutputService } from '../core/interfaces/services.js';
 
 export class OutputService implements IOutputService {
   private readonly noColor: boolean;
@@ -24,7 +24,7 @@ export class OutputService implements IOutputService {
     // Calculate column widths
     const widths = headers.map((header, index) => {
       const maxRowWidth = Math.max(
-        ...rows.map((row) => (row[index] || "").length)
+        ...rows.map((row) => (row[index] || '').length)
       );
       return Math.max(header.length, maxRowWidth);
     });
@@ -32,39 +32,39 @@ export class OutputService implements IOutputService {
     // Print header
     const headerRow = headers
       .map((header, index) => header.padEnd(widths[index]))
-      .join("  ");
+      .join('  ');
 
     console.log(this.format(headerRow, chalk.bold));
 
     // Print separator
-    console.log(widths.map((width) => "-".repeat(width)).join("  "));
+    console.log(widths.map((width) => '-'.repeat(width)).join('  '));
 
     // Print rows
     for (const row of rows) {
       const formattedRow = row
-        .map((cell, index) => (cell || "").padEnd(widths[index]))
-        .join("  ");
+        .map((cell, index) => (cell || '').padEnd(widths[index]))
+        .join('  ');
       console.log(formattedRow);
     }
   }
 
   public success(message: string): void {
-    const symbol = this.format("✓", chalk.green);
+    const symbol = this.format('✓', chalk.green);
     console.log(`${symbol} ${message}`);
   }
 
   public error(message: string): void {
-    const symbol = this.format("✗", chalk.red);
+    const symbol = this.format('✗', chalk.red);
     console.error(`${symbol} ${message}`);
   }
 
   public warning(message: string): void {
-    const symbol = this.format("⚠", chalk.yellow);
+    const symbol = this.format('⚠', chalk.yellow);
     console.warn(`${symbol} ${message}`);
   }
 
   public info(message: string): void {
-    const symbol = this.format("ℹ", chalk.blue);
+    const symbol = this.format('ℹ', chalk.blue);
     console.log(`${symbol} ${message}`);
   }
 
@@ -73,13 +73,13 @@ export class OutputService implements IOutputService {
   }
 
   public formatDate(date: string | Date): string {
-    const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   }
 

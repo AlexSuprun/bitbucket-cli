@@ -2,7 +2,11 @@
  * Context service for resolving workspace and repository
  */
 
-import type { IContextService, IGitService, IConfigService } from '../core/interfaces/services.js';
+import type {
+  IContextService,
+  IGitService,
+  IConfigService,
+} from '../core/interfaces/services.js';
 import { BBError, ErrorCode } from '../types/errors.js';
 import type { RepoContext, GlobalOptions } from '../types/config.js';
 

@@ -53,7 +53,7 @@ export class BBError extends Error {
 
   constructor(details: BBErrorDetails) {
     super(details.message);
-    this.name = "BBError";
+    this.name = 'BBError';
     this.code = details.code;
     this.context = details.context;
     if (details.cause) {
@@ -72,9 +72,13 @@ export class BBError extends Error {
 }
 
 export class AuthError extends BBError {
-  constructor(message: string, code: ErrorCode = ErrorCode.AUTH_REQUIRED, context?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    code: ErrorCode = ErrorCode.AUTH_REQUIRED,
+    context?: Record<string, unknown>
+  ) {
     super({ code, message, context });
-    this.name = "AuthError";
+    this.name = 'AuthError';
   }
 }
 
@@ -90,7 +94,7 @@ export class APIError extends BBError {
   ) {
     const code = APIError.statusToErrorCode(statusCode);
     super({ code, message, context });
-    this.name = "APIError";
+    this.name = 'APIError';
     this.statusCode = statusCode;
     this.response = response;
   }
@@ -106,7 +110,9 @@ export class APIError extends BBError {
       case 429:
         return ErrorCode.API_RATE_LIMITED;
       default:
-        return status >= 500 ? ErrorCode.API_SERVER_ERROR : ErrorCode.API_REQUEST_FAILED;
+        return status >= 500
+          ? ErrorCode.API_SERVER_ERROR
+          : ErrorCode.API_REQUEST_FAILED;
     }
   }
 }
@@ -121,7 +127,7 @@ export class GitError extends BBError {
       message,
       context: { command, exitCode },
     });
-    this.name = "GitError";
+    this.name = 'GitError';
     this.command = command;
     this.exitCode = exitCode;
   }
@@ -136,7 +142,7 @@ export class ValidationError extends BBError {
       message,
       context: { field },
     });
-    this.name = "ValidationError";
+    this.name = 'ValidationError';
     this.field = field;
   }
 }

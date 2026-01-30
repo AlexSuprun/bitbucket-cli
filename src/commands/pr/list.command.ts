@@ -2,11 +2,14 @@
  * List PRs command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi, Pullrequest } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi, Pullrequest } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface ListPRsOptions extends GlobalOptions {
   state?: string;
@@ -14,8 +17,8 @@ export interface ListPRsOptions extends GlobalOptions {
 }
 
 export class ListPRsCommand extends BaseCommand<ListPRsOptions, void> {
-  public readonly name = "list";
-  public readonly description = "List pull requests";
+  public readonly name = 'list';
+  public readonly description = 'List pull requests';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -34,14 +37,21 @@ export class ListPRsCommand extends BaseCommand<ListPRsOptions, void> {
       ...options,
     });
 
-    const state = (options.state || "OPEN") as "OPEN" | "MERGED" | "DECLINED" | "SUPERSEDED";
+    const state = (options.state || 'OPEN') as
+      | 'OPEN'
+      | 'MERGED'
+      | 'DECLINED'
+      | 'SUPERSEDED';
 
     try {
-      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        state,
-      });
+      const response =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            state,
+          }
+        );
 
       const data = response.data;
       const values = data.values ? Array.from(data.values) : [];
@@ -54,16 +64,18 @@ export class ListPRsCommand extends BaseCommand<ListPRsOptions, void> {
       const rows = values.map((pr: Pullrequest) => {
         const title = pr.draft ? `[DRAFT] ${pr.title}` : pr.title;
         const source = pr.source as { branch?: { name?: string } } | undefined;
-        const destination = pr.destination as { branch?: { name?: string } } | undefined;
+        const destination = pr.destination as
+          | { branch?: { name?: string } }
+          | undefined;
         return [
           `#${pr.id}`,
-          this.truncate(title ?? "", 50),
-          pr.author?.display_name ?? "Unknown",
-          `${source?.branch?.name ?? "unknown"} → ${destination?.branch?.name ?? "unknown"}`,
+          this.truncate(title ?? '', 50),
+          pr.author?.display_name ?? 'Unknown',
+          `${source?.branch?.name ?? 'unknown'} → ${destination?.branch?.name ?? 'unknown'}`,
         ];
       });
 
-      this.output.table(["ID", "TITLE", "AUTHOR", "BRANCHES"], rows);
+      this.output.table(['ID', 'TITLE', 'AUTHOR', 'BRANCHES'], rows);
     } catch (error) {
       this.handleError(error, context);
       throw error;
@@ -74,6 +86,6 @@ export class ListPRsCommand extends BaseCommand<ListPRsOptions, void> {
     if (text.length <= maxLength) {
       return text;
     }
-    return text.substring(0, maxLength - 3) + "...";
+    return text.substring(0, maxLength - 3) + '...';
   }
 }

@@ -2,10 +2,13 @@
  * Login command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IConfigService, IOutputService } from "../../core/interfaces/services.js";
-import type { UsersApi } from "../../generated/api.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IConfigService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { UsersApi } from '../../generated/api.js';
 
 export interface LoginOptions {
   username?: string;
@@ -13,8 +16,9 @@ export interface LoginOptions {
 }
 
 export class LoginCommand extends BaseCommand<LoginOptions, void> {
-  public readonly name = "login";
-  public readonly description = "Authenticate with Bitbucket using an API token";
+  public readonly name = 'login';
+  public readonly description =
+    'Authenticate with Bitbucket using an API token';
 
   constructor(
     private readonly configService: IConfigService,
@@ -33,7 +37,7 @@ export class LoginCommand extends BaseCommand<LoginOptions, void> {
 
     if (!username) {
       const error = new Error(
-        "Username is required. Use --username option or set BB_USERNAME environment variable."
+        'Username is required. Use --username option or set BB_USERNAME environment variable.'
       );
       this.output.error(error.message);
       throw error;
@@ -41,7 +45,7 @@ export class LoginCommand extends BaseCommand<LoginOptions, void> {
 
     if (!apiToken) {
       const error = new Error(
-        "API token is required. Use --password option or set BB_API_TOKEN environment variable."
+        'API token is required. Use --password option or set BB_API_TOKEN environment variable.'
       );
       this.output.error(error.message);
       throw error;
@@ -53,10 +57,14 @@ export class LoginCommand extends BaseCommand<LoginOptions, void> {
       const response = await this.usersApi.userGet();
       const user = response.data;
 
-      this.output.success(`Logged in as ${user.display_name} (${user.username})`);
+      this.output.success(
+        `Logged in as ${user.display_name} (${user.username})`
+      );
     } catch (error) {
       await this.configService.clearConfig();
-      this.output.error(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.output.error(
+        `Authentication failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }

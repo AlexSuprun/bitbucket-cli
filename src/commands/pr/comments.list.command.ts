@@ -2,20 +2,26 @@
  * List comments on PR command implementation
  */
 
-import { BaseCommand } from "../../core/base-command.js";
-import type { CommandContext } from "../../core/interfaces/commands.js";
-import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
-import type { GlobalOptions } from "../../types/config.js";
+import { BaseCommand } from '../../core/base-command.js';
+import type { CommandContext } from '../../core/interfaces/commands.js';
+import type {
+  IContextService,
+  IOutputService,
+} from '../../core/interfaces/services.js';
+import type { PullrequestsApi } from '../../generated/api.js';
+import type { GlobalOptions } from '../../types/config.js';
 
 export interface ListCommentsPROptions extends GlobalOptions {
   limit?: string;
   truncate?: boolean;
 }
 
-export class ListCommentsPRCommand extends BaseCommand<{ id: string } & ListCommentsPROptions, void> {
-  public readonly name = "comments";
-  public readonly description = "List comments on a pull request";
+export class ListCommentsPRCommand extends BaseCommand<
+  { id: string } & ListCommentsPROptions,
+  void
+> {
+  public readonly name = 'comments';
+  public readonly description = 'List comments on a pull request';
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
@@ -38,40 +44,42 @@ export class ListCommentsPRCommand extends BaseCommand<{ id: string } & ListComm
     const limit = options.limit ? parseInt(options.limit, 10) : 25;
 
     try {
-      const response = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsGet({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-        pullRequestId: prId,
-      });
+      const response =
+        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsGet(
+          {
+            workspace: repoContext.workspace,
+            repoSlug: repoContext.repoSlug,
+            pullRequestId: prId,
+          }
+        );
 
       const data = response.data;
       const values = data.values ? Array.from(data.values) : [];
 
       if (values.length === 0) {
-        this.output.info("No comments found on this pull request");
+        this.output.info('No comments found on this pull request');
         return;
       }
 
       const rows = values.map((comment) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const content = (comment.content as any)?.raw ?? "";
+        const content = (comment.content as any)?.raw ?? '';
         return [
-          comment.id?.toString() ?? "",
+          comment.id?.toString() ?? '',
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (comment.user as any)?.nickname ?? (comment.user as any)?.display_name ?? "Unknown",
+          (comment.user as any)?.nickname ??
+            (comment.user as any)?.display_name ??
+            'Unknown',
           comment.deleted
-            ? "[deleted]"
+            ? '[deleted]'
             : options.truncate === false
               ? content
-              : content.slice(0, 60) + (content.length > 60 ? "..." : ""),
-          this.output.formatDate(comment.created_on ?? ""),
+              : content.slice(0, 60) + (content.length > 60 ? '...' : ''),
+          this.output.formatDate(comment.created_on ?? ''),
         ];
       });
 
-      this.output.table(
-        ["ID", "Author", "Content", "Date"],
-        rows
-      );
+      this.output.table(['ID', 'Author', 'Content', 'Date'], rows);
     } catch (error) {
       this.handleError(error, context);
       throw error;
