@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0
+
+### Minor Changes
+
+- [#77](https://github.com/0pilatos0/bitbucket-cli/pull/77) [`ac2ee09`](https://github.com/0pilatos0/bitbucket-cli/commit/ac2ee0915052ffd5531c95929b17f0ab1696f683) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Add a pull request checks command to show CI/CD status.
+
 ## 1.5.0
 
 ### Minor Changes
