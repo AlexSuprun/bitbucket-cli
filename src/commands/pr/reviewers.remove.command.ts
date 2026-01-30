@@ -5,7 +5,7 @@
 import { BaseCommand } from "../../core/base-command.js";
 import type { CommandContext } from "../../core/interfaces/commands.js";
 import type { IContextService, IOutputService } from "../../core/interfaces/services.js";
-import type { PullrequestsApi } from "../../generated/api.js";
+import type { PullrequestsApi, UsersApi } from "../../generated/api.js";
 import type { GlobalOptions } from "../../types/config.js";
 
 export interface RemoveReviewerPROptions extends GlobalOptions {
@@ -19,6 +19,7 @@ export class RemoveReviewerPRCommand extends BaseCommand<RemoveReviewerPROptions
 
   constructor(
     private readonly pullrequestsApi: PullrequestsApi,
+    private readonly usersApi: UsersApi,
     private readonly contextService: IContextService,
     output: IOutputService
   ) {
@@ -37,28 +38,35 @@ export class RemoveReviewerPRCommand extends BaseCommand<RemoveReviewerPROptions
     const prId = parseInt(options.id, 10);
 
     try {
-      // First get the current PR to see existing reviewers
+      // First look up the user to get their UUID
+      const userResponse = await this.usersApi.usersSelectedUserGet({
+        selectedUser: options.username,
+      });
+      const user = userResponse.data;
+
+      // Get current PR to see existing reviewers
       const prResponse = await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet({
         workspace: repoContext.workspace,
         repoSlug: repoContext.repoSlug,
         pullRequestId: prId,
       });
-
       const pr = prResponse.data;
-      const currentReviewers = pr.reviewers ?? [];
-      
-      // Filter out the reviewer to remove
-      const updatedReviewers = currentReviewers.filter(
-        (r) => r.username !== options.username
-      );
 
+      // Build list of reviewers (excluding the one to remove)
+      const existingReviewers = pr.reviewers ? Array.from(pr.reviewers) : [];
+      const reviewerUuids = existingReviewers
+        .map((r) => (r as { uuid?: string }).uuid)
+        .filter((uuid) => uuid && uuid !== user.uuid);
+
+      // Update PR with new reviewers list
       await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut({
         workspace: repoContext.workspace,
         repoSlug: repoContext.repoSlug,
         pullRequestId: prId,
         body: {
-          reviewers: updatedReviewers,
-        },
+          type: "pullrequest",
+          reviewers: reviewerUuids.map((uuid) => ({ uuid })),
+        } as unknown as import("../../generated/api.js").Pullrequest,
       });
 
       this.output.success(`Removed ${options.username} as reviewer from pull request #${prId}`);

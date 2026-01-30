@@ -44,6 +44,7 @@ export class EditCommentPRCommand extends BaseCommand<
         pullRequestId: prId,
         commentId: commentId,
         body: {
+          type: "pullrequest_comment",
           content: {
             raw: options.message,
           },

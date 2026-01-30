@@ -3,7 +3,6 @@
  */
 
 import type { IConfigService } from "../core/interfaces/services.js";
-import { Result } from "../types/result.js";
 import { BBError, ErrorCode } from "../types/errors.js";
 import type { VersionCheckResult } from "../types/version.js";
 import { VERSION_CHECK_INTERVAL_MS } from "../types/version.js";
@@ -29,67 +28,53 @@ export class VersionService {
   /**
    * Check if an update is available, respecting user preferences and caching
    */
-  public async checkForUpdate(): Promise<Result<VersionCheckResult | null, BBError>> {
+  public async checkForUpdate(): Promise<VersionCheckResult | null> {
     // Check if user has disabled version checks
-    const skipCheckResult = await this.configService.getValue("skipVersionCheck");
-    if (!skipCheckResult.success) {
-      return skipCheckResult;
-    }
-
-    if (skipCheckResult.value === true) {
-      return Result.ok(null);
+    const skipCheck = await this.configService.getValue("skipVersionCheck");
+    if (skipCheck === true) {
+      return null;
     }
 
     // Check if we're in a CI environment
     if (this.isCIEnvironment()) {
-      return Result.ok(null);
+      return null;
     }
 
     // Check if enough time has passed since last check
-    const shouldCheckResult = await this.shouldCheckVersion();
-    if (!shouldCheckResult.success) {
-      return shouldCheckResult;
+    const shouldCheck = await this.shouldCheckVersion();
+    if (!shouldCheck) {
+      return null;
     }
 
-    if (!shouldCheckResult.value) {
-      return Result.ok(null);
-    }
+    try {
+      // Fetch latest version from npm
+      const latestVersion = await this.fetchLatestVersion();
 
-    // Fetch latest version from npm
-    const latestVersionResult = await this.fetchLatestVersion();
-    if (!latestVersionResult.success) {
+      // Update last check timestamp
+      await this.updateLastCheckTimestamp();
+
+      // Compare versions
+      const updateAvailable = this.isNewerVersion(latestVersion, this.currentVersion);
+
+      return {
+        currentVersion: this.currentVersion,
+        latestVersion,
+        updateAvailable,
+      };
+    } catch {
       // Silently fail - don't bother user with network errors
-      return Result.ok(null);
+      return null;
     }
-
-    const latestVersion = latestVersionResult.value;
-
-    // Update last check timestamp
-    await this.updateLastCheckTimestamp();
-
-    // Compare versions
-    const updateAvailable = this.isNewerVersion(latestVersion, this.currentVersion);
-
-    return Result.ok({
-      currentVersion: this.currentVersion,
-      latestVersion,
-      updateAvailable,
-    });
   }
 
   /**
    * Check if we should check for updates based on last check time
    */
-  private async shouldCheckVersion(): Promise<Result<boolean, BBError>> {
-    const lastCheckResult = await this.configService.getValue("lastVersionCheck");
-    if (!lastCheckResult.success) {
-      return lastCheckResult;
-    }
-
-    const lastCheck = lastCheckResult.value;
+  private async shouldCheckVersion(): Promise<boolean> {
+    const lastCheck = await this.configService.getValue("lastVersionCheck");
 
     if (!lastCheck) {
-      return Result.ok(true);
+      return true;
     }
 
     const lastCheckDate = new Date(lastCheck);
@@ -97,54 +82,40 @@ export class VersionService {
     const timeSinceLastCheck = now.getTime() - lastCheckDate.getTime();
 
     // Get custom interval or use default
-    const intervalResult = await this.configService.getValue("versionCheckInterval");
-    const intervalDays = intervalResult.success && intervalResult.value !== undefined
-      ? Number(intervalResult.value)
-      : 1;
+    const intervalDays = await this.configService.getValue("versionCheckInterval");
+    const days = typeof intervalDays === "number" ? intervalDays : 1;
 
-    const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
+    const intervalMs = days * 24 * 60 * 60 * 1000;
 
-    return Result.ok(timeSinceLastCheck >= intervalMs);
+    return timeSinceLastCheck >= intervalMs;
   }
 
   /**
    * Update the last version check timestamp
    */
-  private async updateLastCheckTimestamp(): Promise<Result<void, BBError>> {
-    return this.configService.setValue("lastVersionCheck", new Date().toISOString());
+  private async updateLastCheckTimestamp(): Promise<void> {
+    await this.configService.setValue("lastVersionCheck", new Date().toISOString());
   }
 
   /**
    * Fetch the latest version from npm registry
    */
-  private async fetchLatestVersion(): Promise<Result<string, BBError>> {
-    try {
-      const response = await fetch(NPM_REGISTRY_URL, {
-        headers: {
-          Accept: "application/json",
-        },
+  private async fetchLatestVersion(): Promise<string> {
+    const response = await fetch(NPM_REGISTRY_URL, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new BBError({
+        code: ErrorCode.NETWORK_ERROR,
+        message: `Failed to fetch version info: ${response.statusText}`,
       });
-
-      if (!response.ok) {
-        return Result.err(
-          new BBError({
-            code: ErrorCode.NETWORK_ERROR,
-            message: `Failed to fetch version info: ${response.statusText}`,
-          })
-        );
-      }
-
-      const data = (await response.json()) as NpmRegistryResponse;
-      return Result.ok(data["dist-tags"].latest);
-    } catch (error) {
-      return Result.err(
-        new BBError({
-          code: ErrorCode.NETWORK_ERROR,
-          message: "Failed to fetch version information from npm",
-          cause: error instanceof Error ? error : undefined,
-        })
-      );
     }
+
+    const data = (await response.json()) as NpmRegistryResponse;
+    return data["dist-tags"].latest;
   }
 
   /**

@@ -39,6 +39,7 @@ export class CommentPRCommand extends BaseCommand<{ id: string; message: string 
         repoSlug: repoContext.repoSlug,
         pullRequestId: prId,
         body: {
+          type: "pullrequest_comment",
           content: {
             raw: options.message,
           },
