@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Bitbucket-blue-logomark-only.svg" alt="Bitbucket Logo" width="80" height="80">
+  <img src="docs/public/favicon.svg" alt="Bitbucket CLI logo" width="80" height="80">
 </p>
 
 <h1 align="center">Bitbucket CLI</h1>
