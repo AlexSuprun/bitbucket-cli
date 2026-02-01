@@ -40,8 +40,7 @@ export class ListCommentsPRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.id, 10);
-    const limit = options.limit ? parseInt(options.limit, 10) : 25;
+    const prId = Number.parseInt(options.id, 10);
 
     try {
       const response =

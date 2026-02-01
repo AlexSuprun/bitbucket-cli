@@ -2,7 +2,6 @@
  * Service interfaces for dependency injection
  */
 
-import type { BBError } from '../../types/errors.js';
 import type {
   BBConfig,
   AuthCredentials,

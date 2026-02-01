@@ -37,8 +37,8 @@ export class DeleteCommentPRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.prId, 10);
-    const commentId = parseInt(options.commentId, 10);
+    const prId = Number.parseInt(options.prId, 10);
+    const commentId = Number.parseInt(options.commentId, 10);
 
     try {
       await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdDelete(

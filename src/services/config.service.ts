@@ -2,8 +2,8 @@
  * Configuration service implementation
  */
 
-import { join } from 'path';
-import { homedir } from 'os';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import type { IConfigService } from '../core/interfaces/services.js';
 import { BBError, ErrorCode } from '../types/errors.js';
 import type { BBConfig, AuthCredentials } from '../types/config.js';
@@ -20,7 +20,7 @@ export class ConfigService implements IConfigService {
 
   private async ensureConfigDir(): Promise<void> {
     try {
-      const fs = await import('fs/promises');
+      const fs = await import('node:fs/promises');
       await fs.mkdir(this.configDir, { recursive: true });
     } catch (error) {
       throw new BBError({
@@ -37,7 +37,7 @@ export class ConfigService implements IConfigService {
     }
 
     try {
-      const fs = await import('fs/promises');
+      const fs = await import('node:fs/promises');
       const data = await fs.readFile(this.configFile, 'utf-8');
       this.configCache = JSON.parse(data) as BBConfig;
       return this.configCache;
@@ -60,7 +60,7 @@ export class ConfigService implements IConfigService {
     await this.ensureConfigDir();
 
     try {
-      const fs = await import('fs/promises');
+      const fs = await import('node:fs/promises');
       await fs.writeFile(this.configFile, JSON.stringify(config, null, 2), {
         mode: 0o600, // Secure permissions
       });

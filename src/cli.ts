@@ -3,13 +3,11 @@
  */
 
 import { Command } from 'commander';
-import { createRequire } from 'module';
+import { createRequire } from 'node:module';
 import { bootstrap } from './bootstrap.js';
-import { Container, ServiceTokens } from './core/container.js';
+import { ServiceTokens } from './core/container.js';
 import type { CommandContext } from './core/interfaces/commands.js';
-import type { GlobalOptions } from './types/config.js';
 import type { VersionService } from './services/version.service.js';
-import type { OutputService } from './services/output.service.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json');
@@ -107,7 +105,7 @@ const container = bootstrap();
 
 // Helper to create command context
 function createContext(program: Command): CommandContext {
-  const opts = program.opts() as GlobalOptions;
+  const opts = program.opts();
   return {
     globalOptions: {
       json: opts.json,
@@ -148,9 +146,6 @@ cli
     // Check for updates after showing help
     const versionService = container.resolve<VersionService>(
       ServiceTokens.VersionService
-    );
-    const output = container.resolve<OutputService>(
-      ServiceTokens.OutputService
     );
 
     try {

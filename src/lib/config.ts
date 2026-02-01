@@ -1,12 +1,12 @@
-import { join } from 'path';
-import { homedir } from 'os';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import type { BBConfig } from '../types/index.js';
 
 const CONFIG_DIR = join(homedir(), '.config', 'bb');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
 
 async function ensureConfigDir(): Promise<void> {
-  const fs = await import('fs/promises');
+  const fs = await import('node:fs/promises');
   try {
     await fs.mkdir(CONFIG_DIR, { recursive: true });
   } catch {
@@ -15,7 +15,7 @@ async function ensureConfigDir(): Promise<void> {
 }
 
 export async function getConfig(): Promise<BBConfig> {
-  const fs = await import('fs/promises');
+  const fs = await import('node:fs/promises');
   try {
     const data = await fs.readFile(CONFIG_FILE, 'utf-8');
     return JSON.parse(data) as BBConfig;
@@ -25,7 +25,7 @@ export async function getConfig(): Promise<BBConfig> {
 }
 
 export async function setConfig(config: BBConfig): Promise<void> {
-  const fs = await import('fs/promises');
+  const fs = await import('node:fs/promises');
   await ensureConfigDir();
   await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
 }

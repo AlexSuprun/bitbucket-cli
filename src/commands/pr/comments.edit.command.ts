@@ -41,8 +41,8 @@ export class EditCommentPRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.prId, 10);
-    const commentId = parseInt(options.commentId, 10);
+    const prId = Number.parseInt(options.prId, 10);
+    const commentId = Number.parseInt(options.commentId, 10);
 
     try {
       await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdPut(
@@ -60,7 +60,7 @@ export class EditCommentPRCommand extends BaseCommand<
         }
       );
 
-      this.output.success(`Updated comment #${commentId}`);
+      this.output.success(`Updated comment #${commentId} on PR #${prId}`);
     } catch (error) {
       this.handleError(error, context);
       throw error;

@@ -41,7 +41,7 @@ export class RemoveReviewerPRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.id, 10);
+    const prId = Number.parseInt(options.id, 10);
 
     try {
       // First look up the user to get their UUID

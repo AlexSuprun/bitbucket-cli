@@ -9,11 +9,7 @@ import type {
   IContextService,
   IOutputService,
 } from '../../core/interfaces/services.js';
-import type {
-  CommitStatusesApi,
-  Commitstatus,
-  PaginatedCommitstatuses,
-} from '../../generated/api.js';
+import type { CommitStatusesApi, Commitstatus } from '../../generated/api.js';
 import type { GlobalOptions } from '../../types/config.js';
 
 export interface ChecksPROptions extends GlobalOptions {
@@ -45,7 +41,7 @@ export class ChecksPRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.id, 10);
+    const prId = Number.parseInt(options.id, 10);
 
     try {
       const response =
@@ -57,7 +53,7 @@ export class ChecksPRCommand extends BaseCommand<
           }
         );
 
-      const data = response.data as PaginatedCommitstatuses;
+      const data = response.data;
       const statuses = data?.values ? Array.from(data.values) : [];
 
       const useJson = options.json || context.globalOptions.json;
@@ -101,9 +97,8 @@ export class ChecksPRCommand extends BaseCommand<
 
   private renderHeader(prId: number, count: number): void {
     this.output.text('');
-    this.output.text(
-      `${chalk.bold(`Pull Request #${prId}`)} - ${count} check${count === 1 ? '' : 's'}`
-    );
+    const title = chalk.bold('Pull Request #' + prId);
+    this.output.text(`${title} - ${count} check${count === 1 ? '' : 's'}`);
     this.output.text(chalk.gray('-'.repeat(60)));
   }
 

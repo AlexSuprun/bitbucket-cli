@@ -3,8 +3,8 @@
  */
 
 import chalk from 'chalk';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -49,9 +49,9 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
 
     let prId: number;
     if (options.id) {
-      prId = parseInt(options.id, 10);
-      if (isNaN(prId)) {
-        throw new Error('Invalid PR ID');
+      prId = Number.parseInt(options.id, 10);
+      if (Number.isNaN(prId)) {
+        throw new TypeError('Invalid PR ID');
       }
     } else {
       const currentBranch = await this.gitService.getCurrentBranch();
@@ -206,15 +206,15 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
 
     this.output.text('');
     const summary = [
-      `${filesChanged} file${filesChanged !== 1 ? 's' : ''} changed`,
+      `${filesChanged} file${filesChanged === 1 ? '' : 's'} changed`,
       totalAdditions > 0
         ? chalk.green(
-            `${totalAdditions} insertion${totalAdditions !== 1 ? 's' : ''}(+)`
+            `${totalAdditions} insertion${totalAdditions === 1 ? '' : 's'}(+)`
           )
         : null,
       totalDeletions > 0
         ? chalk.red(
-            `${totalDeletions} deletion${totalDeletions !== 1 ? 's' : ''}(-)`
+            `${totalDeletions} deletion${totalDeletions === 1 ? '' : 's'}(-)`
           )
         : null,
     ]

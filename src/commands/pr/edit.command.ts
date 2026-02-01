@@ -2,7 +2,7 @@
  * Edit PR command implementation
  */
 
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
@@ -45,7 +45,7 @@ export class EditPRCommand extends BaseCommand<EditPROptions, void> {
 
     let prId: number;
     if (options.id) {
-      prId = parseInt(options.id, 10);
+      prId = Number.parseInt(options.id, 10);
     } else {
       const currentBranch = await this.gitService.getCurrentBranch();
 

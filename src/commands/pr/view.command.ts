@@ -38,7 +38,7 @@ export class ViewPRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.id, 10);
+    const prId = Number.parseInt(options.id, 10);
 
     try {
       const response =

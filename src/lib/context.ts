@@ -11,7 +11,9 @@ import type { RepoContext, GlobalOptions } from '../types/index.js';
  */
 export function parseRemoteUrl(url: string): RepoContext | null {
   // SSH format: git@bitbucket.org:workspace/repo.git
-  const sshMatch = url.match(/git@bitbucket\.org:([^/]+)\/([^.]+)(?:\.git)?/);
+  const sshMatch = new RegExp(
+    /git@bitbucket\.org:([^/]+)\/([^.]+)(?:\.git)?/
+  ).exec(url);
   if (sshMatch) {
     return {
       workspace: sshMatch[1],
@@ -21,9 +23,9 @@ export function parseRemoteUrl(url: string): RepoContext | null {
 
   // HTTPS format: https://bitbucket.org/workspace/repo.git
   // or: https://username@bitbucket.org/workspace/repo.git
-  const httpsMatch = url.match(
+  const httpsMatch = new RegExp(
     /https?:\/\/(?:[^@]+@)?bitbucket\.org\/([^/]+)\/([^/.]+)(?:\.git)?/
-  );
+  ).exec(url);
   if (httpsMatch) {
     return {
       workspace: httpsMatch[1],

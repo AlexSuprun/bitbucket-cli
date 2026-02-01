@@ -77,7 +77,10 @@ export class CloneCommand extends BaseCommand<
 
   private extractRepoName(repository: string): string {
     const parts = repository.split('/');
-    const lastPart = parts[parts.length - 1];
+    const lastPart = parts.at(-1);
+    if (!lastPart) {
+      throw new Error('Invalid repository format.');
+    }
     return lastPart.replace('.git', '');
   }
 }

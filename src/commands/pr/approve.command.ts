@@ -37,7 +37,7 @@ export class ApprovePRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.id, 10);
+    const prId = Number.parseInt(options.id, 10);
 
     try {
       await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost(

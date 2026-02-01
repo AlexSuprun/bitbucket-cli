@@ -5,7 +5,6 @@
 import type { IConfigService } from '../core/interfaces/services.js';
 import { BBError, ErrorCode } from '../types/errors.js';
 import type { VersionCheckResult } from '../types/version.js';
-import { VERSION_CHECK_INTERVAL_MS } from '../types/version.js';
 
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/@pilatos/bitbucket-cli';
 const PACKAGE_NAME = '@pilatos/bitbucket-cli';
@@ -158,7 +157,7 @@ export class VersionService {
       return cleanVersion.split('.').map((part) => {
         // Handle pre-release versions like "1.0.0-beta.1"
         const numPart = part.split('-')[0];
-        return parseInt(numPart, 10) || 0;
+        return Number.parseInt(numPart, 10) || 0;
       });
     };
 

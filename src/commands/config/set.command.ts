@@ -53,7 +53,7 @@ export class SetConfigCommand extends BaseCommand<
       throw error;
     }
 
-    await this.configService.setValue(key as SettableConfigKey, value);
+    await this.configService.setValue(key, value);
 
     this.output.success(`Set ${key} = ${value}`);
   }

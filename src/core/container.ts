@@ -13,16 +13,14 @@ interface ServiceRegistration<T> {
 }
 
 export class Container {
-  private services = new Map<string, ServiceRegistration<unknown>>();
+  private readonly services = new Map<string, ServiceRegistration<unknown>>();
   private static instance: Container | null = null;
 
   /**
    * Get the singleton container instance
    */
   public static getInstance(): Container {
-    if (!Container.instance) {
-      Container.instance = new Container();
-    }
+    Container.instance ??= new Container();
     return Container.instance;
   }
 

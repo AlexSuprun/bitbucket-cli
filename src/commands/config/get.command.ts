@@ -50,7 +50,7 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
       throw error;
     }
 
-    const value = await this.configService.getValue(key as ReadableConfigKey);
+    const value = await this.configService.getValue(key);
 
     // Output the value (or empty string if undefined)
     this.output.text(String(value || ''));

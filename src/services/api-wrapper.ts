@@ -3,7 +3,6 @@
  * Handles Set->Array conversion, pagination, and other quirks
  */
 
-import type { AxiosInstance } from 'axios';
 import type {
   PullrequestsApi,
   RepositoriesApi,

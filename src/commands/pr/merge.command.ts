@@ -44,7 +44,7 @@ export class MergePRCommand extends BaseCommand<
       ...options,
     });
 
-    const prId = parseInt(options.id, 10);
+    const prId = Number.parseInt(options.id, 10);
 
     const request: {
       type: 'pullrequest_merge_parameters';

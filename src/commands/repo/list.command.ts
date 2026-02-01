@@ -32,7 +32,7 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
     context: CommandContext
   ): Promise<void> {
     const workspace = await this.resolveWorkspace(options.workspace);
-    const limit = parseInt(options.limit || '25', 10);
+    const limit = Number.parseInt(options.limit || '25', 10);
 
     try {
       const response = await this.repositoriesApi.repositoriesWorkspaceGet({
