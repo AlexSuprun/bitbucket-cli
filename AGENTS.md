@@ -1,7 +1,7 @@
 # AGENTS.md
 
 This repository is a Bun-based, ESM TypeScript CLI for Bitbucket Cloud.
-Agents should follow the existing command/DI patterns and keep edits aligned
+Agents should follow the existing command and DI patterns and keep edits aligned
 with the current conventions.
 
 ## Commands
@@ -38,37 +38,49 @@ bun run release
 
 ## Repository Layout
 
-- `src/index.ts` entrypoint (Bun shebang)
+- `src/index.ts` entrypoint (Bun shebang; runtime guard)
 - `src/cli.ts` Commander CLI wiring and option parsing
 - `src/bootstrap.ts` dependency injection registrations
+- `src/core/**` DI container, base command, interfaces
 - `src/commands/**` command implementations (`*.command.ts`)
 - `src/services/**` service implementations
+- `src/lib/**` shared utilities (git, output, config helpers)
 - `src/types/**` shared types and error definitions
 - `src/generated/**` OpenAPI client (auto-generated; do not edit)
 - `tests/**` Bun tests mirroring src structure
+- `docs/**` docs site (Astro)
 
 ## Code Style Guidelines
 
+### Runtime and modules
+
+- Bun only; `src/index.ts` guards against non-Bun runtimes
+- Package is ESM (`"type": "module"`); always use ESM imports
+- Imports in `.ts` files use `.js` extensions
+- Prefer `node:`-prefixed builtins (e.g., `node:path`, `node:fs/promises`)
+
 ### Imports
 
-- Use ESM imports with `.js` extensions (even in `.ts` files)
-- Prefer ordering: Node/third-party first, then local modules
+- Order: Node builtins, third-party, then local modules
 - Use `import type { ... }` for type-only imports
-- Export types with `export type { ... }` where appropriate
+- Export types with `export type { ... }` when re-exporting
+- Keep imports explicit; avoid barrel exports for commands
 
 ### Formatting
 
-- Prettier (default config) is the source of truth
-- 2-space indentation, single quotes
+- Prettier is the source of truth
+- 2-space indentation, single quotes, semicolons
+- Print width 80, trailing commas `es5`, end of line `lf`
 - No trailing whitespace
 
 ### Types
 
-- TypeScript is `strict` (see `tsconfig.json`)
-- Use explicit return types, especially on public methods
-- Avoid `any`; use `unknown` for dynamic values
-- Prefer interfaces for public APIs, types for internal structures
-- Use `Array.from()` when converting `Set` values from generated API responses
+- TypeScript `strict` is enabled
+- Use explicit return types on public methods
+- Avoid `any`; prefer `unknown` and narrow
+- Prefer interfaces for public APIs and types for internal structures
+- Use `Array.from()` when converting `values` from generated API responses
+- Be explicit when parsing `string` options to numbers (`Number.parseInt`)
 
 ### Naming Conventions
 
@@ -84,6 +96,7 @@ bun run release
 - Use `BBError` and `ErrorCode` from `src/types/errors.ts` for expected failures
 - API errors are normalized in `src/services/api-client.service.ts` to `APIError`
 - Commands should `try/catch`, call `handleError()`, then rethrow
+- `handleError()` sets `process.exitCode` except in tests
 - Use `requireOption()` from `BaseCommand` for required CLI options
 - Only throw for exceptional cases; CLI is responsible for exit behavior
 
@@ -94,16 +107,26 @@ bun run release
 - Inject dependencies via constructor; avoid service locators in commands
 - `CommandContext` carries `globalOptions` (workspace/repo/json)
 - Use `withGlobalOptions()` when merging per-command options
+- Prefer `ContextService.requireRepoContext()` for workspace/repo resolution
+
+### Output and JSON
+
+- Use `IOutputService` for all CLI output; avoid `console.*` in commands
+- Respect `context.globalOptions.json` and option-level `json` flags
+- For JSON output, call `output.json()` and return early
+- Use `output.table()` for aligned tabular output
+- Use `output.info/success/warning/error` for user-facing messaging
 
 ### Dependency Injection
 
 - Register services and commands in `src/bootstrap.ts` with `ServiceTokens`
 - Container is a singleton; tests reset it in `tests/setup.ts`
-- Services are singletons by default
+- Services are singletons by default (override via options if needed)
 
 ### Testing
 
 - Use Bun test runner (`bun:test`)
+- Single test file: `bun test tests/commands/<name>.test.ts`
 - Test files: `<name>.test.ts` or `<name>.expanded.test.ts`
 - Mocks/utilities live in `tests/setup.ts` (container reset hooks included)
 - Prefer descriptive test names focused on behavior
@@ -113,11 +136,12 @@ bun run release
 - `src/generated/**` is auto-generated; avoid manual edits
 - Regenerate via `bun run generate:api` when specs change
 
-### Security
+### Security and Config
 
 - Never log or commit secrets (tokens, passwords)
-- Config is stored in `~/.config/bb/config.json` with 0o600 permissions
+- Config is stored in `~/.config/bb/config.json` with `0o600` permissions
 - Avoid printing sensitive config values to output
+- API auth uses Basic auth via `ConfigService.getCredentials()`
 
 ## Tooling Notes
 
