@@ -50,29 +50,19 @@ export class DeleteRepoCommand extends BaseCommand<
       await this.contextService.requireRepoContext(contextOptions);
 
     if (!yes) {
-      const error = new Error(
+      throw new Error(
         `This will permanently delete ${repoContext.workspace}/${repoContext.repoSlug}.\n` +
           'Use --yes to confirm deletion.'
       );
-      this.output.error(error.message);
-      if (process.env.NODE_ENV !== 'test') {
-        process.exitCode = 1;
-      }
-      throw error;
     }
 
-    try {
-      await this.repositoriesApi.repositoriesWorkspaceRepoSlugDelete({
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
-      });
+    await this.repositoriesApi.repositoriesWorkspaceRepoSlugDelete({
+      workspace: repoContext.workspace,
+      repoSlug: repoContext.repoSlug,
+    });
 
-      this.output.success(
-        `Deleted repository ${repoContext.workspace}/${repoContext.repoSlug}`
-      );
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.output.success(
+      `Deleted repository ${repoContext.workspace}/${repoContext.repoSlug}`
+    );
   }
 }

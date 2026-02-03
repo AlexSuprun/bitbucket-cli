@@ -40,7 +40,7 @@ describe('GetConfigCommand', () => {
     const command = new GetConfigCommand(configService, output);
 
     await expect(
-      command.execute({ key: 'apiToken' }, { globalOptions: {} })
+      command.run({ key: 'apiToken' }, { globalOptions: {} })
     ).rejects.toBeDefined();
 
     expect(output.logs.some((log) => log.includes('Cannot display'))).toBe(
@@ -55,7 +55,7 @@ describe('GetConfigCommand', () => {
     const command = new GetConfigCommand(configService, output);
 
     await expect(
-      command.execute({ key: 'invalidKey' }, { globalOptions: {} })
+      command.run({ key: 'invalidKey' }, { globalOptions: {} })
     ).rejects.toBeDefined();
 
     expect(output.logs.some((log) => log.includes('Unknown config key'))).toBe(
@@ -91,10 +91,7 @@ describe('SetConfigCommand', () => {
     const command = new SetConfigCommand(configService, output);
 
     await expect(
-      command.execute(
-        { key: 'username', value: 'newuser' },
-        { globalOptions: {} }
-      )
+      command.run({ key: 'username', value: 'newuser' }, { globalOptions: {} })
     ).rejects.toBeDefined();
 
     expect(output.logs.some((log) => log.includes('Cannot set'))).toBe(true);
@@ -107,10 +104,7 @@ describe('SetConfigCommand', () => {
     const command = new SetConfigCommand(configService, output);
 
     await expect(
-      command.execute(
-        { key: 'apiToken', value: 'newpass' },
-        { globalOptions: {} }
-      )
+      command.run({ key: 'apiToken', value: 'newpass' }, { globalOptions: {} })
     ).rejects.toBeDefined();
 
     expect(output.logs.some((log) => log.includes('Cannot set'))).toBe(true);

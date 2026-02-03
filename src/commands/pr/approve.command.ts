@@ -39,19 +39,14 @@ export class ApprovePRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost(
-        {
-          workspace: repoContext.workspace,
-          repoSlug: repoContext.repoSlug,
-          pullRequestId: prId,
-        }
-      );
+    await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdApprovePost(
+      {
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+      }
+    );
 
-      this.output.success(`Approved pull request #${prId}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.output.success(`Approved pull request #${prId}`);
   }
 }

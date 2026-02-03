@@ -388,7 +388,7 @@ describe('ListPRsCommand', () => {
 
     const command = new ListPRsCommand(pullrequestsApi, contextService, output);
 
-    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
+    await expect(command.run({}, { globalOptions: {} })).rejects.toThrow();
   });
 
   it('should show message when no PRs found', async () => {
@@ -634,7 +634,7 @@ describe('CreatePRCommand', () => {
       output
     );
 
-    await expect(command.execute({}, { globalOptions: {} })).rejects.toThrow();
+    await expect(command.run({}, { globalOptions: {} })).rejects.toThrow();
     expect(output.logs.some((log) => log.includes('title'))).toBe(true);
   });
 
@@ -1120,7 +1120,7 @@ describe('EditPRCommand', () => {
     );
 
     await expect(
-      command.execute({ id: '1' }, { globalOptions: {} })
+      command.run({ id: '1' }, { globalOptions: {} })
     ).rejects.toThrow();
     expect(output.logs.some((log) => log.includes('At least one of'))).toBe(
       true
@@ -1183,7 +1183,7 @@ describe('EditPRCommand', () => {
     );
 
     await expect(
-      command.execute({ title: 'New Title' }, { globalOptions: {} })
+      command.run({ title: 'New Title' }, { globalOptions: {} })
     ).rejects.toThrow();
     expect(
       output.logs.some((log) => log.includes('No open pull request found'))

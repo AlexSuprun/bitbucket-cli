@@ -42,54 +42,49 @@ export class ActivityPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdActivityGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-          }
-        );
-
-      // The generated API types say this returns void, but it actually returns paginated activity
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = response.data as any;
-      const values = data?.values ? Array.from(data.values) : [];
-
-      const filterTypes = this.parseTypeFilter(options.type);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const activities =
-        filterTypes.length > 0
-          ? values.filter((activity: any) =>
-              filterTypes.includes(this.getActivityType(activity))
-            )
-          : values;
-
-      if (activities.length === 0) {
-        if (filterTypes.length > 0) {
-          this.output.info('No activity entries matched the requested filter');
-        } else {
-          this.output.info('No activity found on this pull request');
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdActivityGet(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
         }
-        return;
+      );
+
+    // The generated API types say this returns void, but it actually returns paginated activity
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = response.data as any;
+    const values = data?.values ? Array.from(data.values) : [];
+
+    const filterTypes = this.parseTypeFilter(options.type);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const activities =
+      filterTypes.length > 0
+        ? values.filter((activity: any) =>
+            filterTypes.includes(this.getActivityType(activity))
+          )
+        : values;
+
+    if (activities.length === 0) {
+      if (filterTypes.length > 0) {
+        this.output.info('No activity entries matched the requested filter');
+      } else {
+        this.output.info('No activity found on this pull request');
       }
-
-      const rows = activities.map((activity) => {
-        const activityType = this.getActivityType(activity);
-        return [
-          activityType.toUpperCase(),
-          this.getActorName(activity),
-          this.formatActivityDate(activity),
-          this.buildActivityDetails(activity, activityType),
-        ];
-      });
-
-      this.output.table(['TYPE', 'ACTOR', 'DATE', 'DETAILS'], rows);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+      return;
     }
+
+    const rows = activities.map((activity) => {
+      const activityType = this.getActivityType(activity);
+      return [
+        activityType.toUpperCase(),
+        this.getActorName(activity),
+        this.formatActivityDate(activity),
+        this.buildActivityDetails(activity, activityType),
+      ];
+    });
+
+    this.output.table(['TYPE', 'ACTOR', 'DATE', 'DETAILS'], rows);
   }
 
   private parseTypeFilter(typeOption?: string): string[] {

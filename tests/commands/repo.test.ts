@@ -475,7 +475,7 @@ describe('DeleteRepoCommand', () => {
     );
 
     await expect(
-      command.execute({ repository: 'workspace/repo' }, { globalOptions: {} })
+      command.run({ repository: 'workspace/repo' }, { globalOptions: {} })
     ).rejects.toThrow();
 
     expect(output.logs.some((log) => log.includes('--yes'))).toBe(true);

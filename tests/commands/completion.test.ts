@@ -87,7 +87,7 @@ describe('Completion Commands', () => {
       const command = new InstallCompletionCommand(output);
       const context: CommandContext = { globalOptions: {} };
 
-      await expect(command.execute(undefined, context)).rejects.toBeDefined();
+      await expect(command.run(undefined, context)).rejects.toBeDefined();
 
       expect(output.logs).toContainEqual(
         'error:Failed to install completions: Error: Permission denied'
@@ -164,7 +164,7 @@ describe('Completion Commands', () => {
       const command = new UninstallCompletionCommand(output);
       const context: CommandContext = { globalOptions: {} };
 
-      await expect(command.execute(undefined, context)).rejects.toBeDefined();
+      await expect(command.run(undefined, context)).rejects.toBeDefined();
 
       expect(output.logs).toContainEqual(
         'error:Failed to uninstall completions: Error: File not found'

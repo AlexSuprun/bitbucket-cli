@@ -29,34 +29,29 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
 
   public async execute(
     options: ListReposOptions,
-    context: CommandContext
+    _context: CommandContext
   ): Promise<void> {
     const workspace = await this.resolveWorkspace(options.workspace);
     const limit = Number.parseInt(options.limit || '25', 10);
 
-    try {
-      const response = await this.repositoriesApi.repositoriesWorkspaceGet({
-        workspace,
-      });
+    const response = await this.repositoriesApi.repositoriesWorkspaceGet({
+      workspace,
+    });
 
-      const repos = Array.from(response.data.values ?? []).slice(0, limit);
+    const repos = Array.from(response.data.values ?? []).slice(0, limit);
 
-      if (repos.length === 0) {
-        this.output.text('No repositories found');
-        return;
-      }
-
-      const rows = repos.map((repo) => [
-        repo.full_name ?? '',
-        repo.is_private ? 'private' : 'public',
-        (repo.description || '').substring(0, 50),
-      ]);
-
-      this.output.table(['REPOSITORY', 'VISIBILITY', 'DESCRIPTION'], rows);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    if (repos.length === 0) {
+      this.output.text('No repositories found');
+      return;
     }
+
+    const rows = repos.map((repo) => [
+      repo.full_name ?? '',
+      repo.is_private ? 'private' : 'public',
+      (repo.description || '').substring(0, 50),
+    ]);
+
+    this.output.table(['REPOSITORY', 'VISIBILITY', 'DESCRIPTION'], rows);
   }
 
   private async resolveWorkspace(workspace?: string): Promise<string> {

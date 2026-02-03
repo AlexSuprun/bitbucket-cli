@@ -43,42 +43,37 @@ export class ChecksPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      const response =
-        await this.commitStatusesApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdStatusesGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-          }
-        );
-
-      const data = response.data;
-      const statuses = data?.values ? Array.from(data.values) : [];
-
-      const useJson = options.json || context.globalOptions.json;
-
-      if (useJson) {
-        this.output.json({
-          pullRequestId: prId,
+    const response =
+      await this.commitStatusesApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdStatusesGet(
+        {
           workspace: repoContext.workspace,
           repoSlug: repoContext.repoSlug,
-          statuses: statuses.map((status) => this.formatStatusForJson(status)),
-        });
-        return;
-      }
+          pullRequestId: prId,
+        }
+      );
 
-      if (statuses.length === 0) {
-        this.output.info('No CI/CD checks found for this pull request');
-        return;
-      }
+    const data = response.data;
+    const statuses = data?.values ? Array.from(data.values) : [];
 
-      this.renderHeader(prId, statuses.length);
-      this.renderStatuses(statuses);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    const useJson = options.json || context.globalOptions.json;
+
+    if (useJson) {
+      this.output.json({
+        pullRequestId: prId,
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        statuses: statuses.map((status) => this.formatStatusForJson(status)),
+      });
+      return;
     }
+
+    if (statuses.length === 0) {
+      this.output.info('No CI/CD checks found for this pull request');
+      return;
+    }
+
+    this.renderHeader(prId, statuses.length);
+    this.renderStatuses(statuses);
   }
 
   private formatStatusForJson(status: Commitstatus): Record<string, unknown> {

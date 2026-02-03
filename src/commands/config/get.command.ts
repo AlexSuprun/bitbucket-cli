@@ -34,20 +34,16 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
 
     // Check if key is hidden
     if (GetConfigCommand.HIDDEN_KEYS.includes(key)) {
-      const error = new Error(
+      throw new Error(
         `Cannot display '${key}' - use 'bb auth token' to get authentication credentials`
       );
-      this.output.error(error.message);
-      throw error;
     }
 
     // Check if key is valid
     if (!isReadableConfigKey(key)) {
-      const error = new Error(
+      throw new Error(
         `Unknown config key '${key}'. Valid keys: username, defaultWorkspace`
       );
-      this.output.error(error.message);
-      throw error;
     }
 
     const value = await this.configService.getValue(key);

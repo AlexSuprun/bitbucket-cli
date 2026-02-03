@@ -40,20 +40,15 @@ export class DeleteCommentPRCommand extends BaseCommand<
     const prId = Number.parseInt(options.prId, 10);
     const commentId = Number.parseInt(options.commentId, 10);
 
-    try {
-      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdDelete(
-        {
-          workspace: repoContext.workspace,
-          repoSlug: repoContext.repoSlug,
-          pullRequestId: prId,
-          commentId: commentId,
-        }
-      );
+    await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsCommentIdDelete(
+      {
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        commentId: commentId,
+      }
+    );
 
-      this.output.success(`Deleted comment #${commentId} from PR #${prId}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.output.success(`Deleted comment #${commentId} from PR #${prId}`);
   }
 }

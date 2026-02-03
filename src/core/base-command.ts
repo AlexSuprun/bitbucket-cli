@@ -21,6 +21,21 @@ export abstract class BaseCommand<
   ): Promise<TResult>;
 
   /**
+   * Execute the command with error handling
+   */
+  public async run(
+    options: TOptions,
+    context: CommandContext
+  ): Promise<TResult> {
+    try {
+      return await this.execute(options, context);
+    } catch (error) {
+      this.handleError(error, context);
+      throw error;
+    }
+  }
+
+  /**
    * Handle command error - output error and set exit code
    */
   protected handleError(error: unknown, context: CommandContext): void {

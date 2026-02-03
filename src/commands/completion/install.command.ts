@@ -29,8 +29,7 @@ export class InstallCompletionCommand extends BaseCommand<void, void> {
         'Restart your shell or source your profile to enable completions.'
       );
     } catch (error) {
-      this.output.error(`Failed to install completions: ${error}`);
-      throw error;
+      throw new Error(`Failed to install completions: ${error}`);
     }
   }
 }

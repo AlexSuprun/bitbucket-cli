@@ -68,23 +68,18 @@ export class MergePRCommand extends BaseCommand<
         options.strategy as PullrequestMergeParametersMergeStrategyEnum;
     }
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-            body: request,
-          }
-        );
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdMergePost(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          body: request,
+        }
+      );
 
-      const pr = response.data;
+    const pr = response.data;
 
-      this.output.success(`Merged pull request #${prId}: ${pr.title}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.output.success(`Merged pull request #${prId}: ${pr.title}`);
   }
 }

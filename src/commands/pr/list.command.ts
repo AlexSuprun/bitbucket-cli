@@ -43,43 +43,36 @@ export class ListPRsCommand extends BaseCommand<ListPRsOptions, void> {
       | 'DECLINED'
       | 'SUPERSEDED';
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            state,
-          }
-        );
-
-      const data = response.data;
-      const values = data.values ? Array.from(data.values) : [];
-
-      if (values.length === 0) {
-        this.output.text(`No ${state.toLowerCase()} pull requests found`);
-        return;
-      }
-
-      const rows = values.map((pr: Pullrequest) => {
-        const title = pr.draft ? `[DRAFT] ${pr.title}` : pr.title;
-        const source = pr.source as { branch?: { name?: string } } | undefined;
-        const destination = pr.destination as
-          | { branch?: { name?: string } }
-          | undefined;
-        return [
-          `#${pr.id}`,
-          this.truncate(title ?? '', 50),
-          pr.author?.display_name ?? 'Unknown',
-          `${source?.branch?.name ?? 'unknown'} → ${destination?.branch?.name ?? 'unknown'}`,
-        ];
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsGet({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        state,
       });
 
-      this.output.table(['ID', 'TITLE', 'AUTHOR', 'BRANCHES'], rows);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    const data = response.data;
+    const values = data.values ? Array.from(data.values) : [];
+
+    if (values.length === 0) {
+      this.output.text(`No ${state.toLowerCase()} pull requests found`);
+      return;
     }
+
+    const rows = values.map((pr: Pullrequest) => {
+      const title = pr.draft ? `[DRAFT] ${pr.title}` : pr.title;
+      const source = pr.source as { branch?: { name?: string } } | undefined;
+      const destination = pr.destination as
+        | { branch?: { name?: string } }
+        | undefined;
+      return [
+        `#${pr.id}`,
+        this.truncate(title ?? '', 50),
+        pr.author?.display_name ?? 'Unknown',
+        `${source?.branch?.name ?? 'unknown'} → ${destination?.branch?.name ?? 'unknown'}`,
+      ];
+    });
+
+    this.output.table(['ID', 'TITLE', 'AUTHOR', 'BRANCHES'], rows);
   }
 
   private truncate(text: string, maxLength: number): string {

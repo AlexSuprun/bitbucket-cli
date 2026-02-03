@@ -19,6 +19,7 @@ export interface ICommand<TOptions = unknown, TResult = void> {
   readonly description: string;
 
   execute(options: TOptions, context: CommandContext): Promise<TResult>;
+  run(options: TOptions, context: CommandContext): Promise<TResult>;
 }
 
 /**

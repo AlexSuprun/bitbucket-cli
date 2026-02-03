@@ -42,46 +42,41 @@ export class ListCommentsPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-          }
-        );
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsGet(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
-      const data = response.data;
-      const values = data.values ? Array.from(data.values) : [];
+    const data = response.data;
+    const values = data.values ? Array.from(data.values) : [];
 
-      if (values.length === 0) {
-        this.output.info('No comments found on this pull request');
-        return;
-      }
-
-      const rows = values.map((comment) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const content = (comment.content as any)?.raw ?? '';
-        return [
-          comment.id?.toString() ?? '',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (comment.user as any)?.nickname ??
-            (comment.user as any)?.display_name ??
-            'Unknown',
-          comment.deleted
-            ? '[deleted]'
-            : options.truncate === false
-              ? content
-              : content.slice(0, 60) + (content.length > 60 ? '...' : ''),
-          this.output.formatDate(comment.created_on ?? ''),
-        ];
-      });
-
-      this.output.table(['ID', 'Author', 'Content', 'Date'], rows);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    if (values.length === 0) {
+      this.output.info('No comments found on this pull request');
+      return;
     }
+
+    const rows = values.map((comment) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const content = (comment.content as any)?.raw ?? '';
+      return [
+        comment.id?.toString() ?? '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (comment.user as any)?.nickname ??
+          (comment.user as any)?.display_name ??
+          'Unknown',
+        comment.deleted
+          ? '[deleted]'
+          : options.truncate === false
+            ? content
+            : content.slice(0, 60) + (content.length > 60 ? '...' : ''),
+        this.output.formatDate(comment.created_on ?? ''),
+      ];
+    });
+
+    this.output.table(['ID', 'Author', 'Content', 'Date'], rows);
   }
 }

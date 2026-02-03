@@ -18,6 +18,14 @@ class TestCommand extends BaseCommand<{ option?: string }, { data: string }> {
   ): Promise<{ data: string }> {
     return { data: 'test' };
   }
+
+  public callRequireOption<T>(
+    value: T | undefined,
+    name: string,
+    message?: string
+  ): T {
+    return this.requireOption(value, name, message);
+  }
 }
 
 class TestCommandWithError extends BaseCommand<{ option?: string }, void> {
@@ -28,10 +36,7 @@ class TestCommandWithError extends BaseCommand<{ option?: string }, void> {
     _options: { option?: string },
     _context: CommandContext
   ): Promise<void> {
-    throw {
-      code: 5001,
-      message: 'Test error',
-    } as BBError;
+    throw new Error('Test error');
   }
 }
 
@@ -57,7 +62,7 @@ describe('BaseCommand', () => {
     it('should return ok value when option is provided', () => {
       const command = new TestCommand(output);
 
-      const result = command.requireOption('test-value', 'test');
+      const result = command.callRequireOption('test-value', 'test');
 
       expect(result).toBe('test-value');
     });
@@ -65,13 +70,13 @@ describe('BaseCommand', () => {
     it('should return error for empty string that is truthy', () => {
       const command = new TestCommand(output);
 
-      expect(() => command.requireOption('', 'test')).toThrow();
+      expect(() => command.callRequireOption('', 'test')).toThrow();
     });
 
     it('should return error for undefined value', () => {
       const command = new TestCommand(output);
 
-      expect(() => command.requireOption(undefined, 'test')).toThrow(
+      expect(() => command.callRequireOption(undefined, 'test')).toThrow(
         'Option --test is required'
       );
     });
@@ -80,21 +85,21 @@ describe('BaseCommand', () => {
       const command = new TestCommand(output);
 
       expect(() =>
-        command.requireOption(null as unknown as string, 'test')
+        command.callRequireOption(null as unknown as string, 'test')
       ).toThrow();
     });
 
     it('should return error for empty string', () => {
       const command = new TestCommand(output);
 
-      expect(() => command.requireOption('', 'test')).toThrow();
+      expect(() => command.callRequireOption('', 'test')).toThrow();
     });
 
     it('should use custom error message when provided', () => {
       const command = new TestCommand(output);
 
       expect(() =>
-        command.requireOption(undefined, 'test', 'Custom message')
+        command.callRequireOption(undefined, 'test', 'Custom message')
       ).toThrow('Custom message');
     });
 
@@ -102,7 +107,7 @@ describe('BaseCommand', () => {
       const command = new TestCommand(output);
 
       try {
-        command.requireOption(undefined, 'test');
+        command.callRequireOption(undefined, 'test');
       } catch (error) {
         expect((error as BBError).code).toBe(5001);
       }
@@ -111,7 +116,7 @@ describe('BaseCommand', () => {
     it('should handle numeric values', () => {
       const command = new TestCommand(output);
 
-      const result = command.requireOption(123 as unknown as string, 'test');
+      const result = command.callRequireOption(123, 'test');
 
       expect(result).toBe(123);
     });
@@ -119,7 +124,7 @@ describe('BaseCommand', () => {
     it('should handle zero as valid value', () => {
       const command = new TestCommand(output);
 
-      const result = command.requireOption(0 as unknown as string, 'test');
+      const result = command.callRequireOption(0, 'test');
 
       expect(result).toBe(0);
     });
@@ -127,7 +132,7 @@ describe('BaseCommand', () => {
     it('should handle false as valid value', () => {
       const command = new TestCommand(output);
 
-      const result = command.requireOption(false as unknown as string, 'test');
+      const result = command.callRequireOption(false, 'test');
 
       expect(result).toBe(false);
     });
@@ -159,6 +164,28 @@ describe('BaseCommand', () => {
 
       expect(command).toBeDefined();
       expect(output).toBeDefined();
+    });
+  });
+
+  describe('run', () => {
+    it('should return the execute result', async () => {
+      const command = new TestCommand(output);
+
+      const result = await command.run({}, { globalOptions: {} });
+
+      expect(result).toEqual({ data: 'test' });
+    });
+
+    it('should output error and set exit code on failure', async () => {
+      process.env.NODE_ENV = 'production';
+      const command = new TestCommandWithError(output);
+
+      await expect(command.run({}, { globalOptions: {} })).rejects.toThrow(
+        'Test error'
+      );
+
+      expect(output.logs).toContain('error:Test error');
+      expect(process.exitCode).toBe(1);
     });
   });
 });

@@ -41,42 +41,37 @@ export class CheckoutPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      const prResponse =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-          }
-        );
+    const prResponse =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
-      const pr = prResponse.data;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const branchName = (pr.source as any)?.branch?.name;
-      const localBranchName = `pr-${prId}`;
+    const pr = prResponse.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const branchName = (pr.source as any)?.branch?.name;
+    const localBranchName = `pr-${prId}`;
 
-      if (!branchName) {
-        throw new Error('Pull request source branch not found');
-      }
-
-      await this.gitService.fetch();
-
-      try {
-        await this.gitService.checkout(branchName);
-        this.output.success(`Checked out PR #${prId} as '${branchName}'`);
-      } catch {
-        await this.gitService.checkoutNewBranch(
-          localBranchName,
-          `origin/${branchName}`
-        );
-        this.output.success(`Checked out PR #${prId} as '${localBranchName}'`);
-      }
-
-      this.output.text(`  Title: ${pr.title}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    if (!branchName) {
+      throw new Error('Pull request source branch not found');
     }
+
+    await this.gitService.fetch();
+
+    try {
+      await this.gitService.checkout(branchName);
+      this.output.success(`Checked out PR #${prId} as '${branchName}'`);
+    } catch {
+      await this.gitService.checkoutNewBranch(
+        localBranchName,
+        `origin/${branchName}`
+      );
+      this.output.success(`Checked out PR #${prId} as '${localBranchName}'`);
+    }
+
+    this.output.text(`  Title: ${pr.title}`);
   }
 }

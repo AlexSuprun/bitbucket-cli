@@ -67,14 +67,9 @@ export class EditPRCommand extends BaseCommand<EditPROptions, void> {
       });
 
       if (!matchingPR) {
-        const error = new Error(
+        throw new Error(
           `No open pull request found for current branch '${currentBranch}'. Specify a PR ID explicitly.`
         );
-        this.output.error(error.message);
-        if (process.env.NODE_ENV !== 'test') {
-          process.exitCode = 1;
-        }
-        throw error;
       }
 
       prId = matchingPR.id!;
@@ -85,26 +80,16 @@ export class EditPRCommand extends BaseCommand<EditPROptions, void> {
       try {
         body = fs.readFileSync(options.bodyFile, 'utf-8');
       } catch (err) {
-        const error = new Error(
+        throw new Error(
           `Failed to read file '${options.bodyFile}': ${err instanceof Error ? err.message : 'Unknown error'}`
         );
-        this.output.error(error.message);
-        if (process.env.NODE_ENV !== 'test') {
-          process.exitCode = 1;
-        }
-        throw error;
       }
     }
 
     if (!options.title && !body) {
-      const error = new Error(
+      throw new Error(
         'At least one of --title or --body (or --body-file) is required.'
       );
-      this.output.error(error.message);
-      if (process.env.NODE_ENV !== 'test') {
-        process.exitCode = 1;
-      }
-      throw error;
     }
 
     const request: Pullrequest = {
@@ -117,33 +102,28 @@ export class EditPRCommand extends BaseCommand<EditPROptions, void> {
       request.description = body;
     }
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-            body: request,
-          }
-        );
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          body: request,
+        }
+      );
 
-      const pr = response.data;
-      const links = pr.links as { html?: { href?: string } } | undefined;
+    const pr = response.data;
+    const links = pr.links as { html?: { href?: string } } | undefined;
 
-      this.output.success(`Updated pull request #${pr.id}`);
-      this.output.text(`  ${chalk.dim('Title:')} ${pr.title}`);
-      if (pr.description) {
-        const truncatedDesc =
-          pr.description.length > 100
-            ? pr.description.substring(0, 100) + '...'
-            : pr.description;
-        this.output.text(`  ${chalk.dim('Description:')} ${truncatedDesc}`);
-      }
-      this.output.text(`  ${chalk.dim('URL:')} ${links?.html?.href}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    this.output.success(`Updated pull request #${pr.id}`);
+    this.output.text(`  ${chalk.dim('Title:')} ${pr.title}`);
+    if (pr.description) {
+      const truncatedDesc =
+        pr.description.length > 100
+          ? pr.description.substring(0, 100) + '...'
+          : pr.description;
+      this.output.text(`  ${chalk.dim('Description:')} ${truncatedDesc}`);
     }
+    this.output.text(`  ${chalk.dim('URL:')} ${links?.html?.href}`);
   }
 }

@@ -36,7 +36,7 @@ export class CreateRepoCommand extends BaseCommand<
 
   public async execute(
     options: { name: string } & CreateRepoOptions,
-    context: CommandContext
+    _context: CommandContext
   ): Promise<void> {
     const { name, description, project } = options;
     const isPublic = options.public === true;
@@ -65,32 +65,27 @@ export class CreateRepoCommand extends BaseCommand<
       request.project = { type: 'project', key: project };
     }
 
-    try {
-      const response =
-        await this.repositoriesApi.repositoriesWorkspaceRepoSlugPost({
-          workspace,
-          repoSlug: name,
-          body: request,
-        });
+    const response =
+      await this.repositoriesApi.repositoriesWorkspaceRepoSlugPost({
+        workspace,
+        repoSlug: name,
+        body: request,
+      });
 
-      const repo = response.data;
+    const repo = response.data;
 
-      this.output.success(`Created repository ${repo.full_name}`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this.output.text(
-        `  ${chalk.dim('URL:')} ${(repo.links as any)?.html?.href}`
-      );
+    this.output.success(`Created repository ${repo.full_name}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.output.text(
+      `  ${chalk.dim('URL:')} ${(repo.links as any)?.html?.href}`
+    );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sshClone = Array.from((repo.links as any)?.clone ?? []).find(
-        (c: any) => c.name === 'ssh'
-      ) as { href?: string } | undefined;
-      if (sshClone?.href) {
-        this.output.text(`  ${chalk.dim('Clone:')} git clone ${sshClone.href}`);
-      }
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sshClone = Array.from((repo.links as any)?.clone ?? []).find(
+      (c: any) => c.name === 'ssh'
+    ) as { href?: string } | undefined;
+    if (sshClone?.href) {
+      this.output.text(`  ${chalk.dim('Clone:')} git clone ${sshClone.href}`);
     }
   }
 
