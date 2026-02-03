@@ -106,11 +106,11 @@ describe('LoginCommand', () => {
     const command = new LoginCommand(configService, usersApi, output);
 
     await expect(
-      command.execute(
+      command.run(
         { username: 'testuser', password: 'badpassword' },
         { globalOptions: {} }
       )
-    ).rejects.toThrow('Invalid credentials');
+    ).rejects.toThrow('Authentication failed: Invalid credentials');
 
     // Verify error message was output to user
     expect(output.logs).toContain(

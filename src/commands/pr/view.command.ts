@@ -40,28 +40,23 @@ export class ViewPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-          }
-        );
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
-      const pr = response.data;
+    const pr = response.data;
 
-      this.renderHeader(pr);
-      this.renderDescription(pr);
-      this.renderBranchInfo(pr);
-      this.renderMetadata(pr);
-      this.renderReviewers(pr);
-      this.renderFooter(pr);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.renderHeader(pr);
+    this.renderDescription(pr);
+    this.renderBranchInfo(pr);
+    this.renderMetadata(pr);
+    this.renderReviewers(pr);
+    this.renderFooter(pr);
   }
 
   private renderHeader(pr: Pullrequest): void {

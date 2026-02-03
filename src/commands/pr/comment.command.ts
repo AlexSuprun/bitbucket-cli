@@ -39,25 +39,20 @@ export class CommentPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsPost(
-        {
-          workspace: repoContext.workspace,
-          repoSlug: repoContext.repoSlug,
-          pullRequestId: prId,
-          body: {
-            type: 'pullrequest_comment',
-            content: {
-              raw: options.message,
-            },
+    await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsPost(
+      {
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        body: {
+          type: 'pullrequest_comment',
+          content: {
+            raw: options.message,
           },
-        }
-      );
+        },
+      }
+    );
 
-      this.output.success(`Added comment to pull request #${prId}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.output.success(`Added comment to pull request #${prId}`);
   }
 }

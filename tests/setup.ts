@@ -18,13 +18,22 @@ import type {
   GlobalOptions,
 } from '../src/types/config.js';
 
+const originalNodeEnv = process.env.NODE_ENV;
+
 // Reset container before each test
 beforeEach(() => {
   Container.reset();
+  process.env.NODE_ENV = 'test';
 });
 
 afterEach(() => {
   Container.reset();
+  process.exitCode = 0;
+  if (originalNodeEnv !== undefined) {
+    process.env.NODE_ENV = originalNodeEnv;
+  } else {
+    delete process.env.NODE_ENV;
+  }
 });
 
 /**

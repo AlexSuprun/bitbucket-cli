@@ -33,7 +33,10 @@ export class StatusCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(_options: void, context: CommandContext): Promise<void> {
+  public async execute(
+    _options: void,
+    _context: CommandContext
+  ): Promise<void> {
     const config = await this.configService.getConfig();
 
     // Check if credentials exist
@@ -59,11 +62,9 @@ export class StatusCommand extends BaseCommand<void, void> {
         );
       }
     } catch (error) {
-      this.output.error('Authentication is invalid or expired');
-      this.output.text(
-        `Run ${chalk.cyan('bb auth login')} to re-authenticate.`
+      throw new Error(
+        `Authentication is invalid or expired. Run ${chalk.cyan('bb auth login')} to re-authenticate.`
       );
-      throw error;
     }
   }
 }

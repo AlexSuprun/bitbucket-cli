@@ -41,35 +41,27 @@ export class ListReviewersPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-          }
-        );
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+        }
+      );
 
-      const pr = response.data;
-      const reviewers = pr.reviewers ?? [];
+    const pr = response.data;
+    const reviewers = pr.reviewers ?? [];
 
-      if (context.globalOptions.json) {
-        this.output.json(reviewers);
-      } else if (reviewers.length === 0) {
-        this.output.info('No reviewers assigned to this pull request');
-      } else {
-        this.output.table(
-          ['Display Name', 'Account ID'],
-          reviewers.map((r) => [
-            r.display_name ?? 'Unknown',
-            r.account_id ?? '',
-          ])
-        );
-      }
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
+    if (context.globalOptions.json) {
+      this.output.json(reviewers);
+    } else if (reviewers.length === 0) {
+      this.output.info('No reviewers assigned to this pull request');
+    } else {
+      this.output.table(
+        ['Display Name', 'Account ID'],
+        reviewers.map((r) => [r.display_name ?? 'Unknown', r.account_id ?? ''])
+      );
     }
   }
 }

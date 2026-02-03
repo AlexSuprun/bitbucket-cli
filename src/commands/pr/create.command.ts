@@ -40,11 +40,7 @@ export class CreatePRCommand extends BaseCommand<CreatePROptions, void> {
     context: CommandContext
   ): Promise<void> {
     if (!options.title) {
-      this.output.error('Pull request title is required. Use --title option.');
-      if (process.env.NODE_ENV !== 'test') {
-        process.exitCode = 1;
-      }
-      throw new Error('Pull request title is required');
+      throw new Error('Pull request title is required. Use --title option.');
     }
 
     const repoContext = await this.contextService.requireRepoContext({
@@ -82,25 +78,18 @@ export class CreatePRCommand extends BaseCommand<CreatePROptions, void> {
       request.draft = true;
     }
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPost(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            body: request,
-          }
-        );
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPost({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        body: request,
+      });
 
-      const pr = response.data;
-      const links = pr.links as { html?: { href?: string } } | undefined;
+    const pr = response.data;
+    const links = pr.links as { html?: { href?: string } } | undefined;
 
-      this.output.success(`Created pull request #${pr.id}`);
-      this.output.text(`  ${chalk.dim('Title:')} ${pr.title}`);
-      this.output.text(`  ${chalk.dim('URL:')} ${links?.html?.href}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.output.success(`Created pull request #${pr.id}`);
+    this.output.text(`  ${chalk.dim('Title:')} ${pr.title}`);
+    this.output.text(`  ${chalk.dim('URL:')} ${links?.html?.href}`);
   }
 }

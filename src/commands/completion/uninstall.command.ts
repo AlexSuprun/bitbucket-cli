@@ -25,8 +25,7 @@ export class UninstallCompletionCommand extends BaseCommand<void, void> {
       });
       this.output.success('Shell completions uninstalled successfully!');
     } catch (error) {
-      this.output.error(`Failed to uninstall completions: ${error}`);
-      throw error;
+      throw new Error(`Failed to uninstall completions: ${error}`);
     }
   }
 }

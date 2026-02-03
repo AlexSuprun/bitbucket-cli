@@ -37,20 +37,16 @@ export class SetConfigCommand extends BaseCommand<
 
     // Check if key is protected
     if (SetConfigCommand.PROTECTED_KEYS.includes(key)) {
-      const error = new Error(
+      throw new Error(
         `Cannot set '${key}' directly. Use 'bb auth login' to configure authentication.`
       );
-      this.output.error(error.message);
-      throw error;
     }
 
     // Check if key is valid
     if (!isSettableConfigKey(key)) {
-      const error = new Error(
+      throw new Error(
         `Unknown config key '${key}'. Valid keys: defaultWorkspace`
       );
-      this.output.error(error.message);
-      throw error;
     }
 
     await this.configService.setValue(key, value);

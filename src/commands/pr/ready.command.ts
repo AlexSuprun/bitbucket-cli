@@ -39,27 +39,22 @@ export class ReadyPRCommand extends BaseCommand<
 
     const prId = Number.parseInt(options.id, 10);
 
-    try {
-      const response =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-            body: {
-              type: 'pullrequest',
-              draft: false,
-            },
-          }
-        );
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          body: {
+            type: 'pullrequest',
+            draft: false,
+          },
+        }
+      );
 
-      const pr = response.data;
+    const pr = response.data;
 
-      this.output.success(`Marked pull request #${prId} as ready for review`);
-      this.output.text(`  ${pr.title}`);
-    } catch (error) {
-      this.handleError(error, context);
-      throw error;
-    }
+    this.output.success(`Marked pull request #${prId} as ready for review`);
+    this.output.text(`  ${pr.title}`);
   }
 }

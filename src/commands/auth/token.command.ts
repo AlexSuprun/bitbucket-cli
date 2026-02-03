@@ -27,9 +27,7 @@ export class TokenCommand extends BaseCommand<void, void> {
     const credentials = await this.configService.getCredentials();
 
     if (!credentials.username || !credentials.apiToken) {
-      const error = new Error("Not authenticated. Run 'bb auth login' first.");
-      this.output.error(error.message);
-      throw error;
+      throw new Error("Not authenticated. Run 'bb auth login' first.");
     }
 
     const token = Buffer.from(
