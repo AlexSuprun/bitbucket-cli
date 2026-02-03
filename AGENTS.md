@@ -43,8 +43,7 @@ bun run release
 - `src/bootstrap.ts` dependency injection registrations
 - `src/core/**` DI container, base command, interfaces
 - `src/commands/**` command implementations (`*.command.ts`)
-- `src/services/**` service implementations
-- `src/lib/**` shared utilities (git, output, config helpers)
+- `src/services/**` service implementations (preferred helpers live here)
 - `src/types/**` shared types and error definitions
 - `src/generated/**` OpenAPI client (auto-generated; do not edit)
 - `tests/**` Bun tests mirroring src structure
