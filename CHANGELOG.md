@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.1
+
+### Patch Changes
+
+- [`77149d5`](https://github.com/0pilatos0/bitbucket-cli/commit/77149d553a3571d26594f712a06a784299e25f50) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix release publishing CI by wiring npm authentication for the reusable publish workflow and manual publish runs.
+
 ## 1.7.0
 
 ### Minor Changes
