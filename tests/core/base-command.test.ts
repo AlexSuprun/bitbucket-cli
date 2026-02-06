@@ -176,8 +176,7 @@ describe('BaseCommand', () => {
       expect(result).toEqual({ data: 'test' });
     });
 
-    it('should output error and set exit code on failure', async () => {
-      process.env.NODE_ENV = 'production';
+    it('should output error and rethrow on failure', async () => {
       const command = new TestCommandWithError(output);
 
       await expect(command.run({}, { globalOptions: {} })).rejects.toThrow(
@@ -185,7 +184,6 @@ describe('BaseCommand', () => {
       );
 
       expect(output.logs).toContain('error:Test error');
-      expect(process.exitCode).toBe(1);
     });
   });
 });
