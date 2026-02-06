@@ -71,17 +71,31 @@ export class AddReviewerPRCommand extends BaseCommand<
     }
 
     // Update PR with new reviewers list
-    await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
-      {
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          body: {
+            type: 'pullrequest',
+            reviewers: reviewerUuids.map((uuid) => ({ uuid })),
+          } as unknown as import('../../generated/api.js').Pullrequest,
+        }
+      );
+
+    if (context.globalOptions.json) {
+      this.output.json({
+        success: true,
         pullRequestId: prId,
-        body: {
-          type: 'pullrequest',
-          reviewers: reviewerUuids.map((uuid) => ({ uuid })),
-        } as unknown as import('../../generated/api.js').Pullrequest,
-      }
-    );
+        reviewer: {
+          username: options.username,
+          uuid: user.uuid,
+        },
+        pullRequest: response.data,
+      });
+      return;
+    }
 
     this.output.success(
       `Added ${options.username} as reviewer to pull request #${prId}`

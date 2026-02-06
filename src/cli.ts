@@ -9,6 +9,7 @@ import { ServiceTokens } from './core/container.js';
 import type { ServiceToken } from './core/container.js';
 import type { BaseCommand } from './core/base-command.js';
 import type { CommandContext } from './core/interfaces/commands.js';
+import type { IOutputService } from './core/interfaces/services.js';
 import type { VersionService } from './services/version.service.js';
 
 const require = createRequire(import.meta.url);
@@ -29,6 +30,7 @@ if (process.argv.includes('--get-yargs-completions') || process.env.COMP_LINE) {
       '--help',
       '--version',
       '--json',
+      '--no-color',
       '--workspace',
       '--repo',
     ];
@@ -68,8 +70,35 @@ if (process.argv.includes('--get-yargs-completions') || process.env.COMP_LINE) {
   }
 }
 
+export function resolveNoColorSetting(
+  argv: string[],
+  env: NodeJS.ProcessEnv
+): boolean {
+  const hasColorArg = argv.includes('--color');
+  const hasNoColorArg = argv.includes('--no-color');
+  const hasForceColorEnv =
+    env.FORCE_COLOR !== undefined && env.FORCE_COLOR !== '0';
+  const hasNoColorEnv = env.NO_COLOR !== undefined;
+
+  if (hasColorArg) {
+    return false;
+  }
+
+  if (hasForceColorEnv) {
+    return false;
+  }
+
+  if (hasNoColorArg) {
+    return true;
+  }
+
+  return hasNoColorEnv;
+}
+
 // Bootstrap the container
-const container = bootstrap();
+const noColor = resolveNoColorSetting(process.argv, process.env);
+
+const container = bootstrap({ noColor });
 
 // Helper to create command context
 function createContext(program: Command): CommandContext {
@@ -77,6 +106,7 @@ function createContext(program: Command): CommandContext {
   return {
     globalOptions: {
       json: opts.json,
+      noColor: opts.color === false,
       workspace: opts.workspace,
       repo: opts.repo,
     },
@@ -121,6 +151,7 @@ cli
   .description('A command-line interface for Bitbucket Cloud')
   .version(pkg.version)
   .option('--json', 'Output as JSON')
+  .option('--no-color', 'Disable color output')
   .option('-w, --workspace <workspace>', 'Specify workspace')
   .option('-r, --repo <repo>', 'Specify repository')
   .action(async () => {
@@ -131,18 +162,21 @@ cli
     const versionService = container.resolve<VersionService>(
       ServiceTokens.VersionService
     );
+    const output = container.resolve<IOutputService>(
+      ServiceTokens.OutputService
+    );
 
     try {
       const result = await versionService.checkForUpdate();
       if (result?.updateAvailable) {
-        console.log('');
-        console.log('─'.repeat(50));
-        console.log(
+        output.text('');
+        output.text('─'.repeat(50));
+        output.text(
           `⚠ A new version is available: ${result.latestVersion} (you have ${result.currentVersion})`
         );
-        console.log(`  Run '${versionService.getInstallCommand()}' to update`);
-        console.log(`  Or disable with 'bb config set skipVersionCheck true'`);
-        console.log('─'.repeat(50));
+        output.text(`  Run '${versionService.getInstallCommand()}' to update`);
+        output.text(`  Or disable with 'bb config set skipVersionCheck true'`);
+        output.text('─'.repeat(50));
       }
     } catch {
       // Silently ignore version check errors

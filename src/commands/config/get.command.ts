@@ -8,10 +8,7 @@ import type {
   IConfigService,
   IOutputService,
 } from '../../core/interfaces/services.js';
-import {
-  isReadableConfigKey,
-  type ReadableConfigKey,
-} from '../../types/config.js';
+import { isReadableConfigKey } from '../../types/config.js';
 
 export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
   public readonly name = 'get';
@@ -28,7 +25,7 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
 
   public async execute(
     options: { key: string },
-    _context: CommandContext
+    context: CommandContext
   ): Promise<void> {
     const { key } = options;
 
@@ -47,6 +44,14 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
     }
 
     const value = await this.configService.getValue(key);
+
+    if (context.globalOptions.json) {
+      this.output.json({
+        key,
+        value: value ?? null,
+      });
+      return;
+    }
 
     // Output the value (or empty string if undefined)
     this.output.text(String(value || ''));

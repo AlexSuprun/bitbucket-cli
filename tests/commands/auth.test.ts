@@ -182,8 +182,7 @@ describe('StatusCommand', () => {
     const command = new StatusCommand(configService, usersApi, output);
     await command.execute(undefined, { globalOptions: { json: true } });
 
-    // Command outputs text regardless of json flag
-    expect(output.logs).toContain('success:Logged in to Bitbucket');
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
   });
 });
 
@@ -200,6 +199,19 @@ describe('TokenCommand', () => {
 
     const expectedToken = Buffer.from('testuser:testpass').toString('base64');
     expect(output.logs).toContain(`text:${expectedToken}`);
+  });
+
+  it('should output json token when requested', async () => {
+    const configService = createMockConfigService({
+      username: 'testuser',
+      apiToken: 'testpass',
+    });
+    const output = createMockOutputService();
+
+    const command = new TokenCommand(configService, output);
+    await command.execute(undefined, { globalOptions: { json: true } });
+
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
   });
 
   it('should fail when not logged in', async () => {

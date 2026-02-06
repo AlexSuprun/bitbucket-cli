@@ -23,22 +23,22 @@ bb pr view 42 --json
 
 ```bash
 # List all PR titles
-bb pr list --json | jq '.[].title'
+bb pr list --json | jq '.pullRequests[].title'
 
 # Get PR count
-bb pr list --json | jq 'length'
+bb pr list --json | jq '.count'
 
 # Filter by state
-bb pr list -s MERGED --json | jq 'length'
+bb pr list -s MERGED --json | jq '.count'
 
 # Get specific fields
-bb pr list --json | jq '.[] | {id, title, author: .author.display_name}'
+bb pr list --json | jq '.pullRequests[] | {id, title, author: .author.display_name}'
 
 # Filter by author
-bb pr list --json | jq '.[] | select(.author.username == "alice")'
+bb pr list --json | jq '.pullRequests[] | select(.author.username == "alice")'
 
 # Get PR URLs
-bb pr list --json | jq -r '.[].links.html.href'
+bb pr list --json | jq -r '.pullRequests[].links.html.href'
 ```
 
 ### Common jq Patterns
@@ -46,13 +46,13 @@ bb pr list --json | jq -r '.[].links.html.href'
 ```bash
 # PRs updated in the last 7 days
 bb pr list --json | jq --arg date "$(date -d '7 days ago' -Iseconds)" \
-  '.[] | select(.updated_on > $date)'
+  '.pullRequests[] | select(.updated_on > $date)'
 
 # PRs targeting main branch
-bb pr list --json | jq '.[] | select(.destination.branch.name == "main")'
+bb pr list --json | jq '.pullRequests[] | select(.destination.branch.name == "main")'
 
 # Group PRs by author
-bb pr list --json | jq 'group_by(.author.username) | map({author: .[0].author.username, count: length})'
+bb pr list --json | jq '.pullRequests | group_by(.author.username) | map({author: .[0].author.username, count: length})'
 ```
 
 ---
@@ -159,7 +159,7 @@ Add delays between requests:
 ```bash
 #!/bin/bash
 
-for pr_id in $(bb pr list --json | jq -r '.[].id'); do
+for pr_id in $(bb pr list --json | jq -r '.pullRequests[].id'); do
   bb pr view "$pr_id" --json
   sleep 1  # Rate limit protection
 done
@@ -184,7 +184,7 @@ AUTHOR="trusted-bot"
 echo "Finding PRs from $AUTHOR..."
 
 pr_ids=$(bb pr list -w "$WORKSPACE" -r "$REPO" --json | \
-  jq -r --arg author "$AUTHOR" '.[] | select(.author.username == $author) | .id')
+  jq -r --arg author "$AUTHOR" '.pullRequests[] | select(.author.username == $author) | .id')
 
 for pr_id in $pr_ids; do
   echo "Approving PR #$pr_id..."
@@ -210,7 +210,7 @@ echo ""
 echo "Generated: $(date)"
 echo ""
 
-bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '.[] |
+bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '.pullRequests[] |
   "## PR #\(.id): \(.title)\n" +
   "- **Author:** \(.author.display_name)\n" +
   "- **Branch:** \(.source.branch.name) → \(.destination.branch.name)\n" +
@@ -236,7 +236,7 @@ cutoff=$(date -d "$DAYS_OLD days ago" -Iseconds 2>/dev/null || \
 echo "Finding PRs older than $DAYS_OLD days..."
 
 stale_prs=$(bb pr list -w "$WORKSPACE" -r "$REPO" --json | \
-  jq -r --arg cutoff "$cutoff" '.[] | select(.updated_on < $cutoff) | .id')
+  jq -r --arg cutoff "$cutoff" '.pullRequests[] | select(.updated_on < $cutoff) | .id')
 
 if [ -z "$stale_prs" ]; then
   echo "No stale PRs found"
@@ -265,7 +265,7 @@ mkdir -p "$BACKUP_DIR"
 cd "$BACKUP_DIR"
 
 echo "Fetching repository list..."
-repos=$(bb repo list -w "$WORKSPACE" --json | jq -r '.[].name')
+repos=$(bb repo list -w "$WORKSPACE" --json | jq -r '.repositories[].name')
 
 for repo in $repos; do
   echo "Cloning $repo..."
@@ -293,13 +293,13 @@ total_files=0
 total_additions=0
 total_deletions=0
 
-for pr_id in $(bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '.[].id'); do
+for pr_id in $(bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '.pullRequests[].id'); do
   stats=$(bb pr diff "$pr_id" -w "$WORKSPACE" -r "$REPO" --stat --json 2>/dev/null)
 
   if [ -n "$stats" ]; then
-    files=$(echo "$stats" | jq '.stat.filesChanged // 0')
-    additions=$(echo "$stats" | jq '.stat.insertions // 0')
-    deletions=$(echo "$stats" | jq '.stat.deletions // 0')
+    files=$(echo "$stats" | jq '.filesChanged // 0')
+    additions=$(echo "$stats" | jq '.totalAdditions // 0')
+    deletions=$(echo "$stats" | jq '.totalDeletions // 0')
 
     echo "PR #$pr_id: $files files, +$additions -$deletions"
 
@@ -336,7 +336,7 @@ def run_bb(args):
 
 # List PRs
 prs = run_bb(['pr', 'list', '-w', 'workspace', '-r', 'repo'])
-for pr in prs:
+for pr in prs['pullRequests']:
     print(f"#{pr['id']}: {pr['title']}")
 
 # Get PR details
@@ -362,7 +362,7 @@ function runBB(args) {
 
 // List PRs
 const prs = runBB(['pr', 'list', '-w', 'workspace', '-r', 'repo']);
-prs.forEach(pr => {
+prs.pullRequests.forEach(pr => {
   console.log(`#${pr.id}: ${pr.title}`);
 });
 ```

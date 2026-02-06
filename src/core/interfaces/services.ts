@@ -57,5 +57,17 @@ export interface IOutputService {
   warning(message: string): void;
   info(message: string): void;
   text(message: string): void;
+  format(text: string, formatter: (text: string) => string): string;
+  dim(text: string): string;
+  highlight(text: string): string;
+  bold(text: string): string;
+  red(text: string): string;
+  green(text: string): string;
+  yellow(text: string): string;
+  cyan(text: string): string;
+  magenta(text: string): string;
+  gray(text: string): string;
+  blue(text: string): string;
+  underline(text: string): string;
   formatDate(date: string | Date): string;
 }

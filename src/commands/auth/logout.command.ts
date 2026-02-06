@@ -20,11 +20,14 @@ export class LogoutCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(
-    _options: void,
-    _context: CommandContext
-  ): Promise<void> {
+  public async execute(_options: void, context: CommandContext): Promise<void> {
     await this.configService.clearConfig();
+
+    if (context.globalOptions.json) {
+      this.output.json({ authenticated: false, success: true });
+      return;
+    }
+
     this.output.success('Logged out of Bitbucket');
   }
 }

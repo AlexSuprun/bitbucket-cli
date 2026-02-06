@@ -39,6 +39,17 @@ export class CloneCommand extends BaseCommand<
     await this.gitService.clone(repoUrl, directory);
 
     const targetDir = directory || this.extractRepoName(repository);
+
+    if (context.globalOptions.json) {
+      this.output.json({
+        success: true,
+        repository,
+        path: targetDir,
+        cloneUrl: repoUrl,
+      });
+      return;
+    }
+
     this.output.success(`Cloned ${repository} into ${targetDir}`);
   }
 

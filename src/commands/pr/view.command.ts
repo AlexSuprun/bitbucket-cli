@@ -2,7 +2,6 @@
  * View PR command implementation
  */
 
-import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -51,6 +50,11 @@ export class ViewPRCommand extends BaseCommand<
 
     const pr = response.data;
 
+    if (context.globalOptions.json) {
+      this.output.json(pr);
+      return;
+    }
+
     this.renderHeader(pr);
     this.renderDescription(pr);
     this.renderBranchInfo(pr);
@@ -61,13 +65,13 @@ export class ViewPRCommand extends BaseCommand<
 
   private renderHeader(pr: Pullrequest): void {
     const stateColor = this.getStateColor(pr.state);
-    const draftLabel = pr.draft ? chalk.yellow(' [DRAFT]') : '';
+    const draftLabel = pr.draft ? this.output.yellow(' [DRAFT]') : '';
 
     this.output.text('');
     this.output.text(
-      `${chalk.bold(`#${pr.id}`)} ${pr.title}${draftLabel} ${stateColor(`[${pr.state}]`)}`
+      `${this.output.bold(`#${pr.id}`)} ${pr.title}${draftLabel} ${stateColor(`[${pr.state}]`)}`
     );
-    this.output.text(chalk.gray('─'.repeat(60)));
+    this.output.text(this.output.gray('─'.repeat(60)));
   }
 
   private renderDescription(pr: Pullrequest): void {
@@ -84,36 +88,36 @@ export class ViewPRCommand extends BaseCommand<
     const destination = pr.destination as
       | { branch?: { name?: string }; commit?: { hash?: string } }
       | undefined;
-    const sourceBranch = chalk.cyan(source?.branch?.name ?? 'unknown');
-    const destBranch = chalk.cyan(destination?.branch?.name ?? 'unknown');
-    const arrow = chalk.gray(' → ');
+    const sourceBranch = this.output.cyan(source?.branch?.name ?? 'unknown');
+    const destBranch = this.output.cyan(destination?.branch?.name ?? 'unknown');
+    const arrow = this.output.gray(' → ');
 
     this.output.text(
-      `${chalk.dim('Branch:')}   ${sourceBranch}${arrow}${destBranch}`
+      `${this.output.dim('Branch:')}   ${sourceBranch}${arrow}${destBranch}`
     );
 
     if (source?.commit?.hash || destination?.commit?.hash) {
       const sourceHash = source?.commit?.hash
-        ? chalk.gray(source.commit.hash.slice(0, 7))
-        : chalk.gray('unknown');
+        ? this.output.gray(source.commit.hash.slice(0, 7))
+        : this.output.gray('unknown');
       const destHash = destination?.commit?.hash
-        ? chalk.gray(destination.commit.hash.slice(0, 7))
-        : chalk.gray('unknown');
+        ? this.output.gray(destination.commit.hash.slice(0, 7))
+        : this.output.gray('unknown');
       this.output.text(
-        `${chalk.dim('Commits:')}  ${sourceHash}${arrow}${destHash}`
+        `${this.output.dim('Commits:')}  ${sourceHash}${arrow}${destHash}`
       );
     }
   }
 
   private renderMetadata(pr: Pullrequest): void {
     this.output.text(
-      `${chalk.dim('Author:')}   ${pr.author?.display_name ?? 'Unknown'}`
+      `${this.output.dim('Author:')}   ${pr.author?.display_name ?? 'Unknown'}`
     );
 
     if (pr.closed_by) {
       const action = pr.state === 'MERGED' ? 'Merged' : 'Closed';
       this.output.text(
-        `${chalk.dim(action + ':')}   ${pr.closed_by.display_name}`
+        `${this.output.dim(action + ':')}   ${pr.closed_by.display_name}`
       );
     }
 
@@ -123,25 +127,25 @@ export class ViewPRCommand extends BaseCommand<
     const updatedOn = pr.updated_on
       ? this.output.formatDate(pr.updated_on)
       : 'Unknown';
-    this.output.text(`${chalk.dim('Created:')}  ${createdOn}`);
-    this.output.text(`${chalk.dim('Updated:')}  ${updatedOn}`);
+    this.output.text(`${this.output.dim('Created:')}  ${createdOn}`);
+    this.output.text(`${this.output.dim('Updated:')}  ${updatedOn}`);
 
     const mergeCommit = pr.merge_commit as { hash?: string } | undefined;
     if (mergeCommit?.hash) {
       this.output.text(
-        `${chalk.dim('Merge:')}    ${chalk.magenta(mergeCommit.hash.slice(0, 7))}`
+        `${this.output.dim('Merge:')}    ${this.output.magenta(mergeCommit.hash.slice(0, 7))}`
       );
     }
 
     const closeBranchIndicator = pr.close_source_branch
-      ? chalk.green('✓')
-      : chalk.gray('✗');
+      ? this.output.green('✓')
+      : this.output.gray('✗');
     this.output.text(
-      `${chalk.dim('Close Src:')} ${closeBranchIndicator} ${chalk.gray('(close source branch on merge)')}`
+      `${this.output.dim('Close Src:')} ${closeBranchIndicator} ${this.output.gray('(close source branch on merge)')}`
     );
 
     this.output.text(
-      `${chalk.dim('Activity:')} ${pr.comment_count ?? 0} comments · ${pr.task_count ?? 0} tasks`
+      `${this.output.dim('Activity:')} ${pr.comment_count ?? 0} comments · ${pr.task_count ?? 0} tasks`
     );
   }
 
@@ -151,17 +155,17 @@ export class ViewPRCommand extends BaseCommand<
 
     if (reviewers.length === 0) {
       this.output.text('');
-      this.output.text(chalk.gray('No reviewers assigned'));
+      this.output.text(this.output.gray('No reviewers assigned'));
       return;
     }
 
     this.output.text('');
-    this.output.text(chalk.dim('Reviewers:'));
+    this.output.text(this.output.dim('Reviewers:'));
 
     for (const reviewer of reviewers) {
       const status = this.getReviewerStatus(reviewer);
       this.output.text(
-        `  ${status.icon} ${reviewer.user?.display_name ?? 'Unknown'} ${chalk.gray(status.label)}`
+        `  ${status.icon} ${reviewer.user?.display_name ?? 'Unknown'} ${this.output.gray(status.label)}`
       );
     }
   }
@@ -171,22 +175,22 @@ export class ViewPRCommand extends BaseCommand<
     label: string;
   } {
     if (reviewer.approved) {
-      return { icon: chalk.green('✓'), label: 'approved' };
+      return { icon: this.output.green('✓'), label: 'approved' };
     }
 
     if (reviewer.state === 'changes_requested') {
-      return { icon: chalk.red('✗'), label: 'changes requested' };
+      return { icon: this.output.red('✗'), label: 'changes requested' };
     }
 
-    return { icon: chalk.yellow('○'), label: 'pending' };
+    return { icon: this.output.yellow('○'), label: 'pending' };
   }
 
   private renderFooter(pr: Pullrequest): void {
     const links = pr.links as { html?: { href?: string } } | undefined;
     this.output.text('');
-    this.output.text(chalk.gray('─'.repeat(60)));
+    this.output.text(this.output.gray('─'.repeat(60)));
     this.output.text(
-      `${chalk.dim('URL:')} ${chalk.blue.underline(links?.html?.href ?? '')}`
+      `${this.output.dim('URL:')} ${this.output.underline(this.output.blue(links?.html?.href ?? ''))}`
     );
     this.output.text('');
   }
@@ -194,13 +198,13 @@ export class ViewPRCommand extends BaseCommand<
   private getStateColor(state?: string): (text: string) => string {
     switch (state) {
       case 'OPEN':
-        return chalk.green;
+        return (text: string) => this.output.green(text);
       case 'MERGED':
-        return chalk.magenta;
+        return (text: string) => this.output.magenta(text);
       case 'DECLINED':
-        return chalk.red;
+        return (text: string) => this.output.red(text);
       default:
-        return chalk.gray;
+        return (text: string) => this.output.gray(text);
     }
   }
 }

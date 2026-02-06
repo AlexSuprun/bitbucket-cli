@@ -8,10 +8,7 @@ import type {
   IConfigService,
   IOutputService,
 } from '../../core/interfaces/services.js';
-import {
-  isSettableConfigKey,
-  type SettableConfigKey,
-} from '../../types/config.js';
+import { isSettableConfigKey } from '../../types/config.js';
 
 export class SetConfigCommand extends BaseCommand<
   { key: string; value: string },
@@ -31,7 +28,7 @@ export class SetConfigCommand extends BaseCommand<
 
   public async execute(
     options: { key: string; value: string },
-    _context: CommandContext
+    context: CommandContext
   ): Promise<void> {
     const { key, value } = options;
 
@@ -50,6 +47,15 @@ export class SetConfigCommand extends BaseCommand<
     }
 
     await this.configService.setValue(key, value);
+
+    if (context.globalOptions.json) {
+      this.output.json({
+        success: true,
+        key,
+        value,
+      });
+      return;
+    }
 
     this.output.success(`Set ${key} = ${value}`);
   }

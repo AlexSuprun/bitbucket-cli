@@ -61,14 +61,36 @@ export class CheckoutPRCommand extends BaseCommand<
 
     await this.gitService.fetch();
 
+    let checkedOutBranch: string;
+
     try {
       await this.gitService.checkout(branchName);
+      checkedOutBranch = branchName;
+      if (context.globalOptions.json) {
+        this.output.json({
+          success: true,
+          pullRequestId: prId,
+          branch: checkedOutBranch,
+          pullRequest: pr,
+        });
+        return;
+      }
       this.output.success(`Checked out PR #${prId} as '${branchName}'`);
     } catch {
       await this.gitService.checkoutNewBranch(
         localBranchName,
         `origin/${branchName}`
       );
+      checkedOutBranch = localBranchName;
+      if (context.globalOptions.json) {
+        this.output.json({
+          success: true,
+          pullRequestId: prId,
+          branch: checkedOutBranch,
+          pullRequest: pr,
+        });
+        return;
+      }
       this.output.success(`Checked out PR #${prId} as '${localBranchName}'`);
     }
 

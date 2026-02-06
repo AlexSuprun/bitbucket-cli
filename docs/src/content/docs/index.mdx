@@ -116,7 +116,7 @@ bb pr list
     JSON output for all commands. Perfect for CI/CD pipelines and automation scripts.
 
     ```bash
-    bb pr list --json | jq '.[].title'
+    bb pr list --json | jq '.pullRequests[].title'
     ```
   </Card>
 </CardGrid>

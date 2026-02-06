@@ -54,6 +54,15 @@ export class ListCommentsPRCommand extends BaseCommand<
     const data = response.data;
     const values = data.values ? Array.from(data.values) : [];
 
+    if (context.globalOptions.json) {
+      this.output.json({
+        pullRequestId: prId,
+        count: values.length,
+        comments: values,
+      });
+      return;
+    }
+
     if (values.length === 0) {
       this.output.info('No comments found on this pull request');
       return;

@@ -54,6 +54,15 @@ export class ReadyPRCommand extends BaseCommand<
 
     const pr = response.data;
 
+    if (context.globalOptions.json) {
+      this.output.json({
+        success: true,
+        pullRequestId: prId,
+        pullRequest: pr,
+      });
+      return;
+    }
+
     this.output.success(`Marked pull request #${prId} as ready for review`);
     this.output.text(`  ${pr.title}`);
   }

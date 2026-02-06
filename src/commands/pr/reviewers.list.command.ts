@@ -51,11 +51,18 @@ export class ListReviewersPRCommand extends BaseCommand<
       );
 
     const pr = response.data;
-    const reviewers = pr.reviewers ?? [];
+    const reviewers = Array.from(pr.reviewers ?? []);
 
     if (context.globalOptions.json) {
-      this.output.json(reviewers);
-    } else if (reviewers.length === 0) {
+      this.output.json({
+        pullRequestId: prId,
+        count: reviewers.length,
+        reviewers,
+      });
+      return;
+    }
+
+    if (reviewers.length === 0) {
       this.output.info('No reviewers assigned to this pull request');
     } else {
       this.output.table(

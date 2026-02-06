@@ -2,7 +2,6 @@
  * PR diff command implementation
  */
 
-import chalk from 'chalk';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { BaseCommand } from '../../core/base-command.js';
@@ -80,68 +79,86 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     }
 
     if (options.web) {
-      const prResponse =
-        await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
-          {
-            workspace: repoContext.workspace,
-            repoSlug: repoContext.repoSlug,
-            pullRequestId: prId,
-          }
-        );
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const diffUrl = (prResponse.data.links as any)?.diff?.href;
-      if (!diffUrl) {
-        throw new Error('Could not get diff URL');
+      const webUrl = await this.getWebDiffUrl(
+        repoContext.workspace,
+        repoContext.repoSlug,
+        prId
+      );
+      if (context.globalOptions.json) {
+        this.output.json({
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          mode: 'web',
+          url: webUrl,
+        });
+        return;
       }
 
-      const webUrl = diffUrl.replace(
-        /api\.bitbucket\.org\/2\.0\/repositories\/(.*?)\/pullrequests\/(\d+)\/diff/,
-        'bitbucket.org/$1/pull-requests/$2/diff'
-      );
-
-      await this.openInBrowser(webUrl, context);
+      await this.openInBrowser(webUrl);
       return;
     }
 
     if (options.stat) {
-      await this.showStat(
+      const statResult = await this.showStat(
         repoContext.workspace,
         repoContext.repoSlug,
         prId,
-        context
+        Boolean(context.globalOptions.json)
       );
+
+      if (context.globalOptions.json) {
+        this.output.json({
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          mode: 'stat',
+          ...statResult,
+        });
+      }
       return;
     }
 
     if (options.nameOnly) {
-      await this.showNameOnly(
+      const files = await this.showNameOnly(
         repoContext.workspace,
         repoContext.repoSlug,
         prId,
-        context
+        Boolean(context.globalOptions.json)
       );
+
+      if (context.globalOptions.json) {
+        this.output.json({
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          mode: 'name-only',
+          files,
+        });
+      }
       return;
     }
 
-    await this.showDiff(
+    const diff = await this.showDiff(
       repoContext.workspace,
       repoContext.repoSlug,
       prId,
       options,
-      context
+      Boolean(context.globalOptions.json)
     );
+
+    if (context.globalOptions.json) {
+      this.output.json({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        mode: 'diff',
+        diff,
+      });
+    }
   }
 
-  private async openInBrowser(
-    url: string,
-    context: CommandContext
-  ): Promise<void> {
-    if (context.globalOptions.json) {
-      this.output.json({ url });
-      return;
-    }
-
+  private async openInBrowser(url: string): Promise<void> {
     this.output.info(`Opening ${url} in your browser...`);
 
     const platform = process.platform;
@@ -158,12 +175,43 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     await execAsync(command);
   }
 
+  private async getWebDiffUrl(
+    workspace: string,
+    repoSlug: string,
+    prId: number
+  ): Promise<string> {
+    const prResponse =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdGet(
+        {
+          workspace,
+          repoSlug,
+          pullRequestId: prId,
+        }
+      );
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const diffUrl = (prResponse.data.links as any)?.diff?.href;
+    if (!diffUrl) {
+      throw new Error('Could not get diff URL');
+    }
+
+    return diffUrl.replace(
+      /api\.bitbucket\.org\/2\.0\/repositories\/(.*?)\/pullrequests\/(\d+)\/diff/,
+      'bitbucket.org/$1/pull-requests/$2/diff'
+    );
+  }
+
   private async showStat(
     workspace: string,
     repoSlug: string,
     prId: number,
-    context: CommandContext
-  ): Promise<void> {
+    useJson: boolean
+  ): Promise<{
+    files: Array<{ path: string; additions: number; deletions: number }>;
+    filesChanged: number;
+    totalAdditions: number;
+    totalDeletions: number;
+  }> {
     const diffstatResponse =
       await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffstatGet(
         {
@@ -195,11 +243,20 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     );
     const filesChanged = files.length;
 
+    if (useJson) {
+      return {
+        files,
+        filesChanged,
+        totalAdditions,
+        totalDeletions,
+      };
+    }
+
     for (const file of files) {
       const additions =
-        file.additions > 0 ? chalk.green(`+${file.additions}`) : '';
+        file.additions > 0 ? this.output.green(`+${file.additions}`) : '';
       const deletions =
-        file.deletions > 0 ? chalk.red(`-${file.deletions}`) : '';
+        file.deletions > 0 ? this.output.red(`-${file.deletions}`) : '';
       const stats = [additions, deletions].filter(Boolean).join(' ');
       this.output.text(`${file.path} ${stats ? `| ${stats}` : ''}`);
     }
@@ -208,12 +265,12 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     const summary = [
       `${filesChanged} file${filesChanged === 1 ? '' : 's'} changed`,
       totalAdditions > 0
-        ? chalk.green(
+        ? this.output.green(
             `${totalAdditions} insertion${totalAdditions === 1 ? '' : 's'}(+)`
           )
         : null,
       totalDeletions > 0
-        ? chalk.red(
+        ? this.output.red(
             `${totalDeletions} deletion${totalDeletions === 1 ? '' : 's'}(-)`
           )
         : null,
@@ -222,14 +279,21 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
       .join(', ');
 
     this.output.text(summary);
+
+    return {
+      files,
+      filesChanged,
+      totalAdditions,
+      totalDeletions,
+    };
   }
 
   private async showNameOnly(
     workspace: string,
     repoSlug: string,
     prId: number,
-    context: CommandContext
-  ): Promise<void> {
+    useJson: boolean
+  ): Promise<string[]> {
     const diffstatResponse =
       await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffstatGet(
         {
@@ -246,9 +310,15 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
       (file: any) => file.new?.path || file.old?.path || 'unknown'
     );
 
+    if (useJson) {
+      return fileNames;
+    }
+
     for (const fileName of fileNames) {
       this.output.text(fileName);
     }
+
+    return fileNames;
   }
 
   private async showDiff(
@@ -256,8 +326,8 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     repoSlug: string,
     prId: number,
     options: DiffPROptions,
-    context: CommandContext
-  ): Promise<void> {
+    useJson: boolean
+  ): Promise<string> {
     const diffResponse =
       await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdDiffGet(
         {
@@ -270,10 +340,16 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     const diff = diffResponse.data;
 
     const shouldColorize = this.shouldColorize(options.color);
+    if (useJson) {
+      return String(diff);
+    }
+
     const colorizedDiff = shouldColorize
       ? this.colorizeDiff(String(diff))
       : String(diff);
     this.output.text(colorizedDiff);
+
+    return String(diff);
   }
 
   private shouldColorize(colorOption?: 'auto' | 'always' | 'never'): boolean {
@@ -288,19 +364,19 @@ export class DiffPRCommand extends BaseCommand<DiffPROptions, void> {
     return lines
       .map((line) => {
         if (line.startsWith('+') && !line.startsWith('+++')) {
-          return chalk.green(line);
+          return this.output.green(line);
         } else if (line.startsWith('-') && !line.startsWith('---')) {
-          return chalk.red(line);
+          return this.output.red(line);
         } else if (line.startsWith('@@')) {
-          return chalk.cyan(line);
+          return this.output.cyan(line);
         } else if (line.startsWith('diff --git')) {
-          return chalk.bold(line);
+          return this.output.bold(line);
         } else if (
           line.startsWith('index ') ||
           line.startsWith('---') ||
           line.startsWith('+++')
         ) {
-          return chalk.dim(line);
+          return this.output.dim(line);
         }
         return line;
       })

@@ -32,8 +32,7 @@ The Bitbucket CLI stores configuration in a JSON file. This page documents the f
 |-----|------|-------------|--------|
 | `username` | string | Your Bitbucket username | `bb auth login` |
 | `apiToken` | string | Your API token (stored securely) | `bb auth login` |
-| `workspace` | string | Default workspace | `bb config set` |
-| `repo` | string | Default repository | `bb config set` |
+| `defaultWorkspace` | string | Default workspace | `bb config set defaultWorkspace` |
 | `skipVersionCheck` | boolean | Disable update notifications | `bb config set` |
 | `versionCheckInterval` | number | Days between update checks (default: 1) | `bb config set` |
 
@@ -43,8 +42,7 @@ The Bitbucket CLI stores configuration in a JSON file. This page documents the f
 {
   "username": "myuser",
   "apiToken": "ATBB_xxxxxxxxxxxxxxxxxxxx",
-  "workspace": "myworkspace",
-  "repo": "myrepo",
+  "defaultWorkspace": "myworkspace",
   "skipVersionCheck": false,
   "versionCheckInterval": 7
 }
@@ -67,8 +65,7 @@ Configuration file: /Users/you/.config/bb/config.json
 Key              Value
 username         myuser
 apiToken         ********
-workspace        myworkspace
-repo             myrepo
+defaultWorkspace myworkspace
 ```
 
 <Aside type="note">
@@ -78,15 +75,14 @@ The API token is masked for security. Use `bb auth token` to see the actual toke
 ### Get a Specific Value
 
 ```bash
-bb config get workspace
+bb config get defaultWorkspace
 # Output: myworkspace
 ```
 
 ### Set a Value
 
 ```bash
-bb config set workspace myworkspace
-bb config set repo myrepo
+bb config set defaultWorkspace myworkspace
 bb config set skipVersionCheck true
 bb config set versionCheckInterval 7
 ```
@@ -161,7 +157,7 @@ When determining workspace and repository, the CLI checks sources in this order:
 
 3. **Configuration file** (lowest priority)
    ```bash
-   bb config set workspace myworkspace
+   bb config set defaultWorkspace myworkspace
    bb pr list  # Uses config default
    ```
 
@@ -192,7 +188,7 @@ Never share your config file or commit it to version control. The API token gran
 bb auth logout
 ```
 
-This removes `username` and `apiToken` but keeps `workspace` and `repo` settings.
+This removes `username` and `apiToken` but keeps `defaultWorkspace` and other settings.
 
 ### Full Reset
 

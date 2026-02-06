@@ -2,7 +2,6 @@
  * Status command implementation
  */
 
-import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -33,16 +32,20 @@ export class StatusCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(
-    _options: void,
-    _context: CommandContext
-  ): Promise<void> {
+  public async execute(_options: void, context: CommandContext): Promise<void> {
     const config = await this.configService.getConfig();
 
     // Check if credentials exist
     if (!config.username || !config.apiToken) {
+      if (context.globalOptions.json) {
+        this.output.json({ authenticated: false });
+        return;
+      }
+
       this.output.info('Not logged in');
-      this.output.text(`Run ${chalk.cyan('bb auth login')} to authenticate.`);
+      this.output.text(
+        `Run ${this.output.highlight('bb auth login')} to authenticate.`
+      );
       return;
     }
 
@@ -51,19 +54,34 @@ export class StatusCommand extends BaseCommand<void, void> {
       const response = await this.usersApi.userGet();
       const user = response.data;
 
+      if (context.globalOptions.json) {
+        this.output.json({
+          authenticated: true,
+          user: {
+            username: user.username,
+            displayName: user.display_name,
+            accountId: user.account_id,
+          },
+          defaultWorkspace: config.defaultWorkspace,
+        });
+        return;
+      }
+
       this.output.success('Logged in to Bitbucket');
-      this.output.text(`  Username: ${chalk.cyan(user.username)}`);
+      this.output.text(
+        `  Username: ${this.output.highlight(user.username ?? '')}`
+      );
       this.output.text(`  Display name: ${user.display_name}`);
       this.output.text(`  Account ID: ${user.account_id}`);
 
       if (config.defaultWorkspace) {
         this.output.text(
-          `  Default workspace: ${chalk.cyan(config.defaultWorkspace)}`
+          `  Default workspace: ${this.output.highlight(config.defaultWorkspace)}`
         );
       }
     } catch (error) {
       throw new Error(
-        `Authentication is invalid or expired. Run ${chalk.cyan('bb auth login')} to re-authenticate.`
+        `Authentication is invalid or expired. Run ${this.output.highlight('bb auth login')} to re-authenticate.`
       );
     }
   }

@@ -422,6 +422,20 @@ describe('ListPRsCommand', () => {
     expect(output.logs.some((log) => log.includes('table-rows:'))).toBe(true);
     expect(output.logs.some((log) => log.includes('[DRAFT]'))).toBe(true);
   });
+
+  it('should output json when requested', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new ListPRsCommand(pullrequestsApi, contextService, output);
+    await command.execute({}, { globalOptions: { json: true } });
+
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
+  });
 });
 
 describe('ViewPRCommand', () => {
@@ -468,6 +482,20 @@ describe('ViewPRCommand', () => {
     await command.execute({ id: '1' }, { globalOptions: {} });
 
     expect(output.logs.some((log) => log.includes('[DRAFT]'))).toBe(true);
+  });
+
+  it('should output json when requested', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new ViewPRCommand(pullrequestsApi, contextService, output);
+    await command.execute({ id: '1' }, { globalOptions: { json: true } });
+
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
   });
 });
 
@@ -745,6 +773,31 @@ describe('CreatePRCommand', () => {
     );
 
     expect(output.logs.some((log) => log.includes('success:'))).toBe(true);
+  });
+
+  it('should output json when requested', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const gitService = createMockGitService({
+      currentBranch: 'feature-branch',
+    });
+    const output = createMockOutputService();
+
+    const command = new CreatePRCommand(
+      pullrequestsApi,
+      contextService,
+      gitService,
+      output
+    );
+    await command.execute(
+      { title: 'My PR' },
+      { globalOptions: { json: true } }
+    );
+
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
   });
 });
 

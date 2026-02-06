@@ -15,15 +15,24 @@ export class InstallCompletionCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(
-    _options: void,
-    _context: CommandContext
-  ): Promise<void> {
+  public async execute(_options: void, context: CommandContext): Promise<void> {
     try {
       await tabtab.install({
         name: 'bb',
         completer: 'bb',
       });
+
+      if (context.globalOptions.json) {
+        this.output.json({
+          success: true,
+          shellCompletion: {
+            command: 'bb',
+            installed: true,
+          },
+        });
+        return;
+      }
+
       this.output.success('Shell completions installed successfully!');
       this.output.text(
         'Restart your shell or source your profile to enable completions.'

@@ -113,4 +113,36 @@ export class OutputService implements IOutputService {
   public bold(text: string): string {
     return this.format(text, chalk.bold);
   }
+
+  public red(text: string): string {
+    return this.format(text, chalk.red);
+  }
+
+  public green(text: string): string {
+    return this.format(text, chalk.green);
+  }
+
+  public yellow(text: string): string {
+    return this.format(text, chalk.yellow);
+  }
+
+  public cyan(text: string): string {
+    return this.format(text, chalk.cyan);
+  }
+
+  public magenta(text: string): string {
+    return this.format(text, chalk.magenta);
+  }
+
+  public gray(text: string): string {
+    return this.format(text, chalk.gray);
+  }
+
+  public blue(text: string): string {
+    return this.format(text, chalk.blue);
+  }
+
+  public underline(text: string): string {
+    return this.format(text, chalk.underline);
+  }
 }

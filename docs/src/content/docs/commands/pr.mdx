@@ -5,6 +5,8 @@ description: Complete reference for Bitbucket CLI pull request commands. Learn t
 
 Manage pull requests in Bitbucket repositories.
 
+Global options available on all PR commands: `--json`, `--no-color`, `-w, --workspace`, `-r, --repo`.
+
 ## `bb pr create`
 
 Create a new pull request.
@@ -116,6 +118,7 @@ bb pr list [options]
 | `-r, --repo <repo>` | Repository |
 | `-s, --state <state>` | Filter by state: OPEN, MERGED, DECLINED, SUPERSEDED (default: OPEN) |
 | `--limit <number>` | Maximum number of PRs (default: 25) |
+| `--json` | Output as JSON |
 
 ### Examples
 
@@ -500,6 +503,7 @@ bb pr diff 42 --stat --json
 - When no ID is provided, the command searches for an open PR where the source branch matches your current git branch
 - The `--stat` output shows files changed with insertions (+) and deletions (-)
 - Use `--color never` when piping output to files or other commands
+- Use the global `--no-color` flag to disable color output for all command formatting
 - The diff is colorized by default when output is a terminal (green for additions, red for deletions, cyan for hunk headers)
 
 ---
@@ -676,6 +680,9 @@ bb pr comments delete 42 123
 
 # Delete comment in specific repository
 bb pr comments delete 42 456 -w myworkspace -r myrepo
+
+# Delete comment with JSON output
+bb pr comments delete 42 456 --json
 ```
 
 ### Notes

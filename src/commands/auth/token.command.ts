@@ -20,10 +20,7 @@ export class TokenCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(
-    _options: void,
-    _context: CommandContext
-  ): Promise<void> {
+  public async execute(_options: void, context: CommandContext): Promise<void> {
     const credentials = await this.configService.getCredentials();
 
     if (!credentials.username || !credentials.apiToken) {
@@ -34,7 +31,11 @@ export class TokenCommand extends BaseCommand<void, void> {
       `${credentials.username}:${credentials.apiToken}`
     ).toString('base64');
 
-    // Always output the raw token (not JSON formatted)
+    if (context.globalOptions.json) {
+      this.output.json({ token });
+      return;
+    }
+
     this.output.text(token);
   }
 }
