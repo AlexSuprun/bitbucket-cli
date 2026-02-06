@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.7.0
+
+### Minor Changes
+
+- [#93](https://github.com/0pilatos0/bitbucket-cli/pull/93) [`4180b37`](https://github.com/0pilatos0/bitbucket-cli/commit/4180b37b739d59c9cb4572d6c4d6e12f446d98c0) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Normalize CLI output behavior by adding global JSON support to all commands,
+  introducing global `--no-color` handling, and routing command formatting through
+  `IOutputService` helpers instead of direct `chalk` usage.
+
+### Patch Changes
+
+- [#90](https://github.com/0pilatos0/bitbucket-cli/pull/90) [`11d8300`](https://github.com/0pilatos0/bitbucket-cli/commit/11d8300d9a0bdbd7ef44fc98a47aca96ab596628) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Centralize CLI command execution and error handling.
+
+- [#88](https://github.com/0pilatos0/bitbucket-cli/pull/88) [`c175766`](https://github.com/0pilatos0/bitbucket-cli/commit/c175766ab07c798ff87a648982508a28fb68d1f9) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Remove unused legacy modules and consolidate helpers.
+
 ## 1.6.0
 
 ### Minor Changes
