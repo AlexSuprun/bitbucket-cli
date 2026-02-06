@@ -65,6 +65,20 @@ export class ActivityPRCommand extends BaseCommand<
           )
         : values;
 
+    if (context.globalOptions.json) {
+      this.output.json({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        pullRequestId: prId,
+        filters: {
+          types: filterTypes,
+        },
+        count: activities.length,
+        activities,
+      });
+      return;
+    }
+
     if (activities.length === 0) {
       if (filterTypes.length > 0) {
         this.output.info('No activity entries matched the requested filter');

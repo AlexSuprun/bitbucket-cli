@@ -75,10 +75,10 @@ bb pr list
 bb repo list
 bb pr create --title "Add feature"
 bb pr approve 42
-bb config set workspace myworkspace
+bb config set defaultWorkspace myworkspace
 ```
 
-**Global options:** `--json`, `-w, --workspace`, `-r, --repo`
+**Global options:** `--json`, `--no-color`, `-w, --workspace`, `-r, --repo`
 
 ---
 

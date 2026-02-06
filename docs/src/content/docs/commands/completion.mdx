@@ -5,6 +5,8 @@ description: Shell completion utilities reference
 
 Enable tab completion for bash, zsh, or fish shells.
 
+Global options available on completion commands: `--json`, `--no-color`.
+
 ## Supported Shells
 
 | Shell | Config File |
@@ -18,8 +20,14 @@ Enable tab completion for bash, zsh, or fish shells.
 Install shell completions for your current shell.
 
 ```bash
-bb completion install
+bb completion install [options]
 ```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
 
 The installer auto-detects your shell and adds the necessary configuration.
 
@@ -44,6 +52,9 @@ source ~/.config/fish/config.fish
 # Install completions
 bb completion install
 
+# Install with JSON output
+bb completion install --json
+
 # Test it works
 bb <Tab>        # Shows: auth, repo, pr, config, completion
 bb repo <Tab>   # Shows: clone, create, list, view, delete
@@ -56,14 +67,23 @@ bb repo <Tab>   # Shows: clone, create, list, view, delete
 Remove shell completions.
 
 ```bash
-bb completion uninstall
+bb completion uninstall [options]
 ```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
 
 ### Examples
 
 ```bash
 # Remove completions
 bb completion uninstall
+
+# Remove completions with JSON output
+bb completion uninstall --json
 ```
 
 ---
@@ -74,7 +94,7 @@ Tab completion works for:
 
 - **Commands**: `auth`, `repo`, `pr`, `config`, `completion`
 - **Subcommands**: `login`, `clone`, `create`, `list`, etc.
-- **Options**: `--json`, `--workspace`, `--repo`, `--help`
+- **Options**: `--json`, `--no-color`, `--workspace`, `--repo`, `--help`
 
 ### Example Session
 

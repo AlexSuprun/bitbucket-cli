@@ -53,6 +53,17 @@ export class ListPRsCommand extends BaseCommand<ListPRsOptions, void> {
     const data = response.data;
     const values = data.values ? Array.from(data.values) : [];
 
+    if (context.globalOptions.json) {
+      this.output.json({
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+        state,
+        count: values.length,
+        pullRequests: values,
+      });
+      return;
+    }
+
     if (values.length === 0) {
       this.output.text(`No ${state.toLowerCase()} pull requests found`);
       return;

@@ -67,17 +67,31 @@ export class RemoveReviewerPRCommand extends BaseCommand<
       .filter((uuid) => uuid && uuid !== user.uuid);
 
     // Update PR with new reviewers list
-    await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
-      {
-        workspace: repoContext.workspace,
-        repoSlug: repoContext.repoSlug,
+    const response =
+      await this.pullrequestsApi.repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdPut(
+        {
+          workspace: repoContext.workspace,
+          repoSlug: repoContext.repoSlug,
+          pullRequestId: prId,
+          body: {
+            type: 'pullrequest',
+            reviewers: reviewerUuids.map((uuid) => ({ uuid })),
+          } as unknown as import('../../generated/api.js').Pullrequest,
+        }
+      );
+
+    if (context.globalOptions.json) {
+      this.output.json({
+        success: true,
         pullRequestId: prId,
-        body: {
-          type: 'pullrequest',
-          reviewers: reviewerUuids.map((uuid) => ({ uuid })),
-        } as unknown as import('../../generated/api.js').Pullrequest,
-      }
-    );
+        reviewer: {
+          username: options.username,
+          uuid: user.uuid,
+        },
+        pullRequest: response.data,
+      });
+      return;
+    }
 
     this.output.success(
       `Removed ${options.username} as reviewer from pull request #${prId}`

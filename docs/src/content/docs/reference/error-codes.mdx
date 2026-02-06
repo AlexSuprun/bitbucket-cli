@@ -198,11 +198,12 @@ bb auth login
 
 **Solution:**
 Valid configuration keys are:
-- `workspace` - Default workspace
-- `repo` - Default repository
+- `defaultWorkspace` - Default workspace
+- `skipVersionCheck` - Disable update notifications
+- `versionCheckInterval` - Days between update checks
 
 ```bash
-bb config set workspace myworkspace
+bb config set defaultWorkspace myworkspace
 bb config list
 ```
 
@@ -255,7 +256,7 @@ bb pr list -w myworkspace -r myrepo
 ```
 2. Set a default:
 ```bash
-bb config set workspace myworkspace
+bb config set defaultWorkspace myworkspace
 ```
 3. Run from within a cloned Bitbucket repository
 
@@ -274,7 +275,7 @@ bb repo list -w myworkspace
 ```
 2. Set a default workspace:
 ```bash
-bb config set workspace myworkspace
+bb config set defaultWorkspace myworkspace
 ```
 
 ---

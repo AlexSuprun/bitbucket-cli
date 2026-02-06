@@ -30,7 +30,7 @@ export class LoginCommand extends BaseCommand<LoginOptions, void> {
 
   public async execute(
     options: LoginOptions,
-    _context: CommandContext
+    context: CommandContext
   ): Promise<void> {
     const username = options.username || process.env.BB_USERNAME;
     const apiToken = options.password || process.env.BB_API_TOKEN;
@@ -52,6 +52,18 @@ export class LoginCommand extends BaseCommand<LoginOptions, void> {
     try {
       const response = await this.usersApi.userGet();
       const user = response.data;
+
+      if (context.globalOptions.json) {
+        this.output.json({
+          authenticated: true,
+          user: {
+            username: user.username,
+            displayName: user.display_name,
+            accountId: user.account_id,
+          },
+        });
+        return;
+      }
 
       this.output.success(
         `Logged in as ${user.display_name} (${user.username})`

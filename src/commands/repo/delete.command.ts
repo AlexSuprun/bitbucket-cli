@@ -61,6 +61,15 @@ export class DeleteRepoCommand extends BaseCommand<
       repoSlug: repoContext.repoSlug,
     });
 
+    if (context.globalOptions.json) {
+      this.output.json({
+        success: true,
+        workspace: repoContext.workspace,
+        repoSlug: repoContext.repoSlug,
+      });
+      return;
+    }
+
     this.output.success(
       `Deleted repository ${repoContext.workspace}/${repoContext.repoSlug}`
     );

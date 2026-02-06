@@ -5,6 +5,8 @@ description: Configuration commands reference
 
 Manage CLI configuration settings.
 
+Global options available on all config commands: `--json`, `--no-color`.
+
 ## Configuration File
 
 Configuration is stored in a JSON file at:
@@ -20,8 +22,7 @@ The configuration file stores your CLI settings and authentication credentials.
 |-----|-------------|
 | `username` | Bitbucket username (set during `auth login`) |
 | `apiToken` | Bitbucket API token (set during `auth login`, masked in output) |
-| `workspace` | Default workspace for commands |
-| `repo` | Default repository for commands |
+| `defaultWorkspace` | Default workspace for commands |
 | `skipVersionCheck` | Disable update notifications (default: false) |
 | `versionCheckInterval` | Days between update checks (default: 1) |
 
@@ -33,8 +34,7 @@ The config file is stored as JSON:
 {
   "username": "myuser",
   "apiToken": "***",
-  "workspace": "myworkspace",
-  "repo": "myrepo",
+  "defaultWorkspace": "myworkspace",
   "skipVersionCheck": false,
   "versionCheckInterval": 1
 }
@@ -62,11 +62,20 @@ bb config get <key>
 
 ```bash
 # Get default workspace
-bb config get workspace
+bb config get defaultWorkspace
 
 # Get username
 bb config get username
+
+# Get output as JSON
+bb config get defaultWorkspace --json
 ```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
 
 ---
 
@@ -89,17 +98,23 @@ bb config set <key> <value>
 
 ```bash
 # Set default workspace
-bb config set workspace myworkspace
-
-# Set default repository
-bb config set repo myrepo
+bb config set defaultWorkspace myworkspace
 
 # Disable update notifications
 bb config set skipVersionCheck true
 
 # Check for updates weekly instead of daily
 bb config set versionCheckInterval 7
+
+# Get output as JSON
+bb config set defaultWorkspace myworkspace --json
 ```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
 
 :::caution
 Use `bb auth login` to set credentials instead of manually setting `username` and `apiToken`.
@@ -139,10 +154,10 @@ Config file: /Users/you/.config/bb/config.json
 KEY               VALUE
 -----------------  ---------
 username          myuser
-workspace         myworkspace
-appPassword       ********
+defaultWorkspace  myworkspace
+apiToken          ********
 ```
 
 :::note
-The `appPassword` value is always masked for security.
+The `apiToken` value is always masked for security.
 :::

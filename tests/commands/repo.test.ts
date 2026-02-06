@@ -220,8 +220,7 @@ describe('ListReposCommand', () => {
       { globalOptions: { json: true } }
     );
 
-    // Command outputs table regardless of json flag
-    expect(output.logs.some((log) => log.includes('table:'))).toBe(true);
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
   });
 });
 
@@ -295,10 +294,7 @@ describe('ViewRepoCommand', () => {
     );
     await command.execute({}, { globalOptions: { json: true } });
 
-    // Command outputs text regardless of json flag
-    expect(output.logs.some((log) => log.includes('workspace/repo'))).toBe(
-      true
-    );
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
   });
 
   it('should display repository details', async () => {
@@ -433,8 +429,7 @@ describe('CreateRepoCommand', () => {
       { globalOptions: { json: true } }
     );
 
-    // Command outputs text regardless of json flag
-    expect(output.logs.some((log) => log.includes('success:'))).toBe(true);
+    expect(output.logs.some((log) => log.startsWith('json:'))).toBe(true);
   });
 });
 

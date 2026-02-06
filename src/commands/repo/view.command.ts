@@ -2,7 +2,6 @@
  * View repository command implementation
  */
 
-import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -55,40 +54,45 @@ export class ViewRepoCommand extends BaseCommand<ViewRepoOptions, void> {
 
     const repo = response.data;
 
-    this.output.text(chalk.bold(repo.full_name ?? ''));
+    if (context.globalOptions.json) {
+      this.output.json(repo);
+      return;
+    }
+
+    this.output.text(this.output.bold(repo.full_name ?? ''));
 
     if (repo.description) {
-      this.output.text(chalk.dim(repo.description));
+      this.output.text(this.output.dim(repo.description));
     }
 
     this.output.text('');
     this.output.text(
-      `  ${chalk.dim('Visibility:')} ${repo.is_private ? 'Private' : 'Public'}`
+      `  ${this.output.dim('Visibility:')} ${repo.is_private ? 'Private' : 'Public'}`
     );
     this.output.text(
-      `  ${chalk.dim('Owner:')} ${repo.owner?.display_name ?? 'Unknown'}`
+      `  ${this.output.dim('Owner:')} ${repo.owner?.display_name ?? 'Unknown'}`
     );
 
     if (repo.language) {
-      this.output.text(`  ${chalk.dim('Language:')} ${repo.language}`);
+      this.output.text(`  ${this.output.dim('Language:')} ${repo.language}`);
     }
 
     if (repo.mainbranch) {
       this.output.text(
-        `  ${chalk.dim('Default branch:')} ${repo.mainbranch.name}`
+        `  ${this.output.dim('Default branch:')} ${repo.mainbranch.name}`
       );
     }
 
     this.output.text(
-      `  ${chalk.dim('Created:')} ${this.output.formatDate(repo.created_on ?? '')}`
+      `  ${this.output.dim('Created:')} ${this.output.formatDate(repo.created_on ?? '')}`
     );
     this.output.text(
-      `  ${chalk.dim('Updated:')} ${this.output.formatDate(repo.updated_on ?? '')}`
+      `  ${this.output.dim('Updated:')} ${this.output.formatDate(repo.updated_on ?? '')}`
     );
     this.output.text('');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.output.text(
-      `  ${chalk.dim('URL:')} ${(repo.links as any)?.html?.href}`
+      `  ${this.output.dim('URL:')} ${(repo.links as any)?.html?.href}`
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +100,7 @@ export class ViewRepoCommand extends BaseCommand<ViewRepoOptions, void> {
       (c: any) => c.name === 'ssh'
     ) as { href?: string } | undefined;
     if (sshClone?.href) {
-      this.output.text(`  ${chalk.dim('SSH:')} ${sshClone.href}`);
+      this.output.text(`  ${this.output.dim('SSH:')} ${sshClone.href}`);
     }
   }
 }

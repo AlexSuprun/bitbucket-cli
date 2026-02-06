@@ -2,7 +2,6 @@
  * PR checks command implementation
  */
 
-import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -54,6 +53,7 @@ export class ChecksPRCommand extends BaseCommand<
 
     const data = response.data;
     const statuses = data?.values ? Array.from(data.values) : [];
+    const summary = this.getSummary(statuses);
 
     const useJson = options.json || context.globalOptions.json;
 
@@ -62,6 +62,7 @@ export class ChecksPRCommand extends BaseCommand<
         pullRequestId: prId,
         workspace: repoContext.workspace,
         repoSlug: repoContext.repoSlug,
+        summary,
         statuses: statuses.map((status) => this.formatStatusForJson(status)),
       });
       return;
@@ -73,7 +74,7 @@ export class ChecksPRCommand extends BaseCommand<
     }
 
     this.renderHeader(prId, statuses.length);
-    this.renderStatuses(statuses);
+    this.renderStatuses(statuses, summary);
   }
 
   private formatStatusForJson(status: Commitstatus): Record<string, unknown> {
@@ -92,12 +93,15 @@ export class ChecksPRCommand extends BaseCommand<
 
   private renderHeader(prId: number, count: number): void {
     this.output.text('');
-    const title = chalk.bold('Pull Request #' + prId);
+    const title = this.output.bold('Pull Request #' + prId);
     this.output.text(`${title} - ${count} check${count === 1 ? '' : 's'}`);
-    this.output.text(chalk.gray('-'.repeat(60)));
+    this.output.text(this.output.gray('-'.repeat(60)));
   }
 
-  private renderStatuses(statuses: Commitstatus[]): void {
+  private renderStatuses(
+    statuses: Commitstatus[],
+    summary: { successful: number; failed: number; pending: number }
+  ): void {
     const rows = statuses.map((status) => {
       const stateIcon = this.getStateIcon(status.state);
       const stateLabel = this.getStateLabel(status.state);
@@ -106,7 +110,7 @@ export class ChecksPRCommand extends BaseCommand<
 
       return [
         `${stateIcon} ${stateLabel}`,
-        chalk.bold(name),
+        this.output.bold(name),
         this.truncate(description, 40),
         status.updated_on ? this.output.formatDate(status.updated_on) : '-',
       ];
@@ -115,10 +119,9 @@ export class ChecksPRCommand extends BaseCommand<
     this.output.table(['STATUS', 'NAME', 'DESCRIPTION', 'UPDATED'], rows);
 
     // Show summary
-    const summary = this.getSummary(statuses);
     this.output.text('');
     this.output.text(
-      `${chalk.green('OK')} ${summary.successful} successful, ${chalk.red('FAIL')} ${summary.failed} failed, ${chalk.yellow('RUN')} ${summary.pending} pending`
+      `${this.output.green('OK')} ${summary.successful} successful, ${this.output.red('FAIL')} ${summary.failed} failed, ${this.output.yellow('RUN')} ${summary.pending} pending`
     );
     this.output.text('');
   }
@@ -126,15 +129,15 @@ export class ChecksPRCommand extends BaseCommand<
   private getStateIcon(state?: string): string {
     switch (state?.toUpperCase()) {
       case 'SUCCESSFUL':
-        return chalk.green('OK');
+        return this.output.green('OK');
       case 'FAILED':
-        return chalk.red('FAIL');
+        return this.output.red('FAIL');
       case 'INPROGRESS':
-        return chalk.yellow('RUN');
+        return this.output.yellow('RUN');
       case 'STOPPED':
-        return chalk.gray('STOP');
+        return this.output.gray('STOP');
       default:
-        return chalk.gray('?');
+        return this.output.gray('?');
     }
   }
 

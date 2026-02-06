@@ -15,14 +15,23 @@ export class UninstallCompletionCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(
-    _options: void,
-    _context: CommandContext
-  ): Promise<void> {
+  public async execute(_options: void, context: CommandContext): Promise<void> {
     try {
       await tabtab.uninstall({
         name: 'bb',
       });
+
+      if (context.globalOptions.json) {
+        this.output.json({
+          success: true,
+          shellCompletion: {
+            command: 'bb',
+            installed: false,
+          },
+        });
+        return;
+      }
+
       this.output.success('Shell completions uninstalled successfully!');
     } catch (error) {
       throw new Error(`Failed to uninstall completions: ${error}`);

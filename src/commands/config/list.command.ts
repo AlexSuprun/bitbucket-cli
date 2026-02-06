@@ -2,7 +2,6 @@
  * List config command implementation
  */
 
-import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -27,10 +26,7 @@ export class ListConfigCommand extends BaseCommand<void, void> {
     super(output);
   }
 
-  public async execute(
-    _options: void,
-    _context: CommandContext
-  ): Promise<void> {
+  public async execute(_options: void, context: CommandContext): Promise<void> {
     const config = await this.configService.getConfig();
 
     // Build display config with masked password
@@ -40,8 +36,18 @@ export class ListConfigCommand extends BaseCommand<void, void> {
       apiToken: config.apiToken ? '********' : '',
     };
 
+    if (context.globalOptions.json) {
+      this.output.json({
+        configPath: this.configService.getConfigPath(),
+        config: Object.fromEntries(
+          Object.entries(displayConfig).filter(([, value]) => value !== '')
+        ),
+      });
+      return;
+    }
+
     this.output.text(
-      chalk.dim(`Config file: ${this.configService.getConfigPath()}`)
+      this.output.dim(`Config file: ${this.configService.getConfigPath()}`)
     );
     this.output.text('');
 

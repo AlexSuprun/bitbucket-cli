@@ -49,6 +49,15 @@ export class DeleteCommentPRCommand extends BaseCommand<
       }
     );
 
+    if (context.globalOptions.json) {
+      this.output.json({
+        success: true,
+        pullRequestId: prId,
+        commentId,
+      });
+      return;
+    }
+
     this.output.success(`Deleted comment #${commentId} from PR #${prId}`);
   }
 }

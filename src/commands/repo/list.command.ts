@@ -29,9 +29,11 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
 
   public async execute(
     options: ListReposOptions,
-    _context: CommandContext
+    context: CommandContext
   ): Promise<void> {
-    const workspace = await this.resolveWorkspace(options.workspace);
+    const workspace = await this.resolveWorkspace(
+      options.workspace ?? context.globalOptions.workspace
+    );
     const limit = Number.parseInt(options.limit || '25', 10);
 
     const response = await this.repositoriesApi.repositoriesWorkspaceGet({
@@ -39,6 +41,15 @@ export class ListReposCommand extends BaseCommand<ListReposOptions, void> {
     });
 
     const repos = Array.from(response.data.values ?? []).slice(0, limit);
+
+    if (context.globalOptions.json) {
+      this.output.json({
+        workspace,
+        count: repos.length,
+        repositories: repos,
+      });
+      return;
+    }
 
     if (repos.length === 0) {
       this.output.text('No repositories found');

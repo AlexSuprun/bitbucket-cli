@@ -145,6 +145,42 @@ export function createMockOutputService(): IOutputService & { logs: string[] } {
     text(message: string) {
       logs.push(`text:${message}`);
     },
+    format(text: string, formatter: (text: string) => string) {
+      return formatter(text);
+    },
+    dim(text: string) {
+      return text;
+    },
+    highlight(text: string) {
+      return text;
+    },
+    bold(text: string) {
+      return text;
+    },
+    red(text: string) {
+      return text;
+    },
+    green(text: string) {
+      return text;
+    },
+    yellow(text: string) {
+      return text;
+    },
+    cyan(text: string) {
+      return text;
+    },
+    magenta(text: string) {
+      return text;
+    },
+    gray(text: string) {
+      return text;
+    },
+    blue(text: string) {
+      return text;
+    },
+    underline(text: string) {
+      return text;
+    },
     formatDate(date: string | Date) {
       return new Date(date).toISOString();
     },

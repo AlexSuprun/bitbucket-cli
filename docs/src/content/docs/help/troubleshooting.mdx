@@ -105,7 +105,7 @@ Error: Could not determine repository. Use -w and -r flags or run from within a 
 **Causes:**
 - Not in a git repository
 - Git remote doesn't point to Bitbucket
-- No default workspace/repo configured
+- No default workspace configured
 
 **Solutions:**
 
@@ -116,8 +116,7 @@ bb pr list -w myworkspace -r myrepo
 
 **Option 2:** Set defaults
 ```bash
-bb config set workspace myworkspace
-bb config set repo myrepo
+bb config set defaultWorkspace myworkspace
 ```
 
 **Option 3:** Work from a cloned repository
@@ -216,7 +215,7 @@ Error: Rate limit exceeded
 3. Use `--json` and process locally to reduce API calls:
    ```bash
    # One API call, process locally
-   bb pr list --json | jq '.[] | select(.author.username == "me")'
+   bb pr list --json | jq '.pullRequests[] | select(.author.username == "me")'
    ```
 
 ---

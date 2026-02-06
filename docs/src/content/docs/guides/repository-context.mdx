@@ -11,7 +11,7 @@ The CLI checks multiple sources in this order:
 
 1. **Command-line flags** (`--workspace` and `--repo`)
 2. **Current Git repository** (automatically detected from your git remote URL)
-3. **Config file defaults** (`workspace` and `repo` settings)
+3. **Config file defaults** (`defaultWorkspace` setting)
 4. **Combinations** of the above sources
 
 ### Examples
@@ -39,8 +39,7 @@ This works from anywhere, even outside a git repository.
 
 ```bash
 # Set defaults once
-bb config set workspace myworkspace
-bb config set repo myrepo
+bb config set defaultWorkspace myworkspace
 
 # Then use commands without flags
 bb pr list  # ✅ Uses config defaults
@@ -80,7 +79,7 @@ bb repo view myrepo
 ```
 
 The CLI will:
-1. Check if you set a default workspace via `bb config set workspace`
+1. Check if you set a default workspace via `bb config set defaultWorkspace`
 2. Check if you're in a git repository and use its workspace
 3. Error if neither is available
 
@@ -110,7 +109,7 @@ This error appears when the CLI can't figure out which workspace/repo to use.
 **Solutions:**
 1. Use explicit flags: `-w myworkspace -r myrepo`
 2. Run from within a Bitbucket repository
-3. Set defaults: `bb config set workspace myworkspace`
+3. Set defaults: `bb config set defaultWorkspace myworkspace`
 
 ### "Repository not found"
 
@@ -127,7 +126,7 @@ The workspace/repo combination was determined but doesn't exist.
 
 Set your default workspace if you primarily work with one:
 ```bash
-bb config set workspace myworkspace
+bb config set defaultWorkspace myworkspace
 ```
 
 Then work from within your git repositories - context will be automatic.
@@ -156,4 +155,4 @@ cd ../project-b && bb pr list  # Uses project-b's workspace
 
 - Use `bb repo view` with no arguments to see what context the CLI detected
 - The `--json` flag works with most commands for scripting
-- Global flags (`-w`, `-r`, `--json`) work with all commands
+- Global flags (`-w`, `-r`, `--json`, `--no-color`) work with all commands

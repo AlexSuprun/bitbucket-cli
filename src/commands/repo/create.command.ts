@@ -2,7 +2,6 @@
  * Create repository command implementation
  */
 
-import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -36,7 +35,7 @@ export class CreateRepoCommand extends BaseCommand<
 
   public async execute(
     options: { name: string } & CreateRepoOptions,
-    _context: CommandContext
+    context: CommandContext
   ): Promise<void> {
     const { name, description, project } = options;
     const isPublic = options.public === true;
@@ -74,10 +73,15 @@ export class CreateRepoCommand extends BaseCommand<
 
     const repo = response.data;
 
+    if (context.globalOptions.json) {
+      this.output.json(repo);
+      return;
+    }
+
     this.output.success(`Created repository ${repo.full_name}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.output.text(
-      `  ${chalk.dim('URL:')} ${(repo.links as any)?.html?.href}`
+      `  ${this.output.dim('URL:')} ${(repo.links as any)?.html?.href}`
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +89,9 @@ export class CreateRepoCommand extends BaseCommand<
       (c: any) => c.name === 'ssh'
     ) as { href?: string } | undefined;
     if (sshClone?.href) {
-      this.output.text(`  ${chalk.dim('Clone:')} git clone ${sshClone.href}`);
+      this.output.text(
+        `  ${this.output.dim('Clone:')} git clone ${sshClone.href}`
+      );
     }
   }
 

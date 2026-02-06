@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'bun:test';
-import { withGlobalOptions } from '../src/cli.js';
+import { resolveNoColorSetting, withGlobalOptions } from '../src/cli.js';
 import type { CommandContext } from '../src/core/interfaces/commands.js';
 
 describe('withGlobalOptions', () => {
@@ -124,5 +124,41 @@ describe('withGlobalOptions', () => {
     expect(result.workspace).toBe('ws');
     // json should not be in result as it's only in globalOptions
     expect((result as Record<string, unknown>).json).toBeUndefined();
+  });
+});
+
+describe('resolveNoColorSetting', () => {
+  it('should enable noColor when --no-color is passed', () => {
+    const noColor = resolveNoColorSetting(
+      ['node', 'bb', '--no-color'],
+      {} as NodeJS.ProcessEnv
+    );
+
+    expect(noColor).toBe(true);
+  });
+
+  it('should enable noColor when NO_COLOR is set', () => {
+    const noColor = resolveNoColorSetting(['node', 'bb'], {
+      NO_COLOR: '1',
+    } as NodeJS.ProcessEnv);
+
+    expect(noColor).toBe(true);
+  });
+
+  it('should prefer FORCE_COLOR over NO_COLOR and --no-color', () => {
+    const noColor = resolveNoColorSetting(['node', 'bb', '--no-color'], {
+      NO_COLOR: '1',
+      FORCE_COLOR: '1',
+    } as NodeJS.ProcessEnv);
+
+    expect(noColor).toBe(false);
+  });
+
+  it('should allow --color to override NO_COLOR', () => {
+    const noColor = resolveNoColorSetting(['node', 'bb', '--color'], {
+      NO_COLOR: '1',
+    } as NodeJS.ProcessEnv);
+
+    expect(noColor).toBe(false);
   });
 });

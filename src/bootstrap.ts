@@ -67,13 +67,20 @@ import { ListConfigCommand } from './commands/config/list.command.js';
 import { InstallCompletionCommand } from './commands/completion/install.command.js';
 import { UninstallCompletionCommand } from './commands/completion/uninstall.command.js';
 
-export function bootstrap(): Container {
+export interface BootstrapOptions {
+  noColor?: boolean;
+}
+
+export function bootstrap(options: BootstrapOptions = {}): Container {
   const container = Container.getInstance();
 
   // Register core services
   container.register(ServiceTokens.ConfigService, () => new ConfigService());
   container.register(ServiceTokens.GitService, () => new GitService());
-  container.register(ServiceTokens.OutputService, () => new OutputService());
+  container.register(
+    ServiceTokens.OutputService,
+    () => new OutputService({ noColor: options.noColor })
+  );
 
   // Register API clients with axios instance
   container.register(ServiceTokens.PullrequestsApi, () => {

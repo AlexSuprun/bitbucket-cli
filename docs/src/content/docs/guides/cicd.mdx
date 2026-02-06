@@ -116,7 +116,7 @@ jobs:
 
           # Check if PR already exists
           EXISTING=$(bb pr list -w workspace -r repo --json | \
-            jq --arg branch "$BRANCH" '[.[] | select(.source.branch.name == $branch)] | length')
+            jq --arg branch "$BRANCH" '[.pullRequests[] | select(.source.branch.name == $branch)] | length')
 
           if [ "$EXISTING" -eq 0 ]; then
             bb pr create -w workspace -r repo \
@@ -222,7 +222,7 @@ pipeline {
                 sh '''
                     export PATH="$HOME/.bun/bin:$PATH"
                     bb pr list -w myworkspace -r myrepo --json > prs.json
-                    PR_COUNT=$(jq length prs.json)
+                    PR_COUNT=$(jq '.count' prs.json)
                     echo "Found $PR_COUNT open PRs"
                 '''
             }
@@ -236,7 +236,7 @@ pipeline {
                 sh '''
                     export PATH="$HOME/.bun/bin:$PATH"
                     APPROVED_PRS=$(bb pr list -w myworkspace -r myrepo --json | \
-                        jq -r '.[] | select(.participants | any(.approved == true)) | .id')
+                        jq -r '.pullRequests[] | select(.participants | any(.approved == true)) | .id')
 
                     for PR_ID in $APPROVED_PRS; do
                         echo "Merging PR #$PR_ID"
@@ -345,7 +345,7 @@ REPO="myrepo"
 
 # Find PRs that are approved and have passing builds
 approved_prs=$(bb pr list -w "$WORKSPACE" -r "$REPO" --json | jq -r '
-  .[] |
+  .pullRequests[] |
   select(.participants | any(.approved == true)) |
   select(.state == "OPEN") |
   .id
@@ -378,7 +378,7 @@ echo "# Changelog - Week of $(date +%Y-%m-%d)"
 echo ""
 
 bb pr list -w "$WORKSPACE" -r "$REPO" -s MERGED --json | jq -r --arg since "$SINCE_DATE" '
-  .[] |
+  .pullRequests[] |
   select(.updated_on >= $since) |
   "- \(.title) (#\(.id)) by @\(.author.username)"
 '

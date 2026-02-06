@@ -2,7 +2,6 @@
  * Create PR command implementation
  */
 
-import chalk from 'chalk';
 import { BaseCommand } from '../../core/base-command.js';
 import type { CommandContext } from '../../core/interfaces/commands.js';
 import type {
@@ -88,8 +87,13 @@ export class CreatePRCommand extends BaseCommand<CreatePROptions, void> {
     const pr = response.data;
     const links = pr.links as { html?: { href?: string } } | undefined;
 
+    if (context.globalOptions.json) {
+      this.output.json(pr);
+      return;
+    }
+
     this.output.success(`Created pull request #${pr.id}`);
-    this.output.text(`  ${chalk.dim('Title:')} ${pr.title}`);
-    this.output.text(`  ${chalk.dim('URL:')} ${links?.html?.href}`);
+    this.output.text(`  ${this.output.dim('Title:')} ${pr.title}`);
+    this.output.text(`  ${this.output.dim('URL:')} ${links?.html?.href}`);
   }
 }

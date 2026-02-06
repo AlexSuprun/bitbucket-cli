@@ -137,8 +137,7 @@ For full functionality, grant all repository and pull request scopes.
 
 **Option 1:** Set defaults
 ```bash
-bb config set workspace myworkspace
-bb config set repo myrepo
+bb config set defaultWorkspace myworkspace
 ```
 
 **Option 2:** Work from cloned repositories
@@ -210,13 +209,13 @@ Use the `--json` flag for machine-readable output:
 
 ```bash
 # List PR titles
-bb pr list --json | jq '.[].title'
+bb pr list --json | jq '.pullRequests[].title'
 
 # Get PR count
-bb pr list --json | jq 'length'
+bb pr list --json | jq '.count'
 
 # Filter by author
-bb pr list --json | jq '.[] | select(.author.username == "alice")'
+bb pr list --json | jq '.pullRequests[] | select(.author.username == "alice")'
 ```
 
 ---
@@ -230,7 +229,7 @@ Yes! Example pre-push hook to check for open PRs:
 # .git/hooks/pre-push
 
 branch=$(git branch --show-current)
-prs=$(bb pr list --json 2>/dev/null | jq --arg b "$branch" '[.[] | select(.source.branch.name == $b)] | length')
+prs=$(bb pr list --json 2>/dev/null | jq --arg b "$branch" '[.pullRequests[] | select(.source.branch.name == $b)] | length')
 
 if [ "$prs" -gt 0 ]; then
   echo "Note: PR already exists for branch $branch"

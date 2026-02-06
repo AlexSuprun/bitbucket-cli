@@ -13,6 +13,8 @@ Environment variables allow you to configure the CLI without storing credentials
 |----------|-------------|---------|
 | `BB_USERNAME` | Your Bitbucket username | `myuser` |
 | `BB_API_TOKEN` | Your Bitbucket API token | `ATBB...` |
+| `NO_COLOR` | Disable color output globally | `1` |
+| `FORCE_COLOR` | Force-enable color output globally | `1` |
 
 ## Configuration Priority
 
@@ -22,6 +24,13 @@ The CLI resolves configuration in this order (highest priority first):
 2. **Environment variables** (`BB_USERNAME`, `BB_API_TOKEN`)
 3. **Git repository context** (detected from remote URL)
 4. **Configuration file** (`~/.config/bb/config.json`)
+
+For color output, precedence is:
+
+1. `--color` (force color on)
+2. `FORCE_COLOR`
+3. `--no-color`
+4. `NO_COLOR`
 
 ---
 
