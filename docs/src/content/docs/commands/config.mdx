@@ -92,7 +92,17 @@ bb config set <key> <value>
 | Argument | Description |
 |----------|-------------|
 | `key` | Configuration key to set |
-| `value` | Value to set |
+| `value` | Value to set (parsed by key type) |
+
+### Typed Value Parsing
+
+`bb config set` validates and stores typed values for known typed keys:
+
+| Key | Accepted values | Stored type |
+|-----|-----------------|-------------|
+| `defaultWorkspace` | Any string | string |
+| `skipVersionCheck` | `true` or `false` | boolean |
+| `versionCheckInterval` | Positive integer (`>= 1`) | number |
 
 ### Examples
 
@@ -106,8 +116,17 @@ bb config set skipVersionCheck true
 # Check for updates weekly instead of daily
 bb config set versionCheckInterval 7
 
+# Invalid values are rejected
+bb config set skipVersionCheck maybe
+
 # Get output as JSON
 bb config set defaultWorkspace myworkspace --json
+```
+
+Example JSON output for typed keys:
+
+```json
+{ "success": true, "key": "skipVersionCheck", "value": true }
 ```
 
 ### Options

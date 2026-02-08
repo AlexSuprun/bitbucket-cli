@@ -38,6 +38,21 @@ describe('VersionService', () => {
       expect(result).toBeNull();
     });
 
+    it('should return null when legacy skipVersionCheck is string true', async () => {
+      const legacyConfig = {
+        skipVersionCheck: 'true',
+      } as unknown as BBConfig;
+
+      service = new VersionService(
+        createMockConfigService(legacyConfig),
+        '1.0.0'
+      );
+
+      const result = await service.checkForUpdate();
+
+      expect(result).toBeNull();
+    });
+
     it('should return null in CI environment', async () => {
       process.env.CI = 'true';
 
@@ -65,6 +80,26 @@ describe('VersionService', () => {
       mockConfig.lastVersionCheck = oldDate.toISOString();
       service = new VersionService(
         createMockConfigService(mockConfig),
+        '1.0.0'
+      );
+
+      const result = await service.checkForUpdate();
+
+      // Should not check because 3 days < 7 days
+      expect(result).toBeNull();
+    });
+
+    it('should respect legacy string versionCheckInterval', async () => {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 3); // 3 days ago
+
+      const legacyConfig = {
+        versionCheckInterval: '7',
+        lastVersionCheck: oldDate.toISOString(),
+      } as unknown as BBConfig;
+
+      service = new VersionService(
+        createMockConfigService(legacyConfig),
         '1.0.0'
       );
 

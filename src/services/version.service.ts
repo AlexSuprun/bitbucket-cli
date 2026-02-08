@@ -4,6 +4,10 @@
 
 import type { IConfigService } from '../core/interfaces/services.js';
 import { BBError, ErrorCode } from '../types/errors.js';
+import {
+  coerceSkipVersionCheckValue,
+  coerceVersionCheckIntervalValue,
+} from '../types/config.js';
 import type { VersionCheckResult } from '../types/version.js';
 
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org/@pilatos/bitbucket-cli';
@@ -29,7 +33,8 @@ export class VersionService {
    */
   public async checkForUpdate(): Promise<VersionCheckResult | null> {
     // Check if user has disabled version checks
-    const skipCheck = await this.configService.getValue('skipVersionCheck');
+    const skipCheckRaw = await this.configService.getValue('skipVersionCheck');
+    const skipCheck = coerceSkipVersionCheckValue(skipCheckRaw as unknown);
     if (skipCheck === true) {
       return null;
     }
@@ -87,7 +92,7 @@ export class VersionService {
     const intervalDays = await this.configService.getValue(
       'versionCheckInterval'
     );
-    const days = typeof intervalDays === 'number' ? intervalDays : 1;
+    const days = coerceVersionCheckIntervalValue(intervalDays as unknown) ?? 1;
 
     const intervalMs = days * 24 * 60 * 60 * 1000;
 

@@ -294,6 +294,15 @@ bb config set versionCheckInterval 3
 
 The value is in days.
 
+`versionCheckInterval` must be a positive integer (`>= 1`).
+`skipVersionCheck` only accepts `true` or `false`.
+
+Both settings are stored as typed JSON values, so JSON output returns:
+
+```json
+{ "key": "skipVersionCheck", "value": true }
+```
+
 ### Will update checks slow down the CLI?
 
 No. The check is:
