@@ -6,6 +6,7 @@ import { describe, it, expect } from 'bun:test';
 import { GetConfigCommand } from '../../src/commands/config/get.command.js';
 import { SetConfigCommand } from '../../src/commands/config/set.command.js';
 import { ListConfigCommand } from '../../src/commands/config/list.command.js';
+import type { BBConfig } from '../../src/types/config.js';
 import { createMockConfigService, createMockOutputService } from '../setup.js';
 
 describe('GetConfigCommand', () => {
@@ -260,6 +261,8 @@ describe('ListConfigCommand', () => {
       username: 'testuser',
       apiToken: 'testpass',
       defaultWorkspace: 'myworkspace',
+      skipVersionCheck: true,
+      versionCheckInterval: 7,
     });
     const output = createMockOutputService();
 
@@ -269,6 +272,14 @@ describe('ListConfigCommand', () => {
     expect(output.logs.some((log) => log.includes('testuser'))).toBe(true);
     expect(output.logs.some((log) => log.includes('myworkspace'))).toBe(true);
     expect(output.logs.some((log) => log.includes('********'))).toBe(true);
+    expect(output.logs.some((log) => log.includes('skipVersionCheck'))).toBe(
+      true
+    );
+    expect(
+      output.logs.some((log) => log.includes('versionCheckInterval'))
+    ).toBe(true);
+    expect(output.logs.some((log) => log.includes('true'))).toBe(true);
+    expect(output.logs.some((log) => log.includes('7'))).toBe(true);
   });
 
   it('should output table format', async () => {
@@ -282,6 +293,53 @@ describe('ListConfigCommand', () => {
     await command.execute(undefined, { globalOptions: {} });
 
     expect(output.logs.some((log) => log.startsWith('table:'))).toBe(true);
+  });
+
+  it('should include false boolean values', async () => {
+    const configService = createMockConfigService({
+      skipVersionCheck: false,
+    });
+    const output = createMockOutputService();
+
+    const command = new ListConfigCommand(configService, output);
+    await command.execute(undefined, { globalOptions: {} });
+
+    expect(output.logs.some((log) => log.includes('skipVersionCheck'))).toBe(
+      true
+    );
+    expect(output.logs.some((log) => log.includes('false'))).toBe(true);
+  });
+
+  it('should return typed values in JSON output', async () => {
+    const configService = createMockConfigService({
+      apiToken: 'testpass',
+      skipVersionCheck: false,
+      versionCheckInterval: 3,
+    });
+    const output = createMockOutputService();
+
+    const command = new ListConfigCommand(configService, output);
+    await command.execute(undefined, { globalOptions: { json: true } });
+
+    expect(output.logs).toContain(
+      'json:{"configPath":"/tmp/test-config/config.json","config":{"apiToken":"********","skipVersionCheck":false,"versionCheckInterval":3}}'
+    );
+  });
+
+  it('should coerce legacy string typed values for display', async () => {
+    const legacyConfig = {
+      skipVersionCheck: 'true',
+      versionCheckInterval: '9',
+    } as unknown as BBConfig;
+    const configService = createMockConfigService(legacyConfig);
+    const output = createMockOutputService();
+
+    const command = new ListConfigCommand(configService, output);
+    await command.execute(undefined, { globalOptions: { json: true } });
+
+    expect(output.logs).toContain(
+      'json:{"configPath":"/tmp/test-config/config.json","config":{"skipVersionCheck":true,"versionCheckInterval":9}}'
+    );
   });
 
   it('should show message when no config is set', async () => {

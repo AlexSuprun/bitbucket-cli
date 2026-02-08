@@ -8,11 +8,17 @@ import type {
   IConfigService,
   IOutputService,
 } from '../../core/interfaces/services.js';
+import {
+  coerceSkipVersionCheckValue,
+  coerceVersionCheckIntervalValue,
+} from '../../types/config.js';
 
 export interface ConfigDisplay {
-  username: string;
-  defaultWorkspace: string;
-  apiToken: string;
+  username?: string;
+  defaultWorkspace?: string;
+  apiToken?: string;
+  skipVersionCheck?: boolean;
+  versionCheckInterval?: number;
 }
 
 export class ListConfigCommand extends BaseCommand<void, void> {
@@ -30,18 +36,37 @@ export class ListConfigCommand extends BaseCommand<void, void> {
     const config = await this.configService.getConfig();
 
     // Build display config with masked password
-    const displayConfig: ConfigDisplay = {
-      username: config.username || '',
-      defaultWorkspace: config.defaultWorkspace || '',
-      apiToken: config.apiToken ? '********' : '',
-    };
+    const displayConfig: ConfigDisplay = {};
+    if (config.username) {
+      displayConfig.username = config.username;
+    }
+
+    if (config.defaultWorkspace) {
+      displayConfig.defaultWorkspace = config.defaultWorkspace;
+    }
+
+    if (config.apiToken) {
+      displayConfig.apiToken = '********';
+    }
+
+    const skipVersionCheck = coerceSkipVersionCheckValue(
+      config.skipVersionCheck as unknown
+    );
+    if (skipVersionCheck !== undefined) {
+      displayConfig.skipVersionCheck = skipVersionCheck;
+    }
+
+    const versionCheckInterval = coerceVersionCheckIntervalValue(
+      config.versionCheckInterval as unknown
+    );
+    if (versionCheckInterval !== undefined) {
+      displayConfig.versionCheckInterval = versionCheckInterval;
+    }
 
     if (context.globalOptions.json) {
       this.output.json({
         configPath: this.configService.getConfigPath(),
-        config: Object.fromEntries(
-          Object.entries(displayConfig).filter(([, value]) => value !== '')
-        ),
+        config: displayConfig,
       });
       return;
     }
@@ -51,9 +76,10 @@ export class ListConfigCommand extends BaseCommand<void, void> {
     );
     this.output.text('');
 
-    const rows = Object.entries(displayConfig)
-      .filter(([, value]) => value !== '')
-      .map(([key, value]) => [key, value]);
+    const rows = Object.entries(displayConfig).map(([key, value]) => [
+      key,
+      String(value),
+    ]);
 
     if (rows.length === 0) {
       this.output.text('No configuration set');
