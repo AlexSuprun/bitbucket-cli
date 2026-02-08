@@ -8,7 +8,11 @@ import type {
   IConfigService,
   IOutputService,
 } from '../../core/interfaces/services.js';
-import { isReadableConfigKey } from '../../types/config.js';
+import {
+  isReadableConfigKey,
+  normalizeReadableConfigValue,
+  READABLE_CONFIG_KEYS,
+} from '../../types/config.js';
 
 export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
   public readonly name = 'get';
@@ -39,11 +43,12 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
     // Check if key is valid
     if (!isReadableConfigKey(key)) {
       throw new Error(
-        `Unknown config key '${key}'. Valid keys: username, defaultWorkspace`
+        `Unknown config key '${key}'. Valid keys: ${READABLE_CONFIG_KEYS.join(', ')}`
       );
     }
 
-    const value = await this.configService.getValue(key);
+    const rawValue = await this.configService.getValue(key);
+    const value = normalizeReadableConfigValue(key, rawValue as unknown);
 
     if (context.globalOptions.json) {
       this.output.json({
@@ -54,6 +59,6 @@ export class GetConfigCommand extends BaseCommand<{ key: string }, void> {
     }
 
     // Output the value (or empty string if undefined)
-    this.output.text(String(value || ''));
+    this.output.text(String(value ?? ''));
   }
 }

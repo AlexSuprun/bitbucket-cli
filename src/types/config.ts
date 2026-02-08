@@ -28,6 +28,8 @@ export interface GlobalOptions {
   repo?: string;
 }
 
+type ReadableConfigValue = string | number | boolean;
+
 export const CONFIG_KEYS = [
   'username',
   'apiToken',
@@ -63,4 +65,110 @@ export function isSettableConfigKey(key: string): key is SettableConfigKey {
 
 export function isReadableConfigKey(key: string): key is ReadableConfigKey {
   return READABLE_CONFIG_KEYS.includes(key as ReadableConfigKey);
+}
+
+function parseBooleanLiteral(value: string): boolean | undefined {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return undefined;
+}
+
+function parsePositiveIntegerLiteral(value: string): number | undefined {
+  const normalized = value.trim();
+  if (!/^[1-9]\d*$/.test(normalized)) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(normalized, 10);
+  if (!Number.isSafeInteger(parsed)) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
+export function parseSettableConfigValue<K extends SettableConfigKey>(
+  key: K,
+  value: string
+): BBConfig[K] {
+  switch (key) {
+    case 'defaultWorkspace':
+      return value as BBConfig[K];
+    case 'skipVersionCheck': {
+      const parsed = parseBooleanLiteral(value);
+      if (parsed === undefined) {
+        throw new Error(
+          "Invalid value for 'skipVersionCheck'. Expected 'true' or 'false'."
+        );
+      }
+      return parsed as BBConfig[K];
+    }
+    case 'versionCheckInterval': {
+      const parsed = parsePositiveIntegerLiteral(value);
+      if (parsed === undefined) {
+        throw new Error(
+          "Invalid value for 'versionCheckInterval'. Expected a positive integer (1 or greater)."
+        );
+      }
+      return parsed as BBConfig[K];
+    }
+  }
+}
+
+export function coerceSkipVersionCheckValue(
+  value: unknown
+): boolean | undefined {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return parseBooleanLiteral(value);
+  }
+
+  return undefined;
+}
+
+export function coerceVersionCheckIntervalValue(
+  value: unknown
+): number | undefined {
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value) || value < 1) {
+      return undefined;
+    }
+
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return parsePositiveIntegerLiteral(value);
+  }
+
+  return undefined;
+}
+
+export function normalizeReadableConfigValue(
+  key: ReadableConfigKey,
+  value: unknown
+): ReadableConfigValue | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  switch (key) {
+    case 'skipVersionCheck':
+      return coerceSkipVersionCheckValue(value);
+    case 'versionCheckInterval':
+      return coerceVersionCheckIntervalValue(value);
+    case 'username':
+    case 'defaultWorkspace':
+      return typeof value === 'string' ? value : undefined;
+  }
 }

@@ -87,6 +87,20 @@ bb config set skipVersionCheck true
 bb config set versionCheckInterval 7
 ```
 
+Typed key validation:
+
+- `skipVersionCheck` accepts only `true` or `false`
+- `versionCheckInterval` accepts only positive integers (`>= 1`)
+
+Values are stored as native JSON types, so `bb config get <key> --json` returns booleans/numbers for these keys.
+
+Example:
+
+```bash
+bb config get skipVersionCheck --json
+# {"key":"skipVersionCheck","value":true}
+```
+
 ### Protected Keys
 
 Some configuration keys cannot be set directly:

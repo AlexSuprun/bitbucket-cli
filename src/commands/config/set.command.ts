@@ -8,7 +8,11 @@ import type {
   IConfigService,
   IOutputService,
 } from '../../core/interfaces/services.js';
-import { isSettableConfigKey } from '../../types/config.js';
+import {
+  isSettableConfigKey,
+  parseSettableConfigValue,
+  SETTABLE_CONFIG_KEYS,
+} from '../../types/config.js';
 
 export class SetConfigCommand extends BaseCommand<
   { key: string; value: string },
@@ -42,21 +46,23 @@ export class SetConfigCommand extends BaseCommand<
     // Check if key is valid
     if (!isSettableConfigKey(key)) {
       throw new Error(
-        `Unknown config key '${key}'. Valid keys: defaultWorkspace`
+        `Unknown config key '${key}'. Valid keys: ${SETTABLE_CONFIG_KEYS.join(', ')}`
       );
     }
 
-    await this.configService.setValue(key, value);
+    const parsedValue = parseSettableConfigValue(key, value);
+
+    await this.configService.setValue(key, parsedValue);
 
     if (context.globalOptions.json) {
       this.output.json({
         success: true,
         key,
-        value,
+        value: parsedValue,
       });
       return;
     }
 
-    this.output.success(`Set ${key} = ${value}`);
+    this.output.success(`Set ${key} = ${parsedValue}`);
   }
 }
