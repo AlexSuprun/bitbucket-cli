@@ -17,6 +17,7 @@ When commands fail, the CLI returns structured errors with specific error codes.
 | 4xxx | Configuration | Config file read/write issues |
 | 5xxx | Validation | Invalid input or missing required fields |
 | 6xxx | Context | Repository/workspace detection issues |
+| 7xxx | Network | Transport/network failures before API response |
 
 ---
 
@@ -277,6 +278,21 @@ bb repo list -w myworkspace
 ```bash
 bb config set defaultWorkspace myworkspace
 ```
+
+---
+
+## Network Errors (7xxx)
+
+### 7001 - NETWORK_ERROR
+
+**Message:** Network error: Unable to reach Bitbucket API
+
+**Cause:** The request failed before an HTTP response was received (offline, DNS issue, proxy/TLS issue, etc.).
+
+**Solution:**
+- Check internet and DNS connectivity
+- Verify proxy/TLS settings if applicable
+- Retry the command after connectivity is restored
 
 ---
 

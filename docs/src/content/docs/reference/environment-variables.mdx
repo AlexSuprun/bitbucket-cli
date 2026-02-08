@@ -18,12 +18,16 @@ Environment variables allow you to configure the CLI without storing credentials
 
 ## Configuration Priority
 
-The CLI resolves configuration in this order (highest priority first):
+Repository context is resolved in this order (highest priority first):
 
 1. **Command-line flags** (`--workspace`, `--repo`)
-2. **Environment variables** (`BB_USERNAME`, `BB_API_TOKEN`)
-3. **Git repository context** (detected from remote URL)
-4. **Configuration file** (`~/.config/bb/config.json`)
+2. **Git repository context** (detected from remote URL)
+3. **Configuration file** (`defaultWorkspace`)
+
+Authentication credentials are resolved from:
+
+1. **Configuration file** (`~/.config/bb/config.json`)
+2. **Environment variables** (`BB_USERNAME`, `BB_API_TOKEN`) when running `bb auth login`
 
 For color output, precedence is:
 
@@ -36,7 +40,7 @@ For color output, precedence is:
 
 ## Authentication with Environment Variables
 
-### Interactive Login
+### Login from Environment Variables
 
 When environment variables are set, `bb auth login` uses them automatically:
 
@@ -55,6 +59,7 @@ For scripts and CI/CD, set both variables before running commands:
 export BB_USERNAME=myuser
 export BB_API_TOKEN=ATBB_your_token_here
 
+bb auth login
 bb pr list -w myworkspace -r myrepo
 ```
 
@@ -140,7 +145,7 @@ $env:BB_API_TOKEN = "ATBB_token"
 Or inline with a single command:
 
 ```bash
-BB_USERNAME=myuser BB_API_TOKEN=ATBB_token bb pr list
+BB_USERNAME=myuser BB_API_TOKEN=ATBB_token bb auth login && bb pr list -w workspace -r repo
 ```
 
 ---
@@ -152,7 +157,7 @@ Pass environment variables to containers:
 ```bash
 docker run -e BB_USERNAME=myuser \
            -e BB_API_TOKEN=ATBB_token \
-           your-image bb pr list -w workspace -r repo
+           your-image sh -lc "bb auth login && bb pr list -w workspace -r repo"
 ```
 
 Or use an env file:
@@ -164,7 +169,7 @@ BB_API_TOKEN=ATBB_token
 ```
 
 ```bash
-docker run --env-file .env.bb your-image bb pr list -w workspace -r repo
+docker run --env-file .env.bb your-image sh -lc "bb auth login && bb pr list -w workspace -r repo"
 ```
 
 ---

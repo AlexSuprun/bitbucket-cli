@@ -65,10 +65,15 @@ The CLI requires Bun runtime to execute. You can install the package via npm/pnp
 3. **Authenticate**
 
    ```bash
+   export BB_USERNAME=your-username
+   export BB_API_TOKEN=your-api-token
    bb auth login
    ```
 
-   Enter your Bitbucket username and the API token when prompted.
+   Or pass credentials directly:
+   ```bash
+   bb auth login -u your-username -p your-api-token
+   ```
 
    Verify it worked:
    ```bash

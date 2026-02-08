@@ -90,25 +90,23 @@ Use **API tokens** instead:
 
 ### How do I use multiple Bitbucket accounts?
 
-The CLI doesn't have built-in multi-account support, but you can work around this:
+The CLI currently uses a single shared config file, so true per-session multi-account support is not available yet.
 
-**Option 1: Environment variables per session**
+Current workaround: switch accounts by re-running login when needed.
+
 ```bash
-# Terminal 1 - Account A
+# Switch to account A
 export BB_USERNAME=account-a
 export BB_API_TOKEN=token-a
+bb auth login
 
-# Terminal 2 - Account B
+# Later, switch to account B
 export BB_USERNAME=account-b
 export BB_API_TOKEN=token-b
+bb auth login
 ```
 
-**Option 2: Alias with different configs**
-```bash
-# In your .bashrc/.zshrc
-alias bb-work='BB_USERNAME=work BB_API_TOKEN=work-token bb'
-alias bb-personal='BB_USERNAME=personal BB_API_TOKEN=personal-token bb'
-```
+This updates the stored credentials each time you switch.
 
 ---
 
@@ -215,7 +213,7 @@ bb pr list --json | jq '.pullRequests[].title'
 bb pr list --json | jq '.count'
 
 # Filter by author
-bb pr list --json | jq '.pullRequests[] | select(.author.username == "alice")'
+bb pr list --json | jq '.pullRequests[] | select((.author.nickname // .author.display_name) == "alice")'
 ```
 
 ---

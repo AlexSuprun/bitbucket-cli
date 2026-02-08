@@ -215,7 +215,7 @@ Error: Rate limit exceeded
 3. Use `--json` and process locally to reduce API calls:
    ```bash
    # One API call, process locally
-   bb pr list --json | jq '.pullRequests[] | select(.author.username == "me")'
+   bb pr list --json | jq '.pullRequests[] | select((.author.nickname // .author.display_name) == "me")'
    ```
 
 ---

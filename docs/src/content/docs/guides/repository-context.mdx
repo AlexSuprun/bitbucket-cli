@@ -42,8 +42,10 @@ This works from anywhere, even outside a git repository.
 bb config set defaultWorkspace myworkspace
 
 # Then use commands without flags
-bb pr list  # ✅ Uses config defaults
+bb repo list  # ✅ Uses defaultWorkspace from config
 ```
+
+For PR commands, you still need repository context (from git remote or `-r`).
 
 #### Scenario 4: Mixed Sources
 
@@ -155,4 +157,4 @@ cd ../project-b && bb pr list  # Uses project-b's workspace
 
 - Use `bb repo view` with no arguments to see what context the CLI detected
 - The `--json` flag works with most commands for scripting
-- Global flags (`-w`, `-r`, `--json`, `--no-color`) work with all commands
+- Global flags (`--workspace`, `--repo`, `--json`, `--no-color`) are available across commands

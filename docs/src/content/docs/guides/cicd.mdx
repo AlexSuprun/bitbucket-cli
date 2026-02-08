@@ -380,7 +380,7 @@ echo ""
 bb pr list -w "$WORKSPACE" -r "$REPO" -s MERGED --json | jq -r --arg since "$SINCE_DATE" '
   .pullRequests[] |
   select(.updated_on >= $since) |
-  "- \(.title) (#\(.id)) by @\(.author.username)"
+  "- \(.title) (#\(.id)) by @\(.author.nickname // .author.display_name // \"unknown\")"
 '
 ```
 

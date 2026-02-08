@@ -35,7 +35,7 @@ bb pr list -s MERGED --json | jq '.count'
 bb pr list --json | jq '.pullRequests[] | {id, title, author: .author.display_name}'
 
 # Filter by author
-bb pr list --json | jq '.pullRequests[] | select(.author.username == "alice")'
+bb pr list --json | jq '.pullRequests[] | select((.author.nickname // .author.display_name) == "alice")'
 
 # Get PR URLs
 bb pr list --json | jq -r '.pullRequests[].links.html.href'
@@ -52,7 +52,7 @@ bb pr list --json | jq --arg date "$(date -d '7 days ago' -Iseconds)" \
 bb pr list --json | jq '.pullRequests[] | select(.destination.branch.name == "main")'
 
 # Group PRs by author
-bb pr list --json | jq '.pullRequests | group_by(.author.username) | map({author: .[0].author.username, count: length})'
+bb pr list --json | jq '.pullRequests | group_by(.author.nickname // .author.display_name) | map({author: (.[0].author.nickname // .[0].author.display_name), count: length})'
 ```
 
 ---
@@ -184,7 +184,7 @@ AUTHOR="trusted-bot"
 echo "Finding PRs from $AUTHOR..."
 
 pr_ids=$(bb pr list -w "$WORKSPACE" -r "$REPO" --json | \
-  jq -r --arg author "$AUTHOR" '.pullRequests[] | select(.author.username == $author) | .id')
+  jq -r --arg author "$AUTHOR" '.pullRequests[] | select((.author.nickname // .author.display_name) == $author) | .id')
 
 for pr_id in $pr_ids; do
   echo "Approving PR #$pr_id..."

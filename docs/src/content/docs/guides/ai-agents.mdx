@@ -52,7 +52,7 @@ Choose your AI agent:
 
           - Bun runtime 1.0+ installed (https://bun.sh)
           - `npm install -g @pilatos/bitbucket-cli` (or bun/pnpm)
-          - Authenticated via `bb auth login` or env vars
+          - Authenticated via `bb auth login` (env vars supported during login)
           - Run from git repo with Bitbucket remote
 
          ## Commands
@@ -60,7 +60,7 @@ Choose your AI agent:
          See the full command reference in the skill file or run `bb --help`.
 
          **Key commands:**
-         - `bb pr create/list/view/diff/checkout/approve/merge/decline/ready/comment`
+         - `bb pr create/list/view/diff/checkout/approve/merge/decline/ready/comments`
          - `bb repo clone/create/list/view/delete`
          - `bb auth login/logout/status/token`
          - `bb config get/set/list`
@@ -92,7 +92,7 @@ Choose your AI agent:
 
          - Context auto-detection: run from git repo with Bitbucket remote
          - JSON output: all commands support `--json`
-         - Error codes: 0=success, 1xxx=auth, 2xxx=API, 3xxx=git, 5xxx=validation, 6xxx=context
+         - Error codes: 0=success, 1xxx=auth, 2xxx=API, 3xxx=git, 4xxx=config, 5xxx=validation, 6xxx=context, 7xxx=network
          ````
 
       3. **Restart Claude Code** to load the skill
@@ -134,7 +134,7 @@ Choose your AI agent:
          - `bb pr approve <id>` - Approve PR
          - `bb pr merge <id>` - Merge PR
          - `bb pr ready <id>` - Mark draft as ready
-         - `bb pr comment <id> -m "text"` - Add comment
+         - `bb pr comments add <id> "text"` - Add comment
 
          **Repositories:**
          - `bb repo list -w workspace` - List repos
@@ -149,7 +149,7 @@ Choose your AI agent:
           2. Auto-detection works when in a git repo with Bitbucket remote
           3. Use `--json` for machine-readable output
           4. Squash merge: `bb pr merge <id> --strategy squash`
-         4. Delete source branch: `--close-source-branch`
+          5. Delete source branch: `--close-source-branch`
 
          ### Workflows
 
@@ -187,7 +187,7 @@ Choose your AI agent:
          Use `bb` (@pilatos/bitbucket-cli) for Bitbucket operations.
 
          **Key Commands:**
-         - `bb pr create/list/view/diff/checkout/approve/merge/decline/ready/comment`
+         - `bb pr create/list/view/diff/checkout/approve/merge/decline/ready/comments`
          - `bb repo list/clone/view`
          - `bb config get/set/list`
          - `bb auth login/status`
@@ -196,7 +196,7 @@ Choose your AI agent:
 
          **Output:** Use `--json` for machine-readable output.
 
-         **Auth:** Requires `bb auth login` or `BB_USERNAME` + `BB_API_TOKEN` env vars.
+         **Auth:** Requires `bb auth login` (which can use `BB_USERNAME` + `BB_API_TOKEN`).
 
          **Workflows:**
          - Create: Push branch → `bb pr create -t "title" -b "body"`
@@ -291,7 +291,7 @@ This ensures everyone follows the same workflow automatically.
 
 ```bash
 export BB_USERNAME=your-username
-export BB_API_TOKEN=your-app-password
+export BB_API_TOKEN=your-api-token
 ```
 
 For Claude Code, limit permissions in the skill:
@@ -305,7 +305,7 @@ allowed-tools: Bash(bb:*), Read, Grep, Glob  # Good - only bb commands
 
 | Issue | Solution |
 |-------|----------|
-| "Not authenticated" | Run `bb auth login` or set `BB_USERNAME` and `BB_API_TOKEN` |
+| "Not authenticated" | Set `BB_USERNAME` and `BB_API_TOKEN`, then run `bb auth login` |
 | Commands still prompting | Claude Code: check `allowed-tools` includes `Bash(bb:*)` |
 | "Could not determine repo" | Run from git repo with Bitbucket remote, or use `-w/-r` flags |
 | AI using wrong syntax | Add more examples to your skill/instructions |
