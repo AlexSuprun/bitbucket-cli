@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.0
+
+### Minor Changes
+
+- [#105](https://github.com/0pilatos0/bitbucket-cli/pull/105) [`1ea1993`](https://github.com/0pilatos0/bitbucket-cli/commit/1ea199385a2452b32f5a21bd73578c4f2dcb4fa0) Thanks [@AlexSuprun](https://github.com/AlexSuprun)! - Add inline comment support to `bb pr comments add` with `--file`, `--line-to`, and `--line-from` flags
+
+### Patch Changes
+
+- [#103](https://github.com/0pilatos0/bitbucket-cli/pull/103) [`c8b804f`](https://github.com/0pilatos0/bitbucket-cli/commit/c8b804f51d8c42ef4e196e5a1824c90fbb1807a2) Thanks [@0pilatos0](https://github.com/0pilatos0)! - Fix `bb config set` to parse and validate typed configuration values so
+  `skipVersionCheck` and `versionCheckInterval` are stored and returned as boolean
+  and number values. Add backward-compatible handling for legacy string values in
+  version checks and document typed config behavior.
+
 ## 1.7.1
 
 ### Patch Changes
