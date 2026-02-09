@@ -15,6 +15,7 @@ import { CheckoutPRCommand } from '../../src/commands/pr/checkout.command.js';
 import { DiffPRCommand } from '../../src/commands/pr/diff.command.js';
 import { ActivityPRCommand } from '../../src/commands/pr/activity.command.js';
 import { ChecksPRCommand } from '../../src/commands/pr/checks.command.js';
+import { CommentPRCommand } from '../../src/commands/pr/comment.command.js';
 import {
   createMockOutputService,
   createMockGitService,
@@ -22,7 +23,7 @@ import {
   mockUser,
 } from '../setup.js';
 import type { IContextService } from '../../src/core/interfaces/services.js';
-import type { BBError } from '../../src/types/errors.js';
+import { BBError, ErrorCode } from '../../src/types/errors.js';
 import type {
   Pullrequest,
   PullrequestsApi,
@@ -81,8 +82,9 @@ function createMockPullrequestsApi(
     throwOnDiff?: boolean;
     throwOnDiffstat?: boolean;
     throwOnActivity?: boolean;
+    throwOnComment?: boolean;
   } = {}
-): PullrequestsApi {
+): PullrequestsApi & { lastCommentBody?: Record<string, unknown> } {
   const prs = options.pullRequests ?? [mockPullRequest];
 
   const mockApi = {
@@ -259,10 +261,30 @@ function createMockPullrequestsApi(
         size: 1,
       } as unknown as void);
     },
+
+    async repositoriesWorkspaceRepoSlugPullrequestsPullRequestIdCommentsPost(params: {
+      workspace: string;
+      repoSlug: string;
+      pullRequestId: number;
+      body: Record<string, unknown>;
+    }) {
+      if (options.throwOnComment) {
+        throw new Error('API Error');
+      }
+      mockApi.lastCommentBody = params.body;
+      return createAxiosResponse({
+        id: 201,
+        type: 'pullrequest_comment',
+        content: params.body.content,
+        inline: params.body.inline,
+      });
+    },
   };
 
   // Return the mock as PullrequestsApi - we only implement the methods we use
-  return mockApi as unknown as PullrequestsApi;
+  return mockApi as unknown as PullrequestsApi & {
+    lastCommentBody?: Record<string, unknown>;
+  };
 }
 
 function createMockCommitStatusesApi(
@@ -1240,6 +1262,393 @@ describe('EditPRCommand', () => {
     ).rejects.toThrow();
     expect(
       output.logs.some((log) => log.includes('No open pull request found'))
+    ).toBe(true);
+  });
+});
+
+describe('CommentPRCommand', () => {
+  // US4: Backward compatibility — general comments work unchanged
+  it('should post general comment successfully without inline flags', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      { id: '42', message: 'Looks good!' },
+      { globalOptions: {} }
+    );
+
+    expect(output.logs.some((log) => log.includes('success:'))).toBe(true);
+    expect(
+      output.logs.some((log) => log.includes('Added comment to pull request'))
+    ).toBe(true);
+  });
+
+  it('should output general comment JSON without inline key', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      { id: '42', message: 'Looks good!' },
+      { globalOptions: { json: true } }
+    );
+
+    const jsonLog = output.logs.find((log) => log.startsWith('json:'));
+    expect(jsonLog).toBeDefined();
+    const parsed = JSON.parse(jsonLog!.substring(5));
+    expect(parsed.success).toBe(true);
+    expect(parsed.pullRequestId).toBe(42);
+    expect(parsed.comment).toBeDefined();
+    expect(parsed.inline).toBeUndefined();
+  });
+
+  // US3: Validation — invalid flag combinations
+  it('should throw when --line-to is used without --file', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+
+    try {
+      await command.execute(
+        { id: '42', message: 'Fix this', lineTo: '15' },
+        { globalOptions: {} }
+      );
+      expect(true).toBe(false); // Should not reach here
+    } catch (error) {
+      expect(error).toBeInstanceOf(BBError);
+      expect((error as BBError).code).toBe(ErrorCode.VALIDATION_REQUIRED);
+      expect((error as BBError).message).toBe(
+        '--file is required when using --line-to or --line-from'
+      );
+    }
+  });
+
+  it('should throw when --line-from is used without --file', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+
+    try {
+      await command.execute(
+        { id: '42', message: 'Fix this', lineFrom: '10' },
+        { globalOptions: {} }
+      );
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(BBError);
+      expect((error as BBError).code).toBe(ErrorCode.VALIDATION_REQUIRED);
+      expect((error as BBError).message).toBe(
+        '--file is required when using --line-to or --line-from'
+      );
+    }
+  });
+
+  it('should throw when --file is used without --line-to or --line-from', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+
+    try {
+      await command.execute(
+        { id: '42', message: 'Fix this', file: 'src/app.ts' },
+        { globalOptions: {} }
+      );
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(BBError);
+      expect((error as BBError).code).toBe(ErrorCode.VALIDATION_REQUIRED);
+      expect((error as BBError).message).toBe(
+        'At least one of --line-to or --line-from is required when using --file'
+      );
+    }
+  });
+
+  it('should throw when --line-to is non-numeric', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+
+    try {
+      await command.execute(
+        { id: '42', message: 'Fix this', file: 'src/app.ts', lineTo: 'abc' },
+        { globalOptions: {} }
+      );
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(BBError);
+      expect((error as BBError).code).toBe(ErrorCode.VALIDATION_INVALID);
+      expect((error as BBError).message).toBe(
+        '--line-to must be a positive integer'
+      );
+    }
+  });
+
+  it('should throw when --line-to is zero', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+
+    try {
+      await command.execute(
+        { id: '42', message: 'Fix this', file: 'src/app.ts', lineTo: '0' },
+        { globalOptions: {} }
+      );
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(BBError);
+      expect((error as BBError).code).toBe(ErrorCode.VALIDATION_INVALID);
+      expect((error as BBError).message).toBe(
+        '--line-to must be a positive integer'
+      );
+    }
+  });
+
+  it('should throw when --line-from is negative', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+
+    try {
+      await command.execute(
+        { id: '42', message: 'Fix this', file: 'src/app.ts', lineFrom: '-1' },
+        { globalOptions: {} }
+      );
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(BBError);
+      expect((error as BBError).code).toBe(ErrorCode.VALIDATION_INVALID);
+      expect((error as BBError).message).toBe(
+        '--line-from must be a positive integer'
+      );
+    }
+  });
+
+  // US1: Inline comment with --file and --line-to
+  it('should post inline comment with --file and --line-to', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      { id: '42', message: 'Fix this', file: 'src/app.ts', lineTo: '15' },
+      { globalOptions: {} }
+    );
+
+    const apiBody = (pullrequestsApi as any).lastCommentBody;
+    expect(apiBody).toBeDefined();
+    expect(apiBody.inline).toEqual({ path: 'src/app.ts', to: 15 });
+  });
+
+  it('should show inline success message with file and line', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      { id: '42', message: 'Fix this', file: 'src/app.ts', lineTo: '15' },
+      { globalOptions: {} }
+    );
+
+    expect(
+      output.logs.some((log) =>
+        log.includes('Added inline comment on src/app.ts:15 to pull request')
+      )
+    ).toBe(true);
+  });
+
+  it('should output inline comment JSON with inline key', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      { id: '42', message: 'Fix this', file: 'src/app.ts', lineTo: '15' },
+      { globalOptions: { json: true } }
+    );
+
+    const jsonLog = output.logs.find((log) => log.startsWith('json:'));
+    expect(jsonLog).toBeDefined();
+    const parsed = JSON.parse(jsonLog!.substring(5));
+    expect(parsed.success).toBe(true);
+    expect(parsed.pullRequestId).toBe(42);
+    expect(parsed.comment).toBeDefined();
+    expect(parsed.inline).toEqual({ path: 'src/app.ts', to: 15 });
+  });
+
+  // US2: Inline comment with --line-from only
+  it('should post inline comment with --file and --line-from only', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      { id: '42', message: 'Why removed?', file: 'src/old.ts', lineFrom: '10' },
+      { globalOptions: {} }
+    );
+
+    const apiBody = (pullrequestsApi as any).lastCommentBody;
+    expect(apiBody).toBeDefined();
+    expect(apiBody.inline).toEqual({ path: 'src/old.ts', from: 10 });
+  });
+
+  // US2: Inline comment with both --line-to and --line-from
+  it('should post inline comment with --file, --line-to, and --line-from', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      {
+        id: '42',
+        message: 'This refactor looks good',
+        file: 'src/app.ts',
+        lineTo: '20',
+        lineFrom: '15',
+      },
+      { globalOptions: {} }
+    );
+
+    const apiBody = (pullrequestsApi as any).lastCommentBody;
+    expect(apiBody).toBeDefined();
+    expect(apiBody.inline).toEqual({ path: 'src/app.ts', to: 20, from: 15 });
+  });
+
+  // US2: Success message for --line-from only
+  it('should show old line in success message for --line-from only', async () => {
+    const pullrequestsApi = createMockPullrequestsApi();
+    const contextService = createMockContextService({
+      workspace: 'workspace',
+      repoSlug: 'repo',
+    });
+    const output = createMockOutputService();
+
+    const command = new CommentPRCommand(
+      pullrequestsApi,
+      contextService,
+      output
+    );
+    await command.execute(
+      { id: '42', message: 'Why removed?', file: 'src/old.ts', lineFrom: '10' },
+      { globalOptions: {} }
+    );
+
+    expect(
+      output.logs.some((log) =>
+        log.includes(
+          'Added inline comment on src/old.ts (old line 10) to pull request'
+        )
+      )
     ).toBe(true);
   });
 });

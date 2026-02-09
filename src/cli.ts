@@ -502,11 +502,14 @@ prCommentsCmd
 prCommentsCmd
   .command('add <id> <message>')
   .description('Add a comment to a pull request')
+  .option('--file <path>', 'File path in the diff for inline comment')
+  .option('--line-to <number>', 'Line number in the new file version')
+  .option('--line-from <number>', 'Line number in the old file version')
   .action(async (id, message, options) => {
     const context = createContext(cli);
     await runCommand(
       ServiceTokens.CommentPRCommand,
-      withGlobalOptions({ id, message }, context),
+      withGlobalOptions({ id, message, ...options }, context),
       cli,
       context
     );
